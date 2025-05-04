@@ -1,12 +1,15 @@
 {
-  "name": "uploadDistributor",
+  "name": "upload-distributor",
+  "version": "0.1.0",
+  "description": "A system for uploading and distributing audio content to multiple platforms",
   "private": true,
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "format": "prettier --write \"**/*.{ts,tsx,md,js,jsx,json}\"",
+    "check-types": "turbo run check-types",
+    "test": "turbo run test"
   },
   "devDependencies": {
     "prettier": "^3.5.3",
