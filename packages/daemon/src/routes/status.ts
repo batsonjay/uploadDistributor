@@ -30,9 +30,52 @@ router.get('/:uploadId', (req, res) => {
   if (fs.existsSync(statusFile)) {
     try {
       const status = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
+      
+      // Get metadata if available
+      let metadata: Record<string, any> = {};
+      const metadataFile = path.join(uploadDir, 'metadata.json');
+      if (fs.existsSync(metadataFile)) {
+        try {
+          metadata = JSON.parse(fs.readFileSync(metadataFile, 'utf8'));
+        } catch (err) {
+          console.error('Error reading metadata file:', err);
+        }
+      }
+      
+      // Get file information
+      const files: Record<string, any> = {};
+      const audioFile = path.join(uploadDir, 'audio.mp3');
+      const songlistFile = path.join(uploadDir, 'songlist.txt');
+      
+      if (fs.existsSync(audioFile)) {
+        const audioStats = fs.statSync(audioFile);
+        files['audio'] = {
+          size: audioStats.size,
+          exists: true
+        };
+      } else {
+        files['audio'] = { exists: false };
+      }
+      
+      if (fs.existsSync(songlistFile)) {
+        const songlistStats = fs.statSync(songlistFile);
+        const songlistContent = fs.readFileSync(songlistFile, 'utf8');
+        const songCount = songlistContent.split('\n').filter(line => line.trim()).length;
+        
+        files['songlist'] = {
+          size: songlistStats.size,
+          exists: true,
+          songCount
+        };
+      } else {
+        files['songlist'] = { exists: false };
+      }
+      
       return res.json({
         uploadId,
-        ...status
+        ...status,
+        metadata,
+        files
       });
     } catch (err) {
       console.error('Error reading status file:', err);

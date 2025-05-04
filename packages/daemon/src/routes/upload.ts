@@ -26,12 +26,25 @@ if (!fs.existsSync(uploadsDir)) {
  * @returns {object} 200 - Upload ID and status
  */
 router.post('/', (req: any, res: any) => {
-  // Generate unique upload ID
-  const uploadId = uuidv4();
+  // Get upload ID from request or generate a new one
+  // This allows tests to reuse the same upload ID
+  const uploadId = req.headers['x-upload-id'] || uuidv4();
   
   // Create directory for this upload
-  const uploadDir = path.join(uploadsDir, uploadId);
-  fs.mkdirSync(uploadDir, { recursive: true });
+  const uploadDir = path.join(uploadsDir, uploadId as string);
+  
+  // If directory exists, clean it up for reuse
+  if (fs.existsSync(uploadDir)) {
+    console.log(`Reusing existing upload directory for ${uploadId}`);
+    // Keep the directory but remove any existing files
+    const files = fs.readdirSync(uploadDir);
+    files.forEach(file => {
+      fs.unlinkSync(path.join(uploadDir, file));
+    });
+  } else {
+    // Create new directory
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
   
   // Initialize metadata object
   const metadata = {
@@ -80,15 +93,37 @@ router.post('/', (req: any, res: any) => {
       }, null, 2)
     );
     
+    // Determine if we're in development mode
+    // When using ts-node-dev, we're definitely in development mode
+    const isDev = true;
+    
+    // Use .ts extension in development mode, .js in production
+    const fileExt = isDev ? '.ts' : '.js';
+    
     // Fork a process to handle the upload
-    const processorPath = path.join(__dirname, '../processors/upload-processor.js');
-    console.log(`Forking process for upload ${uploadId}`);
+    const processorPath = path.join(__dirname, `../processors/upload-processor${fileExt}`);
+    console.log(`Forking process for upload ${uploadId} using ${processorPath}`);
     
     try {
-      const child = fork(processorPath, [uploadId]);
+      // In development mode, we need to use ts-node to execute TypeScript files
+      let child;
+      if (isDev) {
+        // For development mode, use the child_process.spawn method with ts-node
+        const { spawn } = require('child_process');
+        console.log(`Spawning ts-node process for ${processorPath} with upload ID ${uploadId}`);
+        
+        // Use spawn instead of fork for better control
+        child = spawn('npx', ['ts-node', processorPath, uploadId], {
+          stdio: 'inherit', // Inherit stdio to see output in parent process
+          detached: false   // Keep the child process attached to the parent
+        });
+      } else {
+        // For production mode, use the compiled JS file directly
+        child = fork(processorPath, [uploadId]);
+      }
       
       // Log when child process exits
-      child.on('exit', (code) => {
+      child.on('exit', (code: number | null) => {
         console.log(`Child process for upload ${uploadId} exited with code ${code}`);
       });
       

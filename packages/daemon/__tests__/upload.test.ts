@@ -40,6 +40,9 @@ if (!fs.existsSync(testSonglistPath)) {
   console.log(`Created test songlist file: ${testSonglistPath}`);
 }
 
+// Fixed test upload ID to reuse the same directory
+const TEST_UPLOAD_ID = 'f66ca46e-5282-4795-a825-ef97a0935c34';
+
 // Function to send test upload
 async function sendTestUpload() {
   try {
@@ -61,19 +64,19 @@ async function sendTestUpload() {
     
     console.log('Sending upload to daemon...');
     
-    // Send request
+    // Send request with the fixed upload ID in headers
     const response = await axios.post(`${DAEMON_URL}/upload`, form, {
       headers: {
         ...form.getHeaders(),
+        'x-upload-id': TEST_UPLOAD_ID
       },
     });
     
     console.log('Upload response:', response.data);
     
-    // If upload was successful, poll for status
-    if (response.data.uploadId) {
-      await pollUploadStatus(response.data.uploadId);
-    }
+    // Use the fixed test upload ID instead of the generated one
+    console.log(`Using fixed test upload ID: ${TEST_UPLOAD_ID}`);
+    await pollUploadStatus(TEST_UPLOAD_ID);
   } catch (err) {
     console.error('Error sending test upload:', (err as Error).message);
     if ((err as any).response) {

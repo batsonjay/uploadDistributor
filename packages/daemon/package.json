@@ -10,7 +10,7 @@
     "lint": "eslint src --ext .ts,.js",
     "test": "jest",
     "check-types": "tsc --noEmit",
-    "test-upload": "ts-node src/test-upload.ts"
+    "test-upload": "ts-node __tests__/upload.test.ts"
   },
   "dependencies": {
     "express": "^4.18.2",

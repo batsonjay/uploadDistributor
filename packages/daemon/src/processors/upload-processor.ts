@@ -17,7 +17,11 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 // Get upload ID from command line arguments
-const uploadId = process.argv[2];
+// The upload ID is the last argument passed to the script
+const uploadId = process.argv[process.argv.length - 1];
+
+console.log('Process arguments:', process.argv);
+console.log('Using upload ID:', uploadId);
 
 if (!uploadId) {
   console.error('No upload ID provided');
@@ -25,7 +29,8 @@ if (!uploadId) {
 }
 
 // Define paths
-const uploadsDir = process.env.UPLOAD_DIR || './uploads';
+const uploadsDir = process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads');
+console.log('Uploads directory:', uploadsDir);
 const uploadDir = path.join(uploadsDir, uploadId);
 const audioFile = path.join(uploadDir, 'audio.mp3');
 const songlistFile = path.join(uploadDir, 'songlist.txt');
