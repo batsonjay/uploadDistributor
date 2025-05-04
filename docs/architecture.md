@@ -60,3 +60,10 @@ The system is composed of three main components:
 - Mixcloud and SoundCloud uploads are stubbed/mocked in tests.
 - AzuraCast uploads can be tested against a staging server.
 - CI/CD pipeline includes linting, unit tests, and integration tests.
+
+
+## Development testing
+
+### Azuracast development server
+
+[Destination APIs](docs/destiantion0-apis.md) provides informaiton on an AzuraCast server available for dev/test as well as a discussion of the mocks & stubs required for development before attempting to test against live services, which have no test capability.

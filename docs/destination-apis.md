@@ -10,6 +10,11 @@ Each destination has its own authentication, upload, and metadata requirements. 
 
 ## AzuraCast
 
+Note that some of the AzuraCast APIs require a "station shortcode". Let's call that the ":station_id" in this document.
+
+- For the production station, the :station_id is 1
+- For the development/test station, the :station_id is 2
+
 ### Authentication
 
 - Uses API tokens per user.
@@ -26,7 +31,7 @@ Each destination has its own authentication, upload, and metadata requirements. 
 
 ### Notes
 
-- AzuraCast allows testing via a staging server.
+- AzuraCast allows testing via a staging server. There is a staging server available at the 
 - Supports robust metadata and playlist management.
 
 ---
@@ -46,7 +51,7 @@ Each destination has its own authentication, upload, and metadata requirements. 
 ### Metadata
 
 - Title, description, tags, and tracklist are supported.
-- Tracklist is optional but recommended.
+- Tracklist is optional but recommended. The application / project here intends to supply a Tracklist.
 
 ### Notes
 
@@ -81,6 +86,6 @@ Each destination has its own authentication, upload, and metadata requirements. 
 
 ## Testing Strategy
 
-- AzuraCast: Use a staging server for integration tests.
+- AzuraCast: Use the dev/test server for integration tests. However, implement mocks & stubs for initial development prior to testing against that server.
 - Mixcloud/SoundCloud: Use mocks and stubs to simulate uploads.
 - Validate metadata formatting and API request structure in tests.

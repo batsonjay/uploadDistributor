@@ -23,43 +23,98 @@ This document outlines the proposed implementation steps for the Upload Distribu
 ## Phase 2: Core Components Development
 
 ### 2.1 Daemon Development
-- Implement Express server with API endpoints
-- Create file upload handling with Busboy
-- Develop process forking for concurrent uploads
-- Implement persistent storage for songlists
-- Build authentication integration with AzuraCast
 
-### 2.2 Web Client Development
+#### 2.1.1 Standardized Songlist Format
+- Create a standardized JSON schema for songlists with the following structure:
+  ```json
+  {
+    "broadcast_data": {
+      "broadcast_date": "2025-05-04",
+      "broadcast_time": "20:00:00",
+      "DJ": "DJ Example",
+      "setTitle": "Saturday Night Mix",
+      "duration": "02:00:00"
+    },
+    "track_list": [
+      {
+        "title": "Example Track One",
+        "artist": "Artist A"
+      },
+      {
+        "title": "Example Track Two",
+        "artist": "Artist B"
+      }
+    ],
+    "version": "1.0"
+  }
+  ```
+- Create sample songlist JSON files for development and testing
+
+#### 2.1.2 Persistent Storage for Songlists
+- Implement file-based storage for songlists
+- Store songlists in folders organized by DJ name
+- Use filename format: `yyyy-mm-dd-title` where spaces in title are replaced by hyphens
+- Create stub for songlist normalization (to be fully implemented later)
+- Implement functions to store and retrieve songlists
+
+#### 2.1.3 Destination API Mocks
+- Create mock implementations for all three destination APIs:
+  - AzuraCast
+  - Mixcloud
+  - SoundCloud
+- Implement validation of received data against expected formats
+- Add logging to show what information was received
+- Include verification that information is complete and correctly formatted
+- Create stubs for authentication (to be implemented later)
+
+#### 2.1.4 Distribution Flow
+- Enhance upload processor to distribute to all three destinations
+- Implement the flow to send songlist data to all destinations
+- Log results from each destination API
+- Create a unified interface for all destination APIs
+
+#### 2.1.5 Testing Enhancements
+- Update test script to use the standardized songlist format
+- Test the entire flow from upload to distribution
+- Verify results from each destination
+
+### 2.2 Web Client Development (Deferred)
 - Create Next.js application structure
-- Implement authentication flow
 - Build upload form and metadata entry
 - Develop status tracking UI
 - Implement error handling and retry logic
+- Authentication flow (deferred to Phase 3)
 
-### 2.3 macOS Client Development
+### 2.3 macOS Client Development (Deferred)
 - Set up Electron with React
-- Implement secure credential storage
 - Create FileZilla-like UI
 - Build file selection and upload flow
 - Implement status tracking and notifications
+- Secure credential storage (deferred to Phase 3)
 
-## Phase 3: Destination API Integration
+## Phase 3: Destination API Integration and Authentication
 
-### 3.1 AzuraCast Integration
-- Implement authentication flow
-- Develop file upload functionality
+### 3.1 Authentication Implementation
+- Implement AzuraCast authentication flow
+- Build OAuth2 authentication for Mixcloud
+- Build OAuth2 authentication for SoundCloud
+- Create secure credential storage for clients
+
+### 3.2 AzuraCast Integration
+- Replace mock with actual AzuraCast API integration
+- Implement file upload functionality
 - Create metadata association
 - Build playlist integration
 
-### 3.2 Mixcloud Integration
-- Implement OAuth2 authentication
-- Develop file upload functionality
+### 3.3 Mixcloud Integration
+- Replace mock with actual Mixcloud API integration
+- Implement file upload functionality
 - Create metadata and tracklist formatting
 - Handle rate limiting and error cases
 
-### 3.3 SoundCloud Integration
-- Implement OAuth2 authentication
-- Develop file upload functionality
+### 3.4 SoundCloud Integration
+- Replace mock with actual SoundCloud API integration
+- Implement file upload functionality
 - Create metadata formatting
 - Handle rate limiting and error cases
 
@@ -81,60 +136,69 @@ This document outlines the proposed implementation steps for the Upload Distribu
 
 #### Testing Harness Implementation
 ```javascript
-// Example mock implementation for destination APIs
+// Base class for all destination API mocks
 class DestinationApiMock {
   constructor(destination) {
     this.destination = destination;
     this.requests = [];
-    this.responseOverrides = {};
   }
 
-  // Record API calls for later verification
+  // Record API calls for verification
   recordRequest(endpoint, data) {
-    this.requests.push({ endpoint, data, timestamp: Date.now() });
+    this.requests.push({ endpoint, data, timestamp: new Date().toISOString() });
+    console.log(`[${this.destination}] Request to ${endpoint}:`, JSON.stringify(data, null, 2));
   }
 
-  // Set custom responses for specific endpoints
-  setResponse(endpoint, response) {
-    this.responseOverrides[endpoint] = response;
+  // Validate required fields
+  validateRequiredFields(data, requiredFields) {
+    const missing = requiredFields.filter(field => !data[field]);
+    if (missing.length > 0) {
+      console.error(`[${this.destination}] Missing required fields: ${missing.join(', ')}`);
+      return false;
+    }
+    console.log(`[${this.destination}] All required fields present`);
+    return true;
   }
 
-  // Simulate upload process
-  async upload(file, metadata) {
-    this.recordRequest('upload', { metadata });
-    
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Return custom response or default success
-    return this.responseOverrides['upload'] || { 
-      success: true, 
-      id: `mock-${this.destination}-${Date.now()}`
-    };
-  }
-
-  // Get recorded requests for verification
-  getRecordedRequests() {
-    return this.requests;
-  }
-
-  // Reset mock state
-  reset() {
-    this.requests = [];
-    this.responseOverrides = {};
+  // Stub for authentication (to be implemented later)
+  authenticate() {
+    console.log(`[${this.destination}] Authentication stub called`);
+    return Promise.resolve({ success: true, token: 'mock-token' });
   }
 }
 
-// Usage in tests
-const mixcloudMock = new DestinationApiMock('mixcloud');
-// Inject mock into uploader service
-uploaderService.setMixcloudApi(mixcloudMock);
-// Run upload test
-await uploaderService.uploadToMixcloud(testFile, testMetadata);
-// Verify correct API usage
-const requests = mixcloudMock.getRecordedRequests();
-expect(requests[0].endpoint).toBe('upload');
-expect(requests[0].data.metadata.title).toBe(testMetadata.title);
+// Example usage in tests
+const azuraCastMock = new DestinationApiMock('azuracast');
+// Validate upload data
+const isValid = azuraCastMock.validateRequiredFields(uploadData, ['title', 'artist']);
+// Record the request for verification
+azuraCastMock.recordRequest('upload', uploadData);
+```
+
+#### Songlist Storage Implementation
+```javascript
+// Function to store songlist persistently
+function storeSonglist(uploadId, songlist) {
+  const djDir = path.join(songslistsDir, songlist.broadcast_data.DJ);
+  
+  // Create DJ directory if it doesn't exist
+  if (!fs.existsSync(djDir)) {
+    fs.mkdirSync(djDir, { recursive: true });
+  }
+  
+  // Create a filename based on broadcast date and title
+  // Format: yyyy-mm-dd-title (spaces in title replaced by hyphens)
+  const filename = `${songlist.broadcast_data.broadcast_date}-${
+    songlist.broadcast_data.setTitle.replace(/\s+/g, '-')
+  }.json`;
+  
+  const filePath = path.join(djDir, filename);
+  
+  // Write the songlist to file
+  fs.writeFileSync(filePath, JSON.stringify(songlist, null, 2));
+  
+  return filePath;
+}
 ```
 
 ### 4.2 Unit Testing
@@ -186,13 +250,13 @@ expect(requests[0].data.metadata.title).toBe(testMetadata.title);
 - Document code architecture
 - Create contribution guidelines
 
-## Implementation Timeline
+## Implementation Timeline (Revised)
 
 | Phase | Duration | Dependencies |
 |-------|----------|--------------|
 | 1. Project Setup | 1 week | None |
-| 2. Core Components | 4 weeks | Phase 1 |
-| 3. Destination APIs | 3 weeks | Phase 2 |
+| 2. Core Components (Revised) | 4 weeks | Phase 1 |
+| 3. Authentication & API Integration | 3 weeks | Phase 2 |
 | 4. Testing | 2 weeks (parallel with Phase 3) | Phase 2 |
 | 5. Integration | 2 weeks | Phases 3 & 4 |
 | 6. Deployment | 1 week | Phase 5 |
@@ -230,19 +294,23 @@ Total estimated timeline: 10-12 weeks
 - The project has a solid foundation for further development
 
 ### Next Steps
-- Complete remaining items in Phase 2:
-  - Implement persistent storage for songlists
-  - Build authentication integration with AzuraCast
-- Begin work on Web Client Development
-- Prepare for Destination API Integration in Phase 3
+- Complete revised items in Phase 2:
+  - Create standardized songlist format and sample files
+  - Implement persistent storage for songlists (file-based, organized by DJ)
+  - Create destination API mocks for all three platforms
+  - Enhance upload processor to distribute to all destinations
+  - Update test script to verify the entire flow
+- Authentication integration deferred to Phase 3
+- Begin work on Web Client Development after core daemon functionality is complete
 
-## Critical Path and Risk Mitigation
+## Critical Path and Risk Mitigation (Revised)
 
 ### Critical Path
-1. Daemon development
-2. Destination API integration
+1. Daemon development with mock APIs
+2. Songlist standardization and storage
 3. Testing harness implementation
-4. End-to-end integration
+4. Authentication and real API integration
+5. End-to-end integration
 
 ### Risk Mitigation
 
