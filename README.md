@@ -1,84 +1,90 @@
-# Turborepo starter
+# Upload Distributor
 
-This Turborepo starter is maintained by the Turborepo core team.
+Upload Distributor is a system for uploading and distributing audio content to multiple platforms simultaneously. It enables DJs to upload an MP3 file along with a songlist, which is then distributed to AzuraCast, Mixcloud, and SoundCloud. The system consists of a daemon that handles the upload processing and distribution, a web client for browser-based uploads, and a macOS client with a FileZilla-like interface.
 
-## Using this example
+## Documentation
 
-Run the following command:
+- [Architecture Overview](docs/architecture.md) - System design and operational flow
+- [Tech Stack](docs/tech-stack.md) - Technologies used across the project
+- [Daemon APIs](docs/daemon-apis.md) - Internal APIs exposed by the daemon
+- [Destination APIs](docs/destination-apis.md) - Integration with AzuraCast, Mixcloud, and SoundCloud
+- [Web Client](docs/web-client.md) - Design and responsibilities of the web client
+- [macOS Client](docs/macos-client.md) - Design and responsibilities of the macOS client
+- [Songlists](docs/songlists.md) - Structure and handling of songlist files
+- [Implementation Plan](docs/Implementation-plan.md) - Proposed implementation steps
 
-```sh
-npx create-turbo@latest
-```
+## Development Setup
 
-## What's inside?
+### Prerequisites
 
-This Turborepo includes the following packages/apps:
+- Node.js (v18 or later)
+- npm (v10 or later)
+- Git
 
-### Apps and Packages
+### First-time Setup
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+1. Clone the repository:
+   ```
+   git clone <repository-url>
+   cd uploadDistributor
+   ```
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+2. Install dependencies:
+   ```
+   npm install
+   ```
 
-### Utilities
+3. Create a `.env` file in the root directory based on `.env.example`:
+   ```
+   cp .env.example .env
+   ```
 
-This Turborepo has some additional tools already setup for you:
+4. Build all packages:
+   ```
+   npm run build
+   ```
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+### Development Workflow
 
-### Build
+- Start the daemon in development mode:
+  ```
+  npm run dev --filter=@uploadDistributor/daemon
+  ```
 
-To build all apps and packages, run the following command:
+- Run linting:
+  ```
+  npm run lint
+  ```
 
-```
-cd my-turborepo
-pnpm build
-```
+- Type checking:
+  ```
+  npm run check-types
+  ```
 
-### Develop
+- Format code:
+  ```
+  npm run format
+  ```
 
-To develop all apps and packages, run the following command:
+### Testing
 
-```
-cd my-turborepo
-pnpm dev
-```
+- Run all tests:
+  ```
+  npm run test
+  ```
 
-### Remote Caching
+- Test a specific package:
+  ```
+  npm run test --filter=@uploadDistributor/daemon
+  ```
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+### Project Structure
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-npx turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+- `apps/` - Client applications
+  - `web-ui/` - Next.js web client
+  - `macos-client/` - Electron-based macOS client
+- `packages/` - Shared packages and services
+  - `daemon/` - Core processing daemon
+  - `shared/` - Shared utilities and types
+  - `eslint-config/` - ESLint configurations
+  - `typescript-config/` - TypeScript configurations

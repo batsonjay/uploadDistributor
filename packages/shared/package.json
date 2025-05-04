@@ -1,5 +1,5 @@
 {
-  "name": "@upload/shared",
+  "name": "@uploadDistributor/shared",
   "version": "0.1.0",
   "private": true,
   "main": "dist/index.js",
@@ -10,8 +10,8 @@
     "check-types": "tsc --noEmit"
   },
   "devDependencies": {
-    "@repo/eslint-config": "*",
-    "@repo/typescript-config": "*",
+    "@uploadDistributor/eslint-config": "*",
+    "@uploadDistributor/typescript-config": "*",
     "@types/node": "^22.15.3",
     "eslint": "^9.25.0",
     "typescript": "5.8.2"

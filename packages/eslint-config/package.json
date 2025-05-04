@@ -1,5 +1,5 @@
 {
-  "name": "@upload-distributor/eslint-config",
+  "name": "@uploadDistributor/eslint-config",
   "version": "0.1.0",
   "type": "module",
   "private": true,
