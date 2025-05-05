@@ -59,9 +59,12 @@ This document outlines the proposed implementation steps for the Upload Distribu
         "license": "cc-by-nc-sa"
       }
     },
+    "user_role": "DJ", // or "Admin"
+    "destinations": ["azuracast", "mixcloud", "soundcloud"], // Only used by Admin role
     "version": "1.0"
   }
   ```
+- All timestamps in the JSON will be stored in UTC format
 - Create sample songlist JSON files for development and testing
 
 #### 2.1.2 Persistent Storage for Songlists
@@ -84,7 +87,13 @@ This document outlines the proposed implementation steps for the Upload Distribu
 #### 2.1.4 Distribution Flow
 - Enhance upload processor to distribute to all three destinations
 - Implement the flow to send songlist data to all destinations
-- Log results from each destination API
+- Implement timezone conversion from UTC to appropriate formats for each destination
+- Create two separate response flows:
+  - For DJ users: Return success as soon as upload to daemon is complete
+  - For Admin users: Return detailed status for each destination
+- Implement logging system with two log files:
+  - Success/error log with one-line entries per destination
+  - Detailed error-only log with comprehensive information
 - Create a unified interface for all destination APIs
 
 #### 2.1.5 Testing Enhancements
@@ -94,25 +103,34 @@ This document outlines the proposed implementation steps for the Upload Distribu
 
 ### 2.2 Web Client Development (Deferred)
 - Create Next.js application structure
+- Implement role-based UI (DJ vs Admin interfaces)
 - Build upload form and metadata entry
-- Develop status tracking UI
-- Implement error handling and retry logic
-- Authentication flow (deferred to Phase 3)
+- Implement timezone handling (collect in CET, convert to UTC for storage)
+- Develop appropriate status tracking UI based on user role:
+  - DJ: Simple upload confirmation
+  - Admin: Detailed destination status
+- Implement error handling appropriate to user role
+- Authentication flow with role retrieval (deferred to Phase 3)
 
 ### 2.3 macOS Client Development (Deferred)
 - Set up Electron with React
-- Create FileZilla-like UI
+- Implement role-based UI (DJ vs Admin interfaces)
+- Create FileZilla-like UI with role-appropriate controls
 - Build file selection and upload flow
-- Implement status tracking and notifications
-- Secure credential storage (deferred to Phase 3)
+- Implement timezone handling (collect in CET, convert to UTC for storage)
+- Develop appropriate status tracking based on user role:
+  - DJ: Simple upload confirmation
+  - Admin: Detailed destination status with retry options
+- Secure credential storage with role information (deferred to Phase 3)
 
 ## Phase 3: Destination API Integration and Authentication
 
 ### 3.1 Authentication Implementation
-- Implement AzuraCast authentication flow
+- Implement AzuraCast authentication flow with role retrieval (DJ vs Admin)
 - Build OAuth2 authentication for Mixcloud
 - Build OAuth2 authentication for SoundCloud
-- Create secure credential storage for clients
+- Create secure credential storage for clients including user role
+- Implement role-based permission system in daemon API endpoints
 
 ### 3.2 AzuraCast Integration
 - Replace mock with actual AzuraCast API integration
@@ -238,9 +256,14 @@ function storeSonglist(uploadId, songlist) {
 - Test upload and status tracking end-to-end
 
 ### 5.2 Error Handling and Recovery
-- Implement comprehensive error handling
-- Develop retry mechanisms
-- Create user-friendly error messages
+- Implement comprehensive error handling with role-appropriate responses:
+  - DJ users: Simple success/failure for daemon upload
+  - Admin users: Detailed status for all destinations
+- Develop retry mechanisms for Admin users
+- Implement the two-tier logging system:
+  - Success/error log with concise entries
+  - Detailed error-only log
+- Create user-friendly error messages appropriate to user role
 
 ### 5.3 Performance Optimization
 - Optimize file handling for large uploads
@@ -332,12 +355,14 @@ Total estimated timeline: 10-12 weeks
 - The project has a solid foundation for further development
 
 ### Next Steps
-- Begin work on authentication integration (Phase 3):
-  - Implement AzuraCast authentication flow
+- Begin work on authentication integration with role support (Phase 3):
+  - Implement AzuraCast authentication flow with role retrieval
   - Build OAuth2 authentication for Mixcloud and SoundCloud
-  - Create secure credential storage
+  - Create secure credential storage including user role
+- Implement the two-tier logging system for daemon
+- Update the upload processor to handle different flows for DJ vs Admin users
 - Start replacing mocks with actual API integrations
-- Begin work on Web Client Development
+- Begin work on role-based Web Client Development
 
 ## Critical Path and Risk Mitigation (Revised)
 
@@ -361,9 +386,16 @@ Total estimated timeline: 10-12 weeks
 - Optimize memory usage during processing
 
 #### Authentication Security
-- Use secure storage for credentials
+- Use secure storage for credentials including user role
 - Implement token refresh mechanisms
 - Create session timeout handling
+- Ensure proper role-based access control
+
+#### Role-Based Access Control
+- Implement thorough validation of user roles
+- Ensure Admin-only features are properly protected
+- Test both DJ and Admin flows thoroughly
+- Create clear error messages for unauthorized access attempts
 
 ## Conclusion
 
