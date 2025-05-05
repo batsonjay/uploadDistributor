@@ -1,0 +1,24 @@
+{
+  "broadcast_data": {
+    "broadcast_date": "2025-05-04",
+    "broadcast_time": "20:00:00",
+    "DJ": "Test DJ",
+    "setTitle": "Test Mix",
+    "duration": "01:00:00"
+  },
+  "track_list": [
+    {
+      "title": "Test Track One",
+      "artist": "Artist A"
+    },
+    {
+      "title": "Test Track Two",
+      "artist": "Artist B"
+    },
+    {
+      "title": "Test Track Three",
+      "artist": "Artist C"
+    }
+  ],
+  "version": "1.0"
+}

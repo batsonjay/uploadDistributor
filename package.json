@@ -12,9 +12,12 @@
     "test": "turbo run test"
   },
   "devDependencies": {
+    "@types/node": "^22.15.3",
+    "@types/uuid": "^10.0.0",
     "prettier": "^3.5.3",
     "turbo": "^2.5.2",
-    "typescript": "5.8.2"
+    "typescript": "5.8.2",
+    "uuid": "^11.1.0"
   },
   "engines": {
     "node": ">=18"
