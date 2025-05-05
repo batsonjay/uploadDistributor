@@ -33,7 +33,11 @@ This document outlines the proposed implementation steps for the Upload Distribu
       "broadcast_time": "20:00:00",
       "DJ": "DJ Example",
       "setTitle": "Saturday Night Mix",
-      "duration": "02:00:00"
+      "duration": "02:00:00",
+      "genre": "Deep House",
+      "tags": ["electronic", "house", "deep", "melodic"],
+      "artwork": "/path/to/cover-image.jpg",
+      "description": "A deep and melodic journey through the sounds of Deep House."
     },
     "track_list": [
       {
@@ -45,6 +49,16 @@ This document outlines the proposed implementation steps for the Upload Distribu
         "artist": "Artist B"
       }
     ],
+    "platform_specific": {
+      "mixcloud": {
+        "tags": ["Deep House", "Electronic"],
+        "publish_date": "2025-05-04T20:00:00Z"
+      },
+      "soundcloud": {
+        "sharing": "public",
+        "license": "cc-by-nc-sa"
+      }
+    },
     "version": "1.0"
   }
   ```

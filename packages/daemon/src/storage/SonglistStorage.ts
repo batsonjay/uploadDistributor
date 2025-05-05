@@ -21,11 +21,27 @@ export interface BroadcastData {
   DJ: string;
   setTitle: string;
   duration: string;
+  genre?: string;
+  tags?: string[];
+  artwork?: string;
+  description?: string;
+}
+
+export interface PlatformSpecificData {
+  mixcloud?: {
+    tags?: string[];
+    publish_date?: string;
+  };
+  soundcloud?: {
+    sharing?: 'public' | 'private';
+    license?: string;
+  };
 }
 
 export interface SonglistData {
   broadcast_data: BroadcastData;
   track_list: TrackData[];
+  platform_specific?: PlatformSpecificData;
   version: string;
 }
 

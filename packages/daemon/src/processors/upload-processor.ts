@@ -135,7 +135,7 @@ async function processUpload() {
       // Ensure songlist is defined before storing
       if (songlist) {
         // Use type assertion to tell TypeScript that storeSonglist always returns a string
-        const storedPath = storeSonglist(uploadId, songlist) as string;
+        const storedPath: string = storeSonglist(uploadId, songlist) as string;
         process.stdout.write(`Songlist stored at: ${storedPath}\n`);
       } else {
         throw new Error('Failed to create songlist');
@@ -173,19 +173,140 @@ async function processUpload() {
       sharing: 'public' as 'public'
     };
     
-    // Upload to all platforms in parallel
-    const [azuraCastResult, mixcloudResult, soundCloudResult] = await Promise.all([
-      uploadToAzuraCast(audioFile, azuraCastMetadata),
-      uploadToMixcloud(audioFile, mixcloudMetadata),
-      uploadToSoundCloud(audioFile, soundCloudMetadata)
-    ]);
+    // Upload to all platforms sequentially with platform-specific recovery logic
+    const destinations: any = {};
     
-    // Collect results
-    const destinations = {
-      azuracast: azuraCastResult,
-      mixcloud: mixcloudResult,
-      soundcloud: soundCloudResult
-    };
+    // Step 2a: Upload to AzuraCast
+    process.stdout.write('Starting upload to AzuraCast...\n');
+    updateStatus('processing', 'Uploading to AzuraCast', { current_platform: 'azuracast' });
+    
+    try {
+      // AzuraCast-specific recovery logic: retry up to 2 times with exponential backoff
+      let azuraCastResult: any = { success: false, error: 'Not attempted' };
+      let retryCount = 0;
+      const maxRetries = 2;
+      
+      while (retryCount <= maxRetries) {
+        try {
+          azuraCastResult = await uploadToAzuraCast(audioFile, azuraCastMetadata);
+          if (azuraCastResult.success) {
+            break; // Success, exit retry loop
+          } else {
+            throw new Error(azuraCastResult.error || 'Unknown error');
+          }
+        } catch (err) {
+          if (retryCount < maxRetries) {
+            const backoffTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s, etc.
+            process.stdout.write(`AzuraCast upload failed, retrying in ${backoffTime/1000}s... (${retryCount + 1}/${maxRetries})\n`);
+            await new Promise(resolve => setTimeout(resolve, backoffTime));
+            retryCount++;
+          } else {
+            throw err; // Re-throw after max retries
+          }
+        }
+      }
+      
+      destinations.azuracast = azuraCastResult;
+      process.stdout.write(`AzuraCast upload ${azuraCastResult.success ? 'completed successfully' : 'failed'}\n`);
+    } catch (err) {
+      process.stderr.write(`AzuraCast upload failed after retries: ${err}\n`);
+      destinations.azuracast = {
+        success: false,
+        error: (err as Error).message,
+        recoverable: true // Mark as recoverable for future manual retry
+      };
+      // Continue with other platforms despite AzuraCast failure
+    }
+    
+    // Step 2b: Upload to Mixcloud
+    process.stdout.write('Starting upload to Mixcloud...\n');
+    updateStatus('processing', 'Uploading to Mixcloud', { 
+      ...destinations,
+      current_platform: 'mixcloud' 
+    });
+    
+    try {
+      // Mixcloud-specific recovery logic: single retry with validation check
+      let mixcloudResult: any = { success: false, error: 'Not attempted' };
+      
+      try {
+        mixcloudResult = await uploadToMixcloud(audioFile, mixcloudMetadata);
+        
+        // If upload failed due to track list validation, try again with a simplified track list
+        if (!mixcloudResult.success && mixcloudResult.error?.includes('track list')) {
+          process.stdout.write('Mixcloud upload failed due to track list issues, retrying with simplified track list...\n');
+          
+          // Create simplified track list (limit to 5 tracks if there are more)
+          const simplifiedMetadata = { ...mixcloudMetadata };
+          if (simplifiedMetadata.track_list && simplifiedMetadata.track_list.length > 5) {
+            simplifiedMetadata.track_list = simplifiedMetadata.track_list.slice(0, 5);
+            process.stdout.write(`Simplified track list to ${simplifiedMetadata.track_list.length} tracks\n`);
+          }
+          
+          mixcloudResult = await uploadToMixcloud(audioFile, simplifiedMetadata);
+        }
+      } catch (err) {
+        throw err;
+      }
+      
+      destinations.mixcloud = mixcloudResult;
+      process.stdout.write(`Mixcloud upload ${mixcloudResult.success ? 'completed successfully' : 'failed'}\n`);
+    } catch (err) {
+      process.stderr.write(`Mixcloud upload failed: ${err}\n`);
+      destinations.mixcloud = {
+        success: false,
+        error: (err as Error).message,
+        recoverable: true
+      };
+      // Continue with other platforms despite Mixcloud failure
+    }
+    
+    // Step 2c: Upload to SoundCloud
+    process.stdout.write('Starting upload to SoundCloud...\n');
+    updateStatus('processing', 'Uploading to SoundCloud', { 
+      ...destinations,
+      current_platform: 'soundcloud' 
+    });
+    
+    try {
+      // SoundCloud-specific recovery logic: retry with privacy setting fallback
+      let soundCloudResult: any = { success: false, error: 'Not attempted' };
+      
+      try {
+        soundCloudResult = await uploadToSoundCloud(audioFile, soundCloudMetadata);
+        
+        // If upload failed due to quota or permission issues, try with private sharing
+        if (!soundCloudResult.success && 
+            (soundCloudResult.error?.includes('quota') || 
+             soundCloudResult.error?.includes('permission'))) {
+          process.stdout.write('SoundCloud upload failed due to quota/permission, retrying as private...\n');
+          
+          const privateMetadata = { 
+            ...soundCloudMetadata,
+            sharing: 'private' as 'private'
+          };
+          
+          soundCloudResult = await uploadToSoundCloud(audioFile, privateMetadata);
+          
+          // If successful, note that it was uploaded as private
+          if (soundCloudResult.success) {
+            soundCloudResult.note = 'Uploaded as private due to quota/permission constraints';
+          }
+        }
+      } catch (err) {
+        throw err;
+      }
+      
+      destinations.soundcloud = soundCloudResult;
+      process.stdout.write(`SoundCloud upload ${soundCloudResult.success ? 'completed successfully' : 'failed'}\n`);
+    } catch (err) {
+      process.stderr.write(`SoundCloud upload failed: ${err}\n`);
+      destinations.soundcloud = {
+        success: false,
+        error: (err as Error).message,
+        recoverable: true
+      };
+    }
     
     // Update status to completed with destination results
     updateStatus('completed', 'Upload processing completed successfully', destinations);

@@ -26,13 +26,44 @@ Code will eventually need written to normalize all these into the JSON format to
   - `DJ`
   - `setTitle`
   - `duration`
+  - `genre` (from the approved list of genres, see below)
+  - `tags` (array of keywords related to the content)
+  - `artwork` (path or URL to the cover image)
+  - `description` (detailed description of the broadcast)
 
 - All Track List data must include:
   - `title`
-  - `release`
+  - `artist`
 
 - Timestamps are validated and normalized to a consistent format.
 - Artist/title capitalization is standardized, as is any "feat." notation (which is often included when a track title indicated a "featured" artist)
+
+## Approved Genres
+
+The following is the approved list of genres that can be used in the `genre` field. These genres are based on the Mixcloud "charts" from the House subcategory, plus Techno:
+
+- Acid House
+- Afro House
+- Bass House
+- Chicago House
+- Deep House
+- Electro House
+- Funky House
+- Future House
+- Garage House
+- Hard House
+- Jackin House
+- Latin House
+- Melodic House
+- Minimal House
+- Progressive House
+- Soulful House
+- Tech House
+- Tribal House
+- Vocal House
+- Techno
+
+This restricted list ensures compatibility with Mixcloud's genre categorization system and will be used for both Mixcloud and SoundCloud uploads.
 
 ## Example (JSON)
 TODO: NEEDS GENERATED

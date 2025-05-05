@@ -38,6 +38,10 @@ Note that some of the AzuraCast APIs require a "station shortcode". Let's call t
 
 ## Mixcloud
 
+### API documentation
+
+- `https://www.mixcloud.com/DeVelopers/`.
+
 ### Authentication
 
 - OAuth2-based authentication.
@@ -50,8 +54,12 @@ Note that some of the AzuraCast APIs require a "station shortcode". Let's call t
 
 ### Metadata
 
-- Title, description, tags, and tracklist are supported.
-- Tracklist is optional but recommended. The application / project here intends to supply a Tracklist.
+- Title, description, tags (used by this app to indicate genre), and tracklist are supported.
+- Tracklist is supported, and the application / project here intends to supply a Tracklist.
+- Set the field hosts-X-username to the DJ name
+- Set field publish_date to the same as the set broadcast date & time
+- **Artwork is required** and must be uploaded as part of the submission
+- **Tags must include the genre** from the approved list (see songlists.md)
 
 ### Notes
 
@@ -62,6 +70,11 @@ Note that some of the AzuraCast APIs require a "station shortcode". Let's call t
 
 ## SoundCloud
 
+### API documentation
+
+- `https://developers.soundcloud.com/docs#uploading`
+- `https://developers.soundcloud.com/docs/api/explorer/open-api`
+
 ### Authentication
 
 - OAuth2-based authentication.
@@ -69,13 +82,20 @@ Note that some of the AzuraCast APIs require a "station shortcode". Let's call t
 
 ### Upload
 
-- Uploads are performed via `https://api.soundcloud.com/tracks`.
-- Requires multipart form data with audio and metadata.
+- SoundCloud requires a two-step process:
+  1. First, upload the audio file via `https://api.soundcloud.com/tracks` (POST)
+  2. Then, update the track metadata via `https://api.soundcloud.com/tracks/{track_id}` (PUT)
+- Both steps require proper authentication.
+- The first step returns a track ID that must be used in the second step.
 
 ### Metadata
 
 - Title, genre, description, and sharing settings.
-- Tracklist is not natively supported.
+- **Artwork is required** and must be uploaded as part of the submission.
+- **Genre must be from the approved list** (see songlists.md).
+- Tracklist is not natively supported in the API, but can be included in the description.
+- Sharing settings can be 'public' or 'private'.
+- Additional fields supported: tags, purchase_url, license, release_date, isrc, bpm.
 
 ### Notes
 
