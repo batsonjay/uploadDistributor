@@ -73,7 +73,8 @@ const testMetadata = {
   title: 'Test Upload',
   djName: 'Test DJ',
   description: 'This is a test upload',
-  tags: ['test', 'upload', 'processor']
+  tags: ['test', 'upload', 'processor'],
+  userRole: 'Super Administrator' // Set user role to ADMIN to test the full flow
 };
 
 // Write metadata to file
@@ -127,8 +128,11 @@ if (child.stderr) {
 }
 
 // Handle processor completion
-child.on('close', (code) => {
+child.on('close', async (code) => {
   process.stdout.write(`Upload processor exited with code ${code || 0}\n`);
+  
+  // Add a delay to ensure the status file is fully written
+  await new Promise(resolve => setTimeout(resolve, 500));
   
   // Read final status
   const statusFile = path.join(testUploadDir, 'status.json');

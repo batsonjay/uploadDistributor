@@ -52,7 +52,9 @@ router.post('/', (req: any, res: any) => {
     title: '',
     djName: '',
     azcFolder: '',
-    azcPlaylist: ''
+    azcPlaylist: '',
+    userRole: '',
+    destinations: 'azuracast,mixcloud,soundcloud' // Default to all destinations
   };
   
   // Set up busboy to handle file uploads

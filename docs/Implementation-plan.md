@@ -300,7 +300,7 @@ function storeSonglist(uploadId, songlist) {
 
 Total estimated timeline: 10-12 weeks
 
-## Current Progress (as of May 4, 2025)
+## Current Progress (as of May 5, 2025)
 
 ### Completed Tasks
 
@@ -345,6 +345,49 @@ Total estimated timeline: 10-12 weeks
   - Implemented test-upload-processor.ts for end-to-end testing
   - Added support for creating test uploads with mock data
   - Included verification of results from all destinations
+- ✅ Implemented Timezone Conversion:
+  - Created TimezoneUtils.ts with functions for converting between UTC and CET/CEST
+  - Updated upload-processor.ts to use these conversions for metadata
+- ✅ Implemented Two-Tier Logging System:
+  - Created LoggingUtils.ts with functions for logging destination status and errors
+  - Added support for both concise success/error logs and detailed error logs
+- ✅ Refactored upload-processor.ts (file exceeded 500-line guideline):
+  - Created services directory with destination-specific upload services:
+    - StatusManager.ts for centralized status updates and logging
+    - AzuraCastService.ts for AzuraCast-specific upload logic
+    - MixcloudService.ts for Mixcloud-specific upload logic
+    - SoundCloudService.ts for SoundCloud-specific upload logic
+  - Made the main upload-processor.ts file more concise by delegating to service classes
+  - Improved error handling and recovery logic for each destination
+- ✅ Implemented two-step process for SoundCloud uploads:
+  - Updated SoundCloudApiMock to properly implement the two-step upload process API
+  - Enhanced SoundCloudService to use the two-step process:
+    1. First uploads the file
+    2. Then updates the metadata in a separate step
+  - Added privacy setting fallback for quota/permission issues
+  - Implemented comprehensive error handling and recovery logic
+
+#### Phase 3: Authentication Implementation (Completed)
+For detailed information about the authentication implementation, see [Authentication Implementation](./auth-implementation.md).
+- ✅ Created AuthService with role-based authentication:
+  - Implemented singleton pattern for global access
+  - Added support for DJ and Admin roles
+  - Created mock users for testing
+  - Added token validation and user retrieval
+- ✅ Implemented auth routes:
+  - Added login endpoint with role retrieval
+  - Created token validation endpoint
+  - Added user profile endpoint
+- ✅ Updated AzuraCastApiMock to use AuthService:
+  - Added authentication methods that use the central AuthService
+  - Implemented token validation
+  - Added user profile retrieval
+- ✅ Implemented Password Obfuscation with XOR:
+  - Created PasswordUtils.ts with functions for encoding/decoding passwords
+  - Updated AuthService to use password obfuscation
+  - Updated auth routes to handle encoded passwords
+  - Updated AzuraCastApiMock to support encoded passwords
+  - Created and ran test script to verify password obfuscation works correctly
 
 ### Current Status
 - The daemon is now functioning correctly in development mode
@@ -352,17 +395,19 @@ Total estimated timeline: 10-12 weeks
 - Songlist data is standardized, parsed, and stored persistently
 - Status tracking is working with detailed information for all destinations
 - Mock implementations for all destination APIs are in place
+- Authentication service with role-based access is implemented
+- Upload processor has been refactored into service-based architecture
+- Two-tier logging system is implemented
+- SoundCloud two-step upload process is working correctly
+- Password obfuscation is implemented to avoid plaintext passwords
 - The project has a solid foundation for further development
 
 ### Next Steps
-- Begin work on authentication integration with role support (Phase 3):
-  - Implement AzuraCast authentication flow with role retrieval
-  - Build OAuth2 authentication for Mixcloud and SoundCloud
-  - Create secure credential storage including user role
-- Implement the two-tier logging system for daemon
-- Update the upload processor to handle different flows for DJ vs Admin users
-- Start replacing mocks with actual API integrations
-- Begin work on role-based Web Client Development
+- Complete role-based access control implementation:
+  - Ensure Admin-only features are properly protected
+  - Test both DJ and Admin flows thoroughly
+- Begin replacing mocks with actual API integrations
+- Start work on Web Client Development with role-based UI
 
 ## Critical Path and Risk Mitigation (Revised)
 

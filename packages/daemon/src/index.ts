@@ -4,6 +4,7 @@ import * as dotenv from 'dotenv';
 import { healthRoutes } from './routes/health';
 import { uploadRoutes } from './routes/upload';
 import { statusRoutes } from './routes/status';
+import authRoutes from './routes/auth';
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +21,7 @@ app.use(express.json());
 app.use('/health', healthRoutes);
 app.use('/upload', uploadRoutes);
 app.use('/status', statusRoutes);
+app.use('/api/auth', authRoutes);
 
 // Start server
 app.listen(PORT, () => {

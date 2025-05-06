@@ -9,7 +9,7 @@ import * as fs from 'fs';
 
 export interface SoundCloudUploadResponse {
   success: boolean;
-  id?: string;
+  id: string;
   permalink_url?: string;
   error?: string;
 }
@@ -19,57 +19,107 @@ export interface SoundCloudMetadata {
   artist: string;
   description?: string;
   genre?: string;
-  sharing?: 'public' | 'private';
-  tags?: string[];
+  sharing: 'public' | 'private';
+  artwork?: string;
 }
 
 export class SoundCloudApiMock extends DestinationApiMock {
   constructor() {
     super('soundcloud');
   }
-
+  
   /**
-   * Upload a file to SoundCloud
+   * Upload a file to SoundCloud (Step 1)
    */
   public async uploadFile(
     filePath: string,
     metadata: SoundCloudMetadata
   ): Promise<SoundCloudUploadResponse> {
     // Validate required fields
-    const isValid = this.validateRequiredFields(metadata, ['title', 'artist']);
+    const isValid = this.validateRequiredFields(metadata, ['title', 'artist', 'sharing']);
     if (!isValid) {
       return {
         success: false,
+        id: '',
         error: 'Missing required metadata fields'
       };
     }
-
+    
     // Check if file exists
     if (!fs.existsSync(filePath)) {
       return {
         success: false,
+        id: '',
         error: `File not found: ${filePath}`
       };
     }
-
+    
+    // Check if artwork is provided (required for SoundCloud)
+    if (!metadata.artwork) {
+      return {
+        success: false,
+        id: '',
+        error: 'Artwork is required for SoundCloud uploads'
+      };
+    }
+    
     // Record the request
     this.recordRequest('uploadFile', {
       file: `[Binary file: ${filePath}]`,
-      metadata
+      metadata: {
+        ...metadata,
+        artwork: '[Artwork file reference]'
+      }
     });
-
+    
     // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 700));
-
-    // Return success response
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Return success with track ID for step 2
     const trackId = `mock-soundcloud-${Date.now()}`;
+    
+    return {
+      success: true,
+      id: trackId
+    };
+  }
+  
+  /**
+   * Update track metadata (Step 2)
+   */
+  public async updateTrackMetadata(
+    trackId: string,
+    metadata: SoundCloudMetadata
+  ): Promise<SoundCloudUploadResponse> {
+    // Validate track ID
+    if (!trackId || !trackId.startsWith('mock-soundcloud-')) {
+      return {
+        success: false,
+        id: trackId,
+        error: 'Invalid track ID'
+      };
+    }
+    
+    // Record the request
+    this.recordRequest('updateTrackMetadata', {
+      trackId,
+      metadata: {
+        ...metadata,
+        artwork: metadata.artwork ? '[Artwork file reference]' : undefined
+      }
+    });
+    
+    // Simulate processing time
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Return success
     return {
       success: true,
       id: trackId,
-      permalink_url: `https://soundcloud.com/${metadata.artist.replace(/\s+/g, '-').toLowerCase()}/${metadata.title.replace(/\s+/g, '-').toLowerCase()}-${trackId.substring(trackId.length - 6)}`
+      permalink_url: `https://soundcloud.com/mock-user/${metadata.title.toLowerCase().replace(/\s+/g, '-')}`
     };
   }
-
+  
   /**
    * Get track info
    */

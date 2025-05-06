@@ -8,6 +8,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { USER_ROLES, UserRole } from '../services/AuthService';
 
 // Define the songlist data structure
 export interface TrackData {
@@ -42,6 +43,7 @@ export interface SonglistData {
   broadcast_data: BroadcastData;
   track_list: TrackData[];
   platform_specific?: PlatformSpecificData;
+  user_role?: UserRole;
   version: string;
 }
 
@@ -139,7 +141,14 @@ export function parseSonglist(filePath: string): SonglistData {
   // In a real implementation, this would handle different formats (CSV, text, etc.)
   try {
     const fileContent = fs.readFileSync(filePath, 'utf8');
-    return JSON.parse(fileContent) as SonglistData;
+    const songlist = JSON.parse(fileContent) as SonglistData;
+    
+    // Add default value for user_role if it doesn't exist
+    if (!songlist.user_role) {
+      songlist.user_role = USER_ROLES.DJ;
+    }
+    
+    return songlist;
   } catch (err) {
     process.stderr.write(`Error parsing songlist file: ${err}\n`);
     throw new Error(`Failed to parse songlist file: ${err}`);
