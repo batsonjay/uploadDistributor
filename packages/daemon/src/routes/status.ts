@@ -1,6 +1,7 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import * as path from 'path';
 import * as fs from 'fs';
+import { anyAuthenticated } from '../middleware/roleVerification';
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ const uploadsDir = path.join(__dirname, '../../uploads');
  * @param {string} req.params.uploadId - Upload ID
  * @returns {object} 200 - Upload status
  */
-router.get('/:uploadId', (req, res) => {
+router.get('/:uploadId', anyAuthenticated, (req: Request, res: Response) => {
   const { uploadId } = req.params;
   
   // Check if upload directory exists

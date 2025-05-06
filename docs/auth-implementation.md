@@ -158,6 +158,34 @@ Fixed the StatusManager.ts path resolution:
 - SoundCloud two-step upload process is working correctly
 - The project has a solid foundation for further development
 
+## Role-Based Access Control
+
+The role-based access control system has been implemented to ensure that only authorized users can access specific routes and features. This is achieved through the following components:
+
+### Role Verification Middleware
+
+A middleware function has been created to verify user roles before allowing access to protected routes:
+
+- `verifyRole(requiredRoles)`: A function that returns an Express middleware to check if the user has one of the required roles
+- `adminOnly`: A convenience middleware that only allows users with the Admin role
+- `anyAuthenticated`: A convenience middleware that allows any authenticated user (Admin or DJ)
+
+### Protected Routes
+
+The following routes have been protected with role-based access control:
+
+- `/upload`: Requires authentication (Admin or DJ role)
+- `/status/:uploadId`: Requires authentication (Admin or DJ role)
+
+### Testing
+
+A comprehensive test script has been created to verify the role-based access control implementation:
+
+- Tests unauthenticated access to protected routes
+- Tests Admin user access to all routes
+- Tests DJ user access to all routes
+- Tests invalid token handling
+
 ## Next Steps
 
 - Integrate the authentication system with the real AzuraCast API

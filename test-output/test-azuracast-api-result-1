@@ -1,0 +1,1017 @@
+
+> @uploadDistributor/daemon@0.1.0 test-azuracast-api
+> ts-node src/mocks/test-azuracast-api.ts
+
+Testing AzuraCast API endpoints...
+
+Trying API Admin Users: https://radio.balearic-fm.com/api/admin/users
+Headers: { 'X-API-Key': '452ea24b5bcae87e:3d6677706dd2a0355c6eedd5ed70677b' }
+Success! Status: 200
+Response data:
+[
+  {
+    "email": "alitarekamer909@gmail.com",
+    "name": "Ali",
+    "locale": null,
+    "show_24_hour_time": null,
+    "two_factor_secret": null,
+    "created_at": 1711884243,
+    "updated_at": 1711884243,
+    "roles": [
+      {
+        "id": 2,
+        "name": "DJ",
+        "permissions": {
+          "global": [],
+          "station": {
+            "1": [
+              "manage station automation",
+              "manage station broadcasting",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ],
+            "2": [
+              "manage station automation",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ]
+          }
+        }
+      }
+    ],
+    "api_keys": [],
+    "passkeys": [],
+    "id": 23,
+    "is_me": false,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/23",
+      "masquerade": "https://radio.balearic-fm.com/login-as/23/opzgFb1hO3"
+    }
+  },
+  {
+    "email": "andrew_gaunt@outlook.com",
+    "name": "Andre Rehage",
+    "locale": null,
+    "show_24_hour_time": null,
+    "two_factor_secret": null,
+    "created_at": 1742240106,
+    "updated_at": 1742248683,
+    "roles": [
+      {
+        "id": 2,
+        "name": "DJ",
+        "permissions": {
+          "global": [],
+          "station": {
+            "1": [
+              "manage station automation",
+              "manage station broadcasting",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ],
+            "2": [
+              "manage station automation",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ]
+          }
+        }
+      }
+    ],
+    "api_keys": [],
+    "passkeys": [],
+    "id": 29,
+    "is_me": false,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/29",
+      "masquerade": "https://radio.balearic-fm.com/login-as/29/opzgFb1hO3"
+    }
+  },
+  {
+    "email": "buster@busterneece.com",
+    "name": "Buster Neece",
+    "locale": null,
+    "show_24_hour_time": null,
+    "two_factor_secret": null,
+    "created_at": 1623306407,
+    "updated_at": 1645673005,
+    "roles": [
+      {
+        "id": 1,
+        "name": "Super Administrator",
+        "permissions": {
+          "global": [
+            "administer all"
+          ],
+          "station": []
+        }
+      }
+    ],
+    "api_keys": [],
+    "passkeys": [],
+    "id": 1,
+    "is_me": false,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/1",
+      "masquerade": "https://radio.balearic-fm.com/login-as/1/opzgFb1hO3"
+    }
+  },
+  {
+    "email": "batsonjay@mac.com",
+    "name": "catalyst",
+    "locale": null,
+    "show_24_hour_time": null,
+    "two_factor_secret": null,
+    "created_at": 1682340947,
+    "updated_at": 1746475975,
+    "roles": [
+      {
+        "id": 1,
+        "name": "Super Administrator",
+        "permissions": {
+          "global": [
+            "administer all"
+          ],
+          "station": []
+        }
+      }
+    ],
+    "api_keys": [],
+    "passkeys": [],
+    "id": 20,
+    "is_me": false,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/20",
+      "masquerade": "https://radio.balearic-fm.com/login-as/20/opzgFb1hO3"
+    }
+  },
+  {
+    "email": "miker@mrobs.co.uk",
+    "name": "Chewee",
+    "locale": null,
+    "show_24_hour_time": null,
+    "two_factor_secret": null,
+    "created_at": 1643809374,
+    "updated_at": 1643809595,
+    "roles": [
+      {
+        "id": 2,
+        "name": "DJ",
+        "permissions": {
+          "global": [],
+          "station": {
+            "1": [
+              "manage station automation",
+              "manage station broadcasting",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ],
+            "2": [
+              "manage station automation",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ]
+          }
+        }
+      }
+    ],
+    "api_keys": [],
+    "passkeys": [],
+    "id": 4,
+    "is_me": false,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/4",
+      "masquerade": "https://radio.balearic-fm.com/login-as/4/opzgFb1hO3"
+    }
+  },
+  {
+    "email": "drunkentigertk@gmail.com",
+    "name": "DJ Takafusa",
+    "locale": null,
+    "show_24_hour_time": null,
+    "two_factor_secret": null,
+    "created_at": 1644009318,
+    "updated_at": 1644009318,
+    "roles": [
+      {
+        "id": 2,
+        "name": "DJ",
+        "permissions": {
+          "global": [],
+          "station": {
+            "1": [
+              "manage station automation",
+              "manage station broadcasting",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ],
+            "2": [
+              "manage station automation",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ]
+          }
+        }
+      }
+    ],
+    "api_keys": [],
+    "passkeys": [],
+    "id": 5,
+    "is_me": false,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/5",
+      "masquerade": "https://radio.balearic-fm.com/login-as/5/opzgFb1hO3"
+    }
+  },
+  {
+    "email": "giuseppegrimaldi244@gmail.com",
+    "name": "GIUGRI.J",
+    "locale": null,
+    "show_24_hour_time": null,
+    "two_factor_secret": null,
+    "created_at": 1645129814,
+    "updated_at": 1648579832,
+    "roles": [
+      {
+        "id": 2,
+        "name": "DJ",
+        "permissions": {
+          "global": [],
+          "station": {
+            "1": [
+              "manage station automation",
+              "manage station broadcasting",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ],
+            "2": [
+              "manage station automation",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ]
+          }
+        }
+      }
+    ],
+    "api_keys": [],
+    "passkeys": [],
+    "id": 8,
+    "is_me": false,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/8",
+      "masquerade": "https://radio.balearic-fm.com/login-as/8/opzgFb1hO3"
+    }
+  },
+  {
+    "email": "intencity.ij@gmail.com",
+    "name": "Ian Douglass",
+    "locale": null,
+    "show_24_hour_time": null,
+    "two_factor_secret": null,
+    "created_at": 1642168626,
+    "updated_at": 1746440863,
+    "roles": [
+      {
+        "id": 2,
+        "name": "DJ",
+        "permissions": {
+          "global": [],
+          "station": {
+            "1": [
+              "manage station automation",
+              "manage station broadcasting",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ],
+            "2": [
+              "manage station automation",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ]
+          }
+        }
+      }
+    ],
+    "api_keys": [],
+    "passkeys": [],
+    "id": 3,
+    "is_me": false,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/3",
+      "masquerade": "https://radio.balearic-fm.com/login-as/3/opzgFb1hO3"
+    }
+  },
+  {
+    "email": "batsonjay@gmail.com",
+    "name": "Jay Batson",
+    "locale": null,
+    "show_24_hour_time": null,
+    "two_factor_secret": null,
+    "created_at": 1623306529,
+    "updated_at": 1623306529,
+    "roles": [
+      {
+        "id": 1,
+        "name": "Super Administrator",
+        "permissions": {
+          "global": [
+            "administer all"
+          ],
+          "station": []
+        }
+      }
+    ],
+    "api_keys": [
+      {
+        "user": "Jay Batson",
+        "comment": "uploadProcessorDaemon",
+        "id": "452ea24b5bcae87e"
+      }
+    ],
+    "passkeys": [],
+    "id": 2,
+    "is_me": true,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/2",
+      "masquerade": "https://radio.balearic-fm.com/login-as/2/opzgFb1hO3"
+    }
+  },
+  {
+    "email": "julian21401@gmail.com",
+    "name": "JIB",
+    "locale": "en_US.UTF-8",
+    "show_24_hour_time": true,
+    "two_factor_secret": null,
+    "created_at": 1736887294,
+    "updated_at": 1737002534,
+    "roles": [
+      {
+        "id": 2,
+        "name": "DJ",
+        "permissions": {
+          "global": [],
+          "station": {
+            "1": [
+              "manage station automation",
+              "manage station broadcasting",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ],
+            "2": [
+              "manage station automation",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ]
+          }
+        }
+      }
+    ],
+    "api_keys": [],
+    "passkeys": [],
+    "id": 27,
+    "is_me": false,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/27",
+      "masquerade": "https://radio.balearic-fm.com/login-as/27/opzgFb1hO3"
+    }
+  },
+  {
+    "email": "katealderman@live.com.au",
+    "name": "Kate Alderman",
+    "locale": null,
+    "show_24_hour_time": null,
+    "two_factor_secret": null,
+    "created_at": 1695598259,
+    "updated_at": 1695598259,
+    "roles": [
+      {
+        "id": 2,
+        "name": "DJ",
+        "permissions": {
+          "global": [],
+          "station": {
+            "1": [
+              "manage station automation",
+              "manage station broadcasting",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ],
+            "2": [
+              "manage station automation",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ]
+          }
+        }
+      }
+    ],
+    "api_keys": [],
+    "passkeys": [],
+    "id": 22,
+    "is_me": false,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/22",
+      "masquerade": "https://radio.balearic-fm.com/login-as/22/opzgFb1hO3"
+    }
+  },
+  {
+    "email": "lizcdreher@gmail.com",
+    "name": "Liz Dreher",
+    "locale": null,
+    "show_24_hour_time": null,
+    "two_factor_secret": null,
+    "created_at": 1687209499,
+    "updated_at": 1687685134,
+    "roles": [
+      {
+        "id": 2,
+        "name": "DJ",
+        "permissions": {
+          "global": [],
+          "station": {
+            "1": [
+              "manage station automation",
+              "manage station broadcasting",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ],
+            "2": [
+              "manage station automation",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ]
+          }
+        }
+      }
+    ],
+    "api_keys": [],
+    "passkeys": [],
+    "id": 21,
+    "is_me": false,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/21",
+      "masquerade": "https://radio.balearic-fm.com/login-as/21/opzgFb1hO3"
+    }
+  },
+  {
+    "email": "jonathan8gardner225@gmail.com",
+    "name": "Moody Silvs",
+    "locale": null,
+    "show_24_hour_time": null,
+    "two_factor_secret": null,
+    "created_at": 1735846194,
+    "updated_at": 1735847563,
+    "roles": [
+      {
+        "id": 2,
+        "name": "DJ",
+        "permissions": {
+          "global": [],
+          "station": {
+            "1": [
+              "manage station automation",
+              "manage station broadcasting",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ],
+            "2": [
+              "manage station automation",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ]
+          }
+        }
+      }
+    ],
+    "api_keys": [],
+    "passkeys": [],
+    "id": 25,
+    "is_me": false,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/25",
+      "masquerade": "https://radio.balearic-fm.com/login-as/25/opzgFb1hO3"
+    }
+  },
+  {
+    "email": "paulsweeney1903@hotmail.com",
+    "name": "Paul Sweeney",
+    "locale": null,
+    "show_24_hour_time": null,
+    "two_factor_secret": null,
+    "created_at": 1738524608,
+    "updated_at": 1738524608,
+    "roles": [
+      {
+        "id": 2,
+        "name": "DJ",
+        "permissions": {
+          "global": [],
+          "station": {
+            "1": [
+              "manage station automation",
+              "manage station broadcasting",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ],
+            "2": [
+              "manage station automation",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ]
+          }
+        }
+      }
+    ],
+    "api_keys": [],
+    "passkeys": [],
+    "id": 28,
+    "is_me": false,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/28",
+      "masquerade": "https://radio.balearic-fm.com/login-as/28/opzgFb1hO3"
+    }
+  },
+  {
+    "email": "phr0ggi@gmail.com",
+    "name": "phr0ggi",
+    "locale": null,
+    "show_24_hour_time": null,
+    "two_factor_secret": null,
+    "created_at": 1736872416,
+    "updated_at": 1736872675,
+    "roles": [
+      {
+        "id": 2,
+        "name": "DJ",
+        "permissions": {
+          "global": [],
+          "station": {
+            "1": [
+              "manage station automation",
+              "manage station broadcasting",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ],
+            "2": [
+              "manage station automation",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ]
+          }
+        }
+      }
+    ],
+    "api_keys": [],
+    "passkeys": [],
+    "id": 26,
+    "is_me": false,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/26",
+      "masquerade": "https://radio.balearic-fm.com/login-as/26/opzgFb1hO3"
+    }
+  },
+  {
+    "email": "trafelodj@gmail.com",
+    "name": "Trafelo",
+    "locale": null,
+    "show_24_hour_time": null,
+    "two_factor_secret": null,
+    "created_at": 1682340780,
+    "updated_at": 1682361191,
+    "roles": [
+      {
+        "id": 2,
+        "name": "DJ",
+        "permissions": {
+          "global": [],
+          "station": {
+            "1": [
+              "manage station automation",
+              "manage station broadcasting",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ],
+            "2": [
+              "manage station automation",
+              "manage station media",
+              "view station logs",
+              "view station management",
+              "view station reports"
+            ]
+          }
+        }
+      }
+    ],
+    "api_keys": [],
+    "passkeys": [],
+    "id": 19,
+    "is_me": false,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/admin/user/19",
+      "masquerade": "https://radio.balearic-fm.com/login-as/19/opzgFb1hO3"
+    }
+  }
+]
+
+Trying API Admin Profile: https://radio.balearic-fm.com/api/admin/profile
+Headers: { 'X-API-Key': '452ea24b5bcae87e:3d6677706dd2a0355c6eedd5ed70677b' }
+Failed with status 405
+Error response: {
+  code: 405,
+  type: 'HttpMethodNotAllowedException',
+  message: 'Method not allowed. Must be one of: OPTIONS',
+  formatted_message: 'Method not allowed. Must be one of: OPTIONS',
+  extra_data: {
+    class: 'HttpMethodNotAllowedException',
+    file: '/var/azuracast/www/vendor/slim/slim/Slim/Middleware/RoutingMiddleware.php',
+    line: 79
+  },
+  success: false
+}
+
+Trying API Admin Permissions: https://radio.balearic-fm.com/api/admin/permissions
+Headers: { 'X-API-Key': '452ea24b5bcae87e:3d6677706dd2a0355c6eedd5ed70677b' }
+Success! Status: 200
+Response data:
+{
+  "global": [
+    {
+      "id": "administer all",
+      "name": "All Permissions"
+    },
+    {
+      "id": "view administration",
+      "name": "View Administration Page"
+    },
+    {
+      "id": "view system logs",
+      "name": "View System Logs"
+    },
+    {
+      "id": "administer settings",
+      "name": "Administer Settings"
+    },
+    {
+      "id": "administer api keys",
+      "name": "Administer API Keys"
+    },
+    {
+      "id": "administer stations",
+      "name": "Administer Stations"
+    },
+    {
+      "id": "administer custom fields",
+      "name": "Administer Custom Fields"
+    },
+    {
+      "id": "administer backups",
+      "name": "Administer Backups"
+    },
+    {
+      "id": "administer storage locations",
+      "name": "Administer Storage Locations"
+    }
+  ],
+  "station": [
+    {
+      "id": "administer all",
+      "name": "All Permissions"
+    },
+    {
+      "id": "view station management",
+      "name": "View Station Page"
+    },
+    {
+      "id": "view station reports",
+      "name": "View Station Reports"
+    },
+    {
+      "id": "view station logs",
+      "name": "View Station Logs"
+    },
+    {
+      "id": "manage station profile",
+      "name": "Manage Station Profile"
+    },
+    {
+      "id": "manage station broadcasting",
+      "name": "Manage Station Broadcasting"
+    },
+    {
+      "id": "manage station streamers",
+      "name": "Manage Station Streamers"
+    },
+    {
+      "id": "manage station mounts",
+      "name": "Manage Station Mount Points"
+    },
+    {
+      "id": "manage station remotes",
+      "name": "Manage Station Remote Relays"
+    },
+    {
+      "id": "manage station media",
+      "name": "Manage Station Media"
+    },
+    {
+      "id": "manage station automation",
+      "name": "Manage Station Automation"
+    },
+    {
+      "id": "manage station web hooks",
+      "name": "Manage Station Web Hooks"
+    },
+    {
+      "id": "manage station podcasts",
+      "name": "Manage Station Podcasts"
+    }
+  ]
+}
+
+Trying API Station 2 Profile: https://radio.balearic-fm.com/api/station/2
+Headers: { 'X-API-Key': '452ea24b5bcae87e:3d6677706dd2a0355c6eedd5ed70677b' }
+Success! Status: 200
+Response data:
+{
+  "id": 2,
+  "name": "Balearic FM - Dev",
+  "shortcode": "balearic_fm_dev",
+  "description": "Dev version of the station",
+  "frontend": "icecast",
+  "backend": "liquidsoap",
+  "timezone": "Europe/Madrid",
+  "listen_url": "https://radio.balearic-fm.com/listen/balearic_fm_dev/radio.mp3",
+  "url": "https://balearic-fm.com/",
+  "public_player_url": "https://radio.balearic-fm.com/public/balearic_fm_dev",
+  "playlist_pls_url": "https://radio.balearic-fm.com/public/balearic_fm_dev/playlist.pls",
+  "playlist_m3u_url": "https://radio.balearic-fm.com/public/balearic_fm_dev/playlist.m3u",
+  "is_public": false,
+  "mounts": [
+    {
+      "id": 2,
+      "name": "/radio.mp3 (128kbps MP3)",
+      "url": "https://radio.balearic-fm.com/listen/balearic_fm_dev/radio.mp3",
+      "bitrate": 128,
+      "format": "mp3",
+      "listeners": {
+        "total": 0,
+        "unique": 0,
+        "current": 0
+      },
+      "path": "/radio.mp3",
+      "is_default": true
+    }
+  ],
+  "remotes": [],
+  "hls_enabled": false,
+  "hls_is_default": false,
+  "hls_url": null,
+  "hls_listeners": 0
+}
+
+Found DJ Name: Balearic FM - Dev
+
+Trying API Station 2 Streamers: https://radio.balearic-fm.com/api/station/2/streamers
+Headers: { 'X-API-Key': '452ea24b5bcae87e:3d6677706dd2a0355c6eedd5ed70677b' }
+Success! Status: 200
+Response data:
+[
+  {
+    "streamer_username": "bitoku",
+    "streamer_password": "",
+    "display_name": "bitoku",
+    "comments": null,
+    "is_active": true,
+    "enforce_schedule": false,
+    "reactivate_at": null,
+    "art_updated_at": 0,
+    "schedule_items": [],
+    "id": 14,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/station/2/streamer/14",
+      "broadcasts": "https://radio.balearic-fm.com/api/station/2/streamer/14/broadcasts",
+      "broadcasts_batch": "https://radio.balearic-fm.com/api/station/2/streamer/14/broadcasts/batch",
+      "art": "https://radio.balearic-fm.com/api/station/2/streamer/14/art"
+    },
+    "has_custom_art": false,
+    "art": "https://radio.balearic-fm.com/api/station/2/streamer/14/art"
+  },
+  {
+    "streamer_username": "catalyst",
+    "streamer_password": "",
+    "display_name": "catalyst",
+    "comments": null,
+    "is_active": true,
+    "enforce_schedule": false,
+    "reactivate_at": null,
+    "art_updated_at": 0,
+    "schedule_items": [],
+    "id": 5,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/station/2/streamer/5",
+      "broadcasts": "https://radio.balearic-fm.com/api/station/2/streamer/5/broadcasts",
+      "broadcasts_batch": "https://radio.balearic-fm.com/api/station/2/streamer/5/broadcasts/batch",
+      "art": "https://radio.balearic-fm.com/api/station/2/streamer/5/art"
+    },
+    "has_custom_art": false,
+    "art": "https://radio.balearic-fm.com/api/station/2/streamer/5/art"
+  },
+  {
+    "streamer_username": "chewee",
+    "streamer_password": "",
+    "display_name": "Chewee",
+    "comments": null,
+    "is_active": true,
+    "enforce_schedule": false,
+    "reactivate_at": null,
+    "art_updated_at": 0,
+    "schedule_items": [],
+    "id": 7,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/station/2/streamer/7",
+      "broadcasts": "https://radio.balearic-fm.com/api/station/2/streamer/7/broadcasts",
+      "broadcasts_batch": "https://radio.balearic-fm.com/api/station/2/streamer/7/broadcasts/batch",
+      "art": "https://radio.balearic-fm.com/api/station/2/streamer/7/art"
+    },
+    "has_custom_art": false,
+    "art": "https://radio.balearic-fm.com/api/station/2/streamer/7/art"
+  },
+  {
+    "streamer_username": "intencity",
+    "streamer_password": "",
+    "display_name": "Ian Douglass",
+    "comments": null,
+    "is_active": true,
+    "enforce_schedule": false,
+    "reactivate_at": null,
+    "art_updated_at": 0,
+    "schedule_items": [],
+    "id": 6,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/station/2/streamer/6",
+      "broadcasts": "https://radio.balearic-fm.com/api/station/2/streamer/6/broadcasts",
+      "broadcasts_batch": "https://radio.balearic-fm.com/api/station/2/streamer/6/broadcasts/batch",
+      "art": "https://radio.balearic-fm.com/api/station/2/streamer/6/art"
+    },
+    "has_custom_art": false,
+    "art": "https://radio.balearic-fm.com/api/station/2/streamer/6/art"
+  },
+  {
+    "streamer_username": "manos",
+    "streamer_password": "",
+    "display_name": "DJ Manos",
+    "comments": null,
+    "is_active": true,
+    "enforce_schedule": false,
+    "reactivate_at": null,
+    "art_updated_at": 0,
+    "schedule_items": [],
+    "id": 9,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/station/2/streamer/9",
+      "broadcasts": "https://radio.balearic-fm.com/api/station/2/streamer/9/broadcasts",
+      "broadcasts_batch": "https://radio.balearic-fm.com/api/station/2/streamer/9/broadcasts/batch",
+      "art": "https://radio.balearic-fm.com/api/station/2/streamer/9/art"
+    },
+    "has_custom_art": false,
+    "art": "https://radio.balearic-fm.com/api/station/2/streamer/9/art"
+  },
+  {
+    "streamer_username": "mileseven",
+    "streamer_password": "",
+    "display_name": "Mile Seven",
+    "comments": null,
+    "is_active": true,
+    "enforce_schedule": false,
+    "reactivate_at": null,
+    "art_updated_at": 0,
+    "schedule_items": [],
+    "id": 11,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/station/2/streamer/11",
+      "broadcasts": "https://radio.balearic-fm.com/api/station/2/streamer/11/broadcasts",
+      "broadcasts_batch": "https://radio.balearic-fm.com/api/station/2/streamer/11/broadcasts/batch",
+      "art": "https://radio.balearic-fm.com/api/station/2/streamer/11/art"
+    },
+    "has_custom_art": false,
+    "art": "https://radio.balearic-fm.com/api/station/2/streamer/11/art"
+  },
+  {
+    "streamer_username": "takafusa",
+    "streamer_password": "",
+    "display_name": "DJ Takafusa",
+    "comments": null,
+    "is_active": true,
+    "enforce_schedule": false,
+    "reactivate_at": null,
+    "art_updated_at": 0,
+    "schedule_items": [
+      {
+        "start_time": 700,
+        "end_time": 800,
+        "start_date": "2022-02-07",
+        "end_date": "2022-02-27",
+        "days": [
+          1
+        ],
+        "loop_once": false,
+        "id": 21
+      }
+    ],
+    "id": 8,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/station/2/streamer/8",
+      "broadcasts": "https://radio.balearic-fm.com/api/station/2/streamer/8/broadcasts",
+      "broadcasts_batch": "https://radio.balearic-fm.com/api/station/2/streamer/8/broadcasts/batch",
+      "art": "https://radio.balearic-fm.com/api/station/2/streamer/8/art"
+    },
+    "has_custom_art": false,
+    "art": "https://radio.balearic-fm.com/api/station/2/streamer/8/art"
+  },
+  {
+    "streamer_username": "tnure",
+    "streamer_password": "",
+    "display_name": "tnure",
+    "comments": null,
+    "is_active": true,
+    "enforce_schedule": false,
+    "reactivate_at": null,
+    "art_updated_at": 0,
+    "schedule_items": [],
+    "id": 12,
+    "links": {
+      "self": "https://radio.balearic-fm.com/api/station/2/streamer/12",
+      "broadcasts": "https://radio.balearic-fm.com/api/station/2/streamer/12/broadcasts",
+      "broadcasts_batch": "https://radio.balearic-fm.com/api/station/2/streamer/12/broadcasts/batch",
+      "art": "https://radio.balearic-fm.com/api/station/2/streamer/12/art"
+    },
+    "has_custom_art": false,
+    "art": "https://radio.balearic-fm.com/api/station/2/streamer/12/art"
+  }
+]
+
+Trying API Station 2 DJs: https://radio.balearic-fm.com/api/station/2/djs
+Headers: { 'X-API-Key': '452ea24b5bcae87e:3d6677706dd2a0355c6eedd5ed70677b' }
+Failed with status 405
+Error response: {
+  code: 405,
+  type: 'HttpMethodNotAllowedException',
+  message: 'Method not allowed. Must be one of: OPTIONS',
+  formatted_message: 'Method not allowed. Must be one of: OPTIONS',
+  extra_data: {
+    class: 'HttpMethodNotAllowedException',
+    file: '/var/azuracast/www/vendor/slim/slim/Slim/Middleware/RoutingMiddleware.php',
+    line: 79
+  },
+  success: false
+}

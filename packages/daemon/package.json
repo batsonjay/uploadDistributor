@@ -10,7 +10,9 @@
     "lint": "eslint src --ext .ts,.js",
     "test": "jest",
     "check-types": "tsc --noEmit",
-    "test-upload": "ts-node __tests__/upload.test.ts"
+    "test-upload": "ts-node __tests__/upload.test.ts",
+    "test-roles": "ts-node src/mocks/test-role-verification.ts",
+    "test-azuracast-api": "ts-node src/mocks/test-azuracast-api.ts"
   },
   "dependencies": {
     "express": "^4.18.2",

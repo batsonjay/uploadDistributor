@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 // Ensure TypeScript can find the uuid module
 import { fork } from 'child_process';
+import { anyAuthenticated } from '../middleware/roleVerification';
 
 const router = express.Router();
 
@@ -25,7 +26,7 @@ if (!fs.existsSync(uploadsDir)) {
  * @param {file} req.files.songlist - Songlist file
  * @returns {object} 200 - Upload ID and status
  */
-router.post('/', (req: any, res: any) => {
+router.post('/', anyAuthenticated, (req: any, res: any) => {
   // Get upload ID from request or generate a new one
   // This allows tests to reuse the same upload ID
   const uploadId = req.headers['x-upload-id'] || uuidv4();
@@ -48,12 +49,12 @@ router.post('/', (req: any, res: any) => {
   
   // Initialize metadata object
   const metadata = {
-    userId: '',
+    userId: (req.user?.id || ''),
     title: '',
     djName: '',
     azcFolder: '',
     azcPlaylist: '',
-    userRole: '',
+    userRole: (req.user?.role || ''),
     destinations: 'azuracast,mixcloud,soundcloud' // Default to all destinations
   };
   
