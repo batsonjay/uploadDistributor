@@ -2,10 +2,11 @@
  * AzuraCast API Client
  * 
  * This class provides methods to interact with the AzuraCast API.
- * Currently only implements authentication-related methods.
+ * Implements authentication and file management methods.
  */
 
 import axios from 'axios';
+import { ErrorType } from '../utils/LoggingUtils';
 
 export class AzuraCastApi {
   private baseUrl: string;
@@ -158,6 +159,88 @@ export class AzuraCastApi {
       }
       return {
         success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Check if a directory exists for a DJ in AzuraCast
+   * 
+   * This method lists all files for a station and checks if any of them
+   * have paths that match or start with the DJ display name.
+   * 
+   * @param stationId The station ID (e.g., "2" for dev/test)
+   * @param djName The DJ display name to check
+   * @returns Promise with success/error information and whether the directory exists
+   */
+  async checkDjDirectoryExists(stationId: string, djName: string): Promise<any> {
+    try {
+      console.log(`Checking if directory exists for DJ "${djName}" in station ${stationId}`);
+      
+      // Get all files for the station
+      const response = await axios.get(
+        `${this.baseUrl}/api/station/${stationId}/files`,
+        {
+          headers: {
+            'X-API-Key': this.superAdminApiKey,
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      // Check if any files have paths that match or start with the DJ name
+      if (Array.isArray(response.data)) {
+        // Look for files with paths that include the DJ name
+        const matchingFiles = response.data.filter(file => {
+          // Check if the path includes the DJ name
+          // This is a simple check and might need to be refined based on actual path structure
+          return file.path && (
+            file.path.includes(`/${djName}/`) || 
+            file.path.includes(`\\${djName}\\`) || 
+            file.path.startsWith(`${djName}/`) || 
+            file.path.startsWith(`${djName}\\`)
+          );
+        });
+        
+        if (matchingFiles.length > 0) {
+          console.log(`Found ${matchingFiles.length} files in directory for DJ "${djName}"`);
+          return {
+            success: true,
+            exists: true,
+            files: matchingFiles
+          };
+        }
+      }
+      
+      console.log(`No directory found for DJ "${djName}" in station ${stationId}`);
+      return {
+        success: true,
+        exists: false
+      };
+    } catch (error) {
+      console.error(`Directory check error for DJ "${djName}":`, error);
+      
+      if (axios.isAxiosError(error) && error.response) {
+        // If we get a 404, the directory doesn't exist
+        if (error.response.status === 404) {
+          return {
+            success: true,
+            exists: false,
+            error: 'Directory not found'
+          };
+        }
+        
+        return {
+          success: false,
+          exists: false,
+          error: error.response.data.message || 'Failed to check directory'
+        };
+      }
+      
+      return {
+        success: false,
+        exists: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
