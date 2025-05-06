@@ -167,8 +167,8 @@ export class AzuraCastApi {
   /**
    * Check if a directory exists for a DJ in AzuraCast
    * 
-   * This method lists all files for a station and checks if any of them
-   * have paths that match or start with the DJ display name.
+   * This method lists all directories for a station and checks if the DJ's
+   * directory exists in the list.
    * 
    * @param stationId The station ID (e.g., "2" for dev/test)
    * @param djName The DJ display name to check
@@ -178,9 +178,9 @@ export class AzuraCastApi {
     try {
       console.log(`Checking if directory exists for DJ "${djName}" in station ${stationId}`);
       
-      // Get all files for the station
+      // Get all directories for the station
       const response = await axios.get(
-        `${this.baseUrl}/api/station/${stationId}/files`,
+        `${this.baseUrl}/api/station/${stationId}/files/directories`,
         {
           headers: {
             'X-API-Key': this.superAdminApiKey,
@@ -189,34 +189,38 @@ export class AzuraCastApi {
         }
       );
       
-      // Check if any files have paths that match or start with the DJ name
-      if (Array.isArray(response.data)) {
-        // Look for files with paths that include the DJ name
-        const matchingFiles = response.data.filter(file => {
-          // Check if the path includes the DJ name
-          // This is a simple check and might need to be refined based on actual path structure
-          return file.path && (
-            file.path.includes(`/${djName}/`) || 
-            file.path.includes(`\\${djName}\\`) || 
-            file.path.startsWith(`${djName}/`) || 
-            file.path.startsWith(`${djName}\\`)
-          );
+      // Check if the response contains a list of directories
+      if (response.data && response.data.rows && Array.isArray(response.data.rows)) {
+        // The directories are in the rows array with name and path properties
+        const directories = response.data.rows;
+        
+        // Check if the DJ's directory exists in the list
+        const directoryExists = directories.some((dir: { name: string, path: string }) => {
+          const match = dir.name === djName || dir.path === djName;
+          if (match) {
+            console.log(`Match found: Directory "${dir.name}" matches DJ name "${djName}"`);
+          }
+          return match;
         });
         
-        if (matchingFiles.length > 0) {
-          console.log(`Found ${matchingFiles.length} files in directory for DJ "${djName}"`);
+        if (directoryExists) {
+          console.log(`Directory found for DJ "${djName}" in station ${stationId}`);
           return {
             success: true,
             exists: true,
-            files: matchingFiles
+            directories
           };
         }
+      } else {
+        // Only log if there's an unexpected response format
+        console.log('Response format unexpected - unable to check directories');
       }
       
-      console.log(`No directory found for DJ "${djName}" in station ${stationId}`);
+      console.log(`No directory found for DJ "${djName}"`);
       return {
         success: true,
-        exists: false
+        exists: false,
+        rawResponse: response.data
       };
     } catch (error) {
       console.error(`Directory check error for DJ "${djName}":`, error);

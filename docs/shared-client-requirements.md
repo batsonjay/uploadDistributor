@@ -67,6 +67,7 @@ The client must handle two distinct user roles with different permissions and in
 - DJ users should not see information about multiple destinations.
 - For DJ users, the upload is considered complete once the file is successfully uploaded to the daemon.
 - Authentication errors and file upload errors to the daemon should be clearly communicated to DJ users.
+- If the DJ's directory doesn't exist in AzuraCast, the client should display the error message: "Media upload folder name mismatch; inform station administrator".
 
 ### Admin Role Error Handling
 - Admin users should see detailed error information for all destinations.
@@ -79,11 +80,13 @@ The client must handle two distinct user roles with different permissions and in
 
 ### DJ Role Upload Flow
 1. DJ user logs in and is identified as having the DJ role.
-2. DJ user selects files and enters metadata.
-3. Client validates all data and files.
-4. Client sends data to daemon via `POST /upload`.
-5. Once the upload to the daemon is complete, the client informs the DJ user that the upload was successful.
-6. The daemon handles uploads to all destinations in the background without further client interaction.
+2. The daemon verifies that a directory exists for the DJ's display name in AzuraCast.
+3. If the directory doesn't exist, the client displays an error message and prevents further action.
+4. If the directory exists, the DJ user selects files and enters metadata.
+5. Client validates all data and files.
+6. Client sends data to daemon via `POST /upload`.
+7. Once the upload to the daemon is complete, the client informs the DJ user that the upload was successful.
+8. The daemon handles uploads to all destinations in the background without further client interaction.
 
 ### Admin Role Upload Flow
 1. Admin user logs in and is identified as having the Admin role.

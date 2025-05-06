@@ -1,0 +1,99 @@
+
+[azuracast] [2025-05-06 04:08:08]: ERROR
+Title: Directory check for Jay Batson
+Error Type: validation
+Error Message: Directory does not exist
+Request Details: {
+  "stationId": "2",
+  "djName": "Jay Batson"
+}
+Attempt: 1 of 3
+---------------------------------------------
+
+[azuracast] [2025-05-06 04:20:06]: ERROR
+Title: Directory check for Jay Batson
+Error Type: validation
+Error Message: Directory does not exist
+Request Details: {
+  "stationId": "2",
+  "djName": "Jay Batson"
+}
+Attempt: 1 of 3
+---------------------------------------------
+
+[azuracast] [2025-05-06 04:21:57]: ERROR
+Title: Directory check for Jay Batson
+Error Type: validation
+Error Message: Directory does not exist
+Request Details: {
+  "stationId": "2",
+  "djName": "Jay Batson"
+}
+Attempt: 1 of 3
+---------------------------------------------
+
+[azuracast] [2025-05-06 04:21:58]: ERROR
+Title: Directory check for nonexistent-dj
+Error Type: validation
+Error Message: Directory does not exist
+Request Details: {
+  "stationId": "2",
+  "djName": "nonexistent-dj"
+}
+Attempt: 1 of 3
+---------------------------------------------
+
+[azuracast] [2025-05-06 04:25:02]: ERROR
+Title: Directory check for Jay Batson
+Error Type: validation
+Error Message: Directory does not exist
+Request Details: {
+  "stationId": "2",
+  "djName": "Jay Batson"
+}
+Attempt: 1 of 3
+---------------------------------------------
+
+[azuracast] [2025-05-06 04:25:02]: ERROR
+Title: Directory check for nonexistent-dj
+Error Type: validation
+Error Message: Directory does not exist
+Request Details: {
+  "stationId": "2",
+  "djName": "nonexistent-dj"
+}
+Attempt: 1 of 3
+---------------------------------------------
+
+[azuracast] [2025-05-06 04:33:41]: ERROR
+Title: Directory check for nonexistent-dj
+Error Type: validation
+Error Message: Directory does not exist
+Request Details: {
+  "stationId": "2",
+  "djName": "nonexistent-dj"
+}
+Attempt: 1 of 3
+---------------------------------------------
+
+[azuracast] [2025-05-06 04:37:52]: ERROR
+Title: Directory check for nonexistent-dj
+Error Type: validation
+Error Message: Directory does not exist
+Request Details: {
+  "stationId": "2",
+  "djName": "nonexistent-dj"
+}
+Attempt: 1 of 3
+---------------------------------------------
+
+[azuracast] [2025-05-06 04:39:28]: ERROR
+Title: Directory check for nonexistent-dj
+Error Type: validation
+Error Message: Directory does not exist
+Request Details: {
+  "stationId": "2",
+  "djName": "nonexistent-dj"
+}
+Attempt: 1 of 3
+---------------------------------------------

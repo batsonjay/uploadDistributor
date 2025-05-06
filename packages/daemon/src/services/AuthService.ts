@@ -5,10 +5,14 @@
  * It uses both mock data and the real AzuraCast API.
  * 
  * Password handling is done using simple XOR obfuscation to avoid plaintext passwords.
+ * 
+ * After successful authentication, it verifies that the DJ has a valid directory
+ * in AzuraCast before allowing uploads.
  */
 
 import { decodePassword } from '../utils/PasswordUtils';
 import { AzuraCastApi } from '../apis/AzuraCastApi';
+import { ErrorType, logDetailedError } from '../utils/LoggingUtils';
 
 // Define user roles as constants for easy modification
 export const USER_ROLES = {
@@ -143,6 +147,18 @@ export class AuthService {
         role: this.mapAzuraCastRoleToUserRole(authResult.user.roles)
       };
       
+      // For DJ users, verify that their directory exists in AzuraCast
+      if (user.role === USER_ROLES.DJ) {
+        console.log(`Verifying directory for DJ user: ${user.displayName}`);
+        const directoryResult = await this.verifyDjDirectory(user.displayName);
+        if (!directoryResult.success) {
+          return directoryResult;
+        }
+      } else {
+        console.log(`Skipping directory verification for Admin user: ${user.displayName}`);
+        // Admin users don't need directory verification
+      }
+      
       return {
         success: true,
         user,
@@ -157,10 +173,16 @@ export class AuthService {
   }
   
   // Helper method to map AzuraCast roles to our UserRole type
-  private mapAzuraCastRoleToUserRole(azuraCastRoles: string[]): UserRole {
-    if (azuraCastRoles.includes('Super Administrator')) {
+  private mapAzuraCastRoleToUserRole(azuraCastRoles: any[]): UserRole {
+    console.log('User roles from AzuraCast:', azuraCastRoles);
+    
+    // Check if the user is a Super Administrator
+    if (Array.isArray(azuraCastRoles) && azuraCastRoles.some(role => role.name === 'Super Administrator')) {
+      console.log('User has Super Administrator role');
       return USER_ROLES.ADMIN;
     }
+    
+    console.log('User has DJ role');
     return USER_ROLES.DJ;
   }
   
@@ -188,6 +210,18 @@ export class AuthService {
         role: this.mapAzuraCastRoleToUserRole(profileResult.user.roles)
       };
       
+      // For DJ users, verify that their directory exists in AzuraCast
+      if (user.role === USER_ROLES.DJ) {
+        console.log(`Verifying directory for DJ user: ${user.displayName}`);
+        const directoryResult = await this.verifyDjDirectory(user.displayName);
+        if (!directoryResult.success) {
+          return directoryResult;
+        }
+      } else {
+        console.log(`Skipping directory verification for Admin user: ${user.displayName}`);
+        // Admin users don't need directory verification
+      }
+      
       return {
         success: true,
         user,
@@ -197,6 +231,77 @@ export class AuthService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+  
+  /**
+   * Verify that a directory exists for the DJ in AzuraCast
+   * 
+   * @param djName The DJ's display name
+   * @returns AuthResponse with success/error information
+   */
+  private async verifyDjDirectory(djName: string): Promise<AuthResponse> {
+    // Create AzuraCast API client
+    const api = new AzuraCastApi();
+    
+    try {
+      // Use station ID 2 for dev/test
+      const stationId = '2';
+      
+      // Check if the directory exists
+      const directoryResult = await api.checkDjDirectoryExists(stationId, djName);
+      
+      if (!directoryResult.success) {
+        // Log the error
+        logDetailedError(
+          'azuracast',
+          `Directory check for ${djName}`,
+          ErrorType.VALIDATION,
+          directoryResult.error || 'Failed to check directory',
+          { stationId, djName },
+          1
+        );
+        
+        return {
+          success: false,
+          error: 'Media upload folder name mismatch; inform station administrator'
+        };
+      }
+      
+      if (!directoryResult.exists) {
+        // Log the error
+        logDetailedError(
+          'azuracast',
+          `Directory check for ${djName}`,
+          ErrorType.VALIDATION,
+          'Directory does not exist',
+          { stationId, djName },
+          1
+        );
+        
+        return {
+          success: false,
+          error: 'Media upload folder name mismatch; inform station administrator'
+        };
+      }
+      
+      // Directory exists, return success
+      return { success: true };
+    } catch (error) {
+      // Log the error
+      logDetailedError(
+        'azuracast',
+        `Directory check for ${djName}`,
+        ErrorType.UNKNOWN,
+        error instanceof Error ? error.message : 'Unknown error',
+        { djName },
+        1
+      );
+      
+      return {
+        success: false,
+        error: 'Failed to verify upload directory; please try again later'
       };
     }
   }

@@ -16,35 +16,6 @@ const CORRECT_DJ_NAME = 'catalyst'; // Replace with a known DJ name
 const INCORRECT_DJ_NAME = 'nonexistent-dj'; // A DJ name that doesn't exist
 
 /**
- * Interface for AzuraCast file data
- */
-interface AzuraCastFile {
-  id: number;
-  path: string;
-  title: string;
-  artist: string;
-  album: string;
-  [key: string]: any; // Allow for other properties
-}
-
-/**
- * Filter file data to only include relevant fields
- */
-function filterFileData(files: AzuraCastFile[], limit: number = 5) {
-  // Only show a limited number of files
-  const limitedFiles = files.slice(0, limit);
-  
-  // Only include relevant fields
-  return limitedFiles.map((file: AzuraCastFile) => ({
-    id: file.id,
-    path: file.path,
-    title: file.title,
-    artist: file.artist,
-    album: file.album
-  }));
-}
-
-/**
  * Test the directory check functionality
  */
 async function testDirectoryCheck() {
@@ -58,27 +29,23 @@ async function testDirectoryCheck() {
     console.log(`\nChecking directory for DJ: ${CORRECT_DJ_NAME}`);
     const correctResult = await api.checkDjDirectoryExists(STATION_ID, CORRECT_DJ_NAME);
     
-    // Filter and format the output
-    if (correctResult.success && correctResult.exists && correctResult.files) {
-      const fileCount = correctResult.files.length;
-      const filteredFiles = filterFileData(correctResult.files);
-      
-      console.log(`Directory exists for DJ "${CORRECT_DJ_NAME}"`);
-      console.log(`Found ${fileCount} files. Showing first ${filteredFiles.length}:`);
-      console.log(JSON.stringify(filteredFiles, null, 2));
-      
-      // Extract path patterns to understand the structure
-      const pathPatterns = new Set(correctResult.files.map((file: AzuraCastFile) => file.path));
-      console.log('\nPath patterns found:');
-      console.log(Array.from(pathPatterns).slice(0, 5));
+    // Format the output - only show if it exists or not
+    if (correctResult.success) {
+      console.log(`Directory for DJ "${CORRECT_DJ_NAME}": ${correctResult.exists ? 'EXISTS' : 'DOES NOT EXIST'}`);
     } else {
-      console.log('Result:', correctResult);
+      console.log(`Error checking directory for DJ "${CORRECT_DJ_NAME}": ${correctResult.error || 'Unknown error'}`);
     }
     
     // Test with an incorrect DJ name
     console.log(`\nChecking directory for DJ: ${INCORRECT_DJ_NAME}`);
     const incorrectResult = await api.checkDjDirectoryExists(STATION_ID, INCORRECT_DJ_NAME);
-    console.log('Result:', incorrectResult);
+    
+    // Format the output - only show if it exists or not
+    if (incorrectResult.success) {
+      console.log(`Directory for DJ "${INCORRECT_DJ_NAME}": ${incorrectResult.exists ? 'EXISTS' : 'DOES NOT EXIST'}`);
+    } else {
+      console.log(`Error checking directory for DJ "${INCORRECT_DJ_NAME}": ${incorrectResult.error || 'Unknown error'}`);
+    }
     
     // Log errors to the error log file if needed
     if (!correctResult.success) {

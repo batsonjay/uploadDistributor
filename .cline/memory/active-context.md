@@ -1,19 +1,20 @@
 # Active Context: Upload Distributor Project
 
 ## Most Recently Completed Step
-- Implemented Role-Based Access Control
-  - Created roleVerification middleware with verifyRole, adminOnly, and anyAuthenticated functions
-  - Protected upload and status routes with role verification
-  - Added user information to request object for use in route handlers
-  - Created comprehensive test script to verify role-based access control
+- Fixed role detection in AuthService and improved directory verification
+  - Updated the mapAzuraCastRoleToUserRole method to properly handle complex role objects
+  - Changed the parameter type from `string[]` to `any[]` to accommodate the actual data structure
+  - Implemented proper detection of role names using `role.name` instead of assuming string values
+  - Added detailed logging to show the roles received from AzuraCast
+  - Simplified the test-directory-verification.ts to focus on the key test cases
 
 ## Current Task
-- The role-based access control implementation is complete
-- The authentication system now protects routes based on user roles
-- The upload and status routes require authentication
-- All tests for role verification pass successfully
+- The directory verification implementation is now working correctly
+- The authentication system properly handles the complex role objects from AzuraCast
+- The test-directory-verification.ts file has been simplified to focus on the key test cases
+- All tests for directory verification pass successfully
 
 ## Next Step
-- All authentication implementation steps are now complete
-- The next phase would be to integrate the authentication system with the real AzuraCast API
-- This would involve updating the AuthService to use the real API endpoints instead of mock data
+- Complete the integration with the real AzuraCast API for file uploads
+- Begin replacing other mocks with actual API integrations
+- Start work on Web Client Development with role-based UI

@@ -5,13 +5,13 @@ This document outlines the implementation of the authentication system for the U
 ## User Information
 
 - Admin User:
-  - Email: batsonjay@mac.com
-  - Display Name: catalyst
+  - Email: batsonjay@gmail.com
+  - Display Name: Jay Batson
   - Role: Super Administrator
 
 - DJ User:
-  - Email: miker@mrobs.co.uk
-  - Display Name: Chewee
+  - Email: batsonjay@mac.com
+  - Display Name: catalyst
   - Role: DJ
 
 ## Testing Strategy
@@ -149,6 +149,15 @@ Fixed the StatusManager.ts path resolution:
 - Added a delay before exiting to ensure status files are fully written
 - Enhanced the test script with proper user role and delay handling
 
+### Step 12: Improve Role Detection in AuthService
+
+Enhanced the role detection in AuthService.ts:
+- Updated the mapAzuraCastRoleToUserRole method to properly handle complex role objects
+- Changed the parameter type from `string[]` to `any[]` to accommodate the actual data structure
+- Implemented proper detection of role names using `role.name` instead of assuming string values
+- Added detailed logging to show the roles received from AzuraCast
+- Simplified the test-directory-verification.ts to focus on the key test cases
+
 ## Current Status
 
 - The authentication system is fully implemented with role-based access control
@@ -210,6 +219,39 @@ The authentication system has been integrated with the real AzuraCast API. The i
    - Successfully tested with the DJ user "catalyst" (email: batsonjay@mac.com)
 
 This approach maintains security by not requiring individual API keys for each DJ while still allowing proper authentication and role-based access control.
+
+## Directory Verification
+
+After successful authentication, the system now verifies that the DJ has a valid directory in AzuraCast before allowing uploads. This ensures that uploads will be properly stored and accessible in the AzuraCast system.
+
+### Implementation Details
+
+1. **Directory Verification Process**:
+   - After authenticating a DJ user, we check if a directory exists for their display name in AzuraCast
+   - We use the `GET /api/station/{station_id}/files/directories` endpoint to list all directories
+   - The API returns a list of directory objects with `name` and `path` properties
+   - We check if any directory's name matches the DJ's display name
+   - If no matching directory is found, we consider it non-existent
+
+2. **Error Handling**:
+   - If the directory doesn't exist, we log an error and return a specific error message to the client
+   - The client displays an error message: "Media upload folder name mismatch; inform station administrator"
+   - This prevents uploads that would fail later in the process due to missing directories
+
+3. **Implementation Components**:
+   - Added `checkDjDirectoryExists` method to the `AzuraCastApi` class
+   - The method takes a station ID and DJ name as parameters
+   - Returns whether the directory exists and any matching files
+   - Includes proper error handling and logging
+
+4. **Role Handling Improvements**:
+   - Updated the `mapAzuraCastRoleToUserRole` method to properly handle complex role objects
+   - Changed the parameter type from `string[]` to `any[]` to accommodate the actual data structure
+   - Implemented proper detection of role names using `role.name` instead of assuming string values
+   - Added detailed logging to show the roles received from AzuraCast
+   - Simplified the test-directory-verification.ts to focus on the key test cases
+
+This verification step ensures that uploads are only attempted when the necessary directory structure exists in AzuraCast, improving the reliability of the upload process and providing clear feedback to users when there are configuration issues.
 
 ## Next Steps
 

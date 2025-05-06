@@ -11,6 +11,8 @@ The daemon exposes a RESTful API for use by the web and macOS clients. It handle
 - Clients authenticate using AzuraCast credentials.
 - Auth tokens are passed with each request.
 - The daemon validates tokens with AzuraCast before proceeding.
+- After successful authentication, the daemon verifies that the DJ has a valid directory in AzuraCast.
+- If the directory doesn't exist, the daemon returns an error to the client.
 
 ## Endpoints
 
@@ -72,6 +74,10 @@ Health check endpoint.
 
 - Standard HTTP status codes are used.
 - Error responses include a `message` field for debugging.
+- Specific error messages are provided for common issues:
+  - Authentication failures: "Invalid credentials"
+  - Directory verification failures: "Media upload folder name mismatch; inform station administrator"
+  - File validation failures: "Invalid file format"
 
 ## Upload Handling
 
