@@ -2,12 +2,13 @@
  * Authentication Service
  * 
  * This service provides authentication functionality for the application.
- * It currently uses mock data, but will be updated to use the AzuraCast API in the future.
+ * It uses both mock data and the real AzuraCast API.
  * 
  * Password handling is done using simple XOR obfuscation to avoid plaintext passwords.
  */
 
 import { decodePassword } from '../utils/PasswordUtils';
+import { AzuraCastApi } from '../apis/AzuraCastApi';
 
 // Define user roles as constants for easy modification
 export const USER_ROLES = {
@@ -115,17 +116,88 @@ export class AuthService {
     };
   }
   
-  // This method will be used when we switch to real AzuraCast API
+  // Authenticate with the real AzuraCast API
   public async authenticateWithAzuraCast(email: string, encodedPassword: string): Promise<AuthResponse> {
-    // This will be implemented later with actual API calls
-    // For now, just call the mock method
-    return this.authenticate(email, encodedPassword);
+    // Decode the password
+    const password = decodePassword(encodedPassword);
+    
+    // Create AzuraCast API client
+    const api = new AzuraCastApi();
+    
+    try {
+      // Authenticate with AzuraCast
+      const authResult = await api.authenticateWithCredentials(email, password);
+      
+      if (!authResult.success) {
+        return {
+          success: false,
+          error: authResult.error || 'Authentication failed'
+        };
+      }
+      
+      // Map AzuraCast user to our UserProfile format
+      const user: UserProfile = {
+        id: authResult.user.id.toString(),
+        email: authResult.user.email,
+        displayName: authResult.user.name,
+        role: this.mapAzuraCastRoleToUserRole(authResult.user.roles)
+      };
+      
+      return {
+        success: true,
+        user,
+        token: authResult.apiKey
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   }
   
-  // This method will be used when we switch to real AzuraCast API
+  // Helper method to map AzuraCast roles to our UserRole type
+  private mapAzuraCastRoleToUserRole(azuraCastRoles: string[]): UserRole {
+    if (azuraCastRoles.includes('Super Administrator')) {
+      return USER_ROLES.ADMIN;
+    }
+    return USER_ROLES.DJ;
+  }
+  
+  // Validate token with the real AzuraCast API
   public async validateTokenWithAzuraCast(token: string): Promise<AuthResponse> {
-    // This will be implemented later with actual API calls
-    // For now, just call the mock method
-    return this.validateToken(token);
+    // Create AzuraCast API client
+    const api = new AzuraCastApi();
+    
+    try {
+      // Get user profile with the API key
+      const profileResult = await api.getUserProfile(token);
+      
+      if (!profileResult.success) {
+        return {
+          success: false,
+          error: profileResult.error || 'Invalid token'
+        };
+      }
+      
+      // Map AzuraCast user to our UserProfile format
+      const user: UserProfile = {
+        id: profileResult.user.id.toString(),
+        email: profileResult.user.email,
+        displayName: profileResult.user.name,
+        role: this.mapAzuraCastRoleToUserRole(profileResult.user.roles)
+      };
+      
+      return {
+        success: true,
+        user,
+        token
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   }
 }

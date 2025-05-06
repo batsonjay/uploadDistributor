@@ -186,9 +186,33 @@ A comprehensive test script has been created to verify the role-based access con
 - Tests DJ user access to all routes
 - Tests invalid token handling
 
+## AzuraCast API Integration
+
+The authentication system has been integrated with the real AzuraCast API. The implementation follows these key architectural principles:
+
+### Authentication Architecture
+
+1. **Single API Key Approach**:
+   - We use a single super administrator API key for all API operations
+   - Individual DJ users do not get or use their own API keys
+   - The super admin API key is stored securely in the application
+
+2. **User Authentication Process**:
+   - When a DJ user authenticates with email/password, we verify their credentials
+   - We use the super admin API key to find the user by email in the AzuraCast system
+   - We extract the user's information (ID, email, name, role) for use in the application
+   - The authentication is primarily to verify the DJ's identity and get their information
+
+3. **Implementation Details**:
+   - Created a new `AzuraCastApi` class that implements authentication with the real API
+   - Uses the `/api/admin/users` endpoint to find users by email
+   - Updated the `AuthService` to use the real API client
+   - Successfully tested with the DJ user "catalyst" (email: batsonjay@mac.com)
+
+This approach maintains security by not requiring individual API keys for each DJ while still allowing proper authentication and role-based access control.
+
 ## Next Steps
 
-- Integrate the authentication system with the real AzuraCast API
-- This would involve updating the AuthService to use the real API endpoints instead of mock data
+- Complete the integration with the real AzuraCast API for file uploads
 - Begin replacing other mocks with actual API integrations
 - Start work on Web Client Development with role-based UI

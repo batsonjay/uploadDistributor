@@ -129,6 +129,7 @@ This document outlines the proposed implementation steps for the Upload Distribu
 - ✅ Implement AzuraCast authentication flow with role retrieval (DJ vs Admin)
 - ✅ Create secure credential storage for clients including user role
 - ✅ Implement role-based permission system in daemon API endpoints
+- ✅ Integrate with real AzuraCast API for authentication
 - Build OAuth2 authentication for Mixcloud (Pending)
 - Build OAuth2 authentication for SoundCloud (Pending)
 
@@ -409,10 +410,10 @@ For detailed information about the authentication implementation, see [Authentic
 - The project has a solid foundation for further development
 
 ### Next Steps
-- Begin replacing mocks with actual API integrations:
-  - Start with AzuraCast API integration
-  - Update AuthService to use real AzuraCast endpoints
+- Continue replacing mocks with actual API integrations:
+  - Complete AzuraCast API integration for file uploads
   - Implement proper error handling for network issues
+  - Integrate with Mixcloud and SoundCloud APIs
 - Start work on Web Client Development with role-based UI
 
 ## Critical Path and Risk Mitigation (Revised)
