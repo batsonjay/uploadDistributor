@@ -79,19 +79,89 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
   });
   
   // Handle completion
-  bb.on('finish', () => {
+  bb.on('finish', async () => {
     // Save metadata
     fs.writeFileSync(
       path.join(uploadDir, 'metadata.json'),
       JSON.stringify(metadata, null, 2)
     );
     
-    // Create initial status file
+    // Add a small delay to ensure files are fully written to disk
+    console.log('Adding a small delay to ensure files are fully written to disk...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Validate files before proceeding
+    const audioFilePath = path.join(uploadDir, 'audio.mp3');
+    const songlistFilePath = path.join(uploadDir, 'songlist.txt');
+    
+    // Check if files exist and have content
+    console.log(`Checking audio file at path: ${audioFilePath}`);
+    
+    if (!fs.existsSync(audioFilePath)) {
+      console.log(`Audio file does not exist at path: ${audioFilePath}`);
+      return res.status(400).json({
+        error: 'Invalid upload',
+        message: 'Audio file is missing'
+      });
+    }
+    
+    const audioFileSize = fs.statSync(audioFilePath).size;
+    console.log(`Audio file exists and has size: ${audioFileSize} bytes`);
+    
+    if (audioFileSize === 0) {
+      console.log(`Audio file is empty (0 bytes)`);
+      return res.status(400).json({
+        error: 'Invalid upload',
+        message: 'Audio file is empty'
+      });
+    }
+    
+    // Try to read the first few bytes of the file to verify it's readable
+    try {
+      const fd = fs.openSync(audioFilePath, 'r');
+      const buffer = Buffer.alloc(10);
+      const bytesRead = fs.readSync(fd, buffer, 0, 10, 0);
+      fs.closeSync(fd);
+      
+      console.log(`Read ${bytesRead} bytes from audio file: ${buffer.toString('hex')}`);
+      
+      if (bytesRead === 0) {
+        console.log(`Could not read any bytes from audio file`);
+        return res.status(400).json({
+          error: 'Invalid upload',
+          message: 'Could not read audio file'
+        });
+      }
+    } catch (err) {
+      console.error(`Error reading audio file: ${err}`);
+      return res.status(400).json({
+        error: 'Invalid upload',
+        message: `Error reading audio file: ${(err as Error).message}`
+      });
+    }
+    
+    if (!fs.existsSync(songlistFilePath)) {
+      return res.status(400).json({
+        error: 'Invalid upload',
+        message: 'Songlist file is missing'
+      });
+    }
+    
+    if (fs.statSync(songlistFilePath).size === 0) {
+      return res.status(400).json({
+        error: 'Invalid upload',
+        message: 'Songlist file is empty'
+      });
+    }
+    
+    console.log(`Songlist file exists and has size: ${fs.statSync(songlistFilePath).size} bytes`);
+    
+    // Create initial status file - now using 'received' status instead of 'queued'
     fs.writeFileSync(
       path.join(uploadDir, 'status.json'),
       JSON.stringify({
-        status: 'queued',
-        message: 'Upload received and queued for processing',
+        status: 'received',
+        message: 'Files successfully received and validated',
         timestamp: new Date().toISOString()
       }, null, 2)
     );
@@ -138,10 +208,11 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
       // The status endpoint will show any processing errors
     }
     
-    // Return upload ID to client
+    // Return upload ID to client with 'received' status
     res.json({
       uploadId,
-      status: 'queued'
+      status: 'received',
+      message: 'Files successfully received and validated'
     });
   });
   

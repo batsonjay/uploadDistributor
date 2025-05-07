@@ -9,6 +9,10 @@
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit"
   },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "form-data": "^4.0.0"
+  },
   "devDependencies": {
     "@uploadDistributor/eslint-config": "*",
     "@uploadDistributor/typescript-config": "*",

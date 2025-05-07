@@ -11,11 +11,13 @@
     "test": "jest",
     "check-types": "tsc --noEmit",
     "test-upload": "ts-node __tests__/upload.test.ts",
+    "test-upload-shared": "ts-node __tests__/upload-with-shared.test.ts",
     "test-roles": "ts-node src/mocks/test-role-verification.ts",
     "test-azuracast-api": "ts-node src/mocks/test-azuracast-api.ts",
     "test-azuracast-auth": "ts-node src/mocks/test-azuracast-auth.ts"
   },
   "dependencies": {
+    "@uploadDistributor/shared": "*",
     "express": "^4.18.2",
     "busboy": "^1.6.0",
     "cors": "^2.8.5",

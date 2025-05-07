@@ -1,2 +1,2 @@
-export * from './utils/slugify';
-export * from './validators/filename';
+// Export the upload module
+export * from './upload';

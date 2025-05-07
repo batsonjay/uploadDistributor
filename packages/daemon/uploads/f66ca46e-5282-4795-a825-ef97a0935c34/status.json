@@ -1,0 +1,22 @@
+{
+  "status": "completed",
+  "message": "Upload processing completed successfully",
+  "timestamp": "2025-05-07T20:53:01.285Z",
+  "destinations": {
+    "azuracast": {
+      "success": true,
+      "id": "mock-azuracast-1746651178970",
+      "path": "/var/azuracast/stations/2/files/mock-azuracast-1746651178970.mp3"
+    },
+    "mixcloud": {
+      "success": true,
+      "id": "mock-mixcloud-1746651180177",
+      "url": "https://www.mixcloud.com/test-dj/test-mix/"
+    },
+    "soundcloud": {
+      "success": true,
+      "id": "mock-soundcloud-1746651180983",
+      "url": "https://soundcloud.com/mock-user/test-mix"
+    }
+  }
+}

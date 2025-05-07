@@ -98,7 +98,7 @@ const soundCloudService = new SoundCloudService(statusManager);
 // Main processing function
 async function processUpload() {
   try {
-    // Update status to processing
+    // Update status to processing - the upload route already set status to 'received'
     statusManager.updateStatus('processing', 'Upload processing started');
     
     // Log the start of processing
@@ -146,14 +146,11 @@ async function processUpload() {
         const storedPath: string = storeSonglist(uploadId, songlist) as string;
         process.stdout.write(`Songlist stored at: ${storedPath}\n`);
         
-        // If this is a DJ user, we can return success now
+        // For DJ users, we'll continue processing in the background without updating status again
+        // The client already received a 'received' status when the files were validated
         if (isDjUser) {
-          statusManager.updateStatus('completed', 'Upload received successfully', {
-            message: 'Your upload has been received and will be processed in the background.'
-          });
-          
-          // We'll continue processing in the background
-          process.stdout.write('DJ user upload completed, continuing processing in background...\n');
+          process.stdout.write('DJ user upload continuing in background...\n');
+          // We don't update the status here, as the client doesn't need to know about the background processing
         }
       } else {
         throw new Error('Failed to create songlist');
@@ -283,8 +280,14 @@ async function processUpload() {
       destinations.soundcloud = { success: true, skipped: true, message: 'Destination not selected' };
     }
     
-    // Only update status for Admin users, since we've already updated it for DJ users
-    if (!isDjUser) {
+    // Update final status based on user role
+    if (isDjUser) {
+      // For DJ users, we don't expose destination details
+      statusManager.updateStatus('completed', 'Upload processing completed successfully', {
+        message: 'Your upload has been processed successfully.'
+      });
+    } else {
+      // For Admin users, we show detailed destination status
       statusManager.updateStatus('completed', 'Upload processing completed successfully', destinations);
     }
     process.stdout.write(`Upload ${uploadId} processed successfully\n`);
