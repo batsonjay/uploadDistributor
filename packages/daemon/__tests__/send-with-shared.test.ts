@@ -39,6 +39,7 @@ const TEST_FILES_DIR = path.join(__dirname, '../test-files');
 // Paths to static test files
 const testMp3Path = path.join(TEST_FILES_DIR, 'sample-mp3.mp3');
 const testSonglistPath = path.join(TEST_FILES_DIR, 'sample-songlist.txt');
+const testArtworkPath = path.join(TEST_FILES_DIR, 'sample-artwork.jpg');
 
 // Verify that the test files exist
 if (!fs.existsSync(testMp3Path)) {
@@ -49,8 +50,17 @@ if (!fs.existsSync(testSonglistPath)) {
   throw new Error(`Test songlist file not found: ${testSonglistPath}`);
 }
 
+// Create a sample artwork file if it doesn't exist
+if (!fs.existsSync(testArtworkPath)) {
+  console.log(`Test artwork file not found, creating a sample one at: ${testArtworkPath}`);
+  // Copy the MP3 file to use as a placeholder for the artwork
+  // In a real scenario, this would be an actual image file
+  fs.copyFileSync(testMp3Path, testArtworkPath);
+}
+
 console.log(`Using test MP3 file: ${testMp3Path}`);
 console.log(`Using test songlist file: ${testSonglistPath}`);
+console.log(`Using test artwork file: ${testArtworkPath}`);
 
 // Fixed test file ID to reuse the same directory
 const TEST_FILE_ID = 'f66ca46e-5282-4795-a825-ef97a0935c34';
@@ -74,7 +84,8 @@ async function runTest(userRole: string = USER_ROLES.ADMIN) {
     // Prepare files
     const files: SendFiles = {
       audioFile: fs.createReadStream(testMp3Path),
-      songlistFile: fs.createReadStream(testSonglistPath)
+      songlistFile: fs.createReadStream(testSonglistPath),
+      artworkFile: fs.createReadStream(testArtworkPath)
     };
     
     // Prepare callbacks

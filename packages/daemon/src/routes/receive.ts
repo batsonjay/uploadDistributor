@@ -55,7 +55,8 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     azcFolder: '',
     azcPlaylist: '',
     userRole: (req.user?.role || ''),
-    destinations: 'azuracast,mixcloud,soundcloud' // Default to all destinations
+    destinations: 'azuracast,mixcloud,soundcloud', // Default to all destinations
+    artworkFilename: '' // Store the artwork filename
   };
   
   // Set up busboy to handle file receiving
@@ -66,7 +67,23 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     const { filename, encoding, mimeType } = info;
     console.log(`Processing ${name} file: ${filename}, encoding: ${encoding}, mimeType: ${mimeType}`);
     
-    const saveTo = path.join(fileDir, name === 'audio' ? 'audio.mp3' : 'songlist.txt');
+    let saveTo;
+    if (name === 'audio') {
+      saveTo = path.join(fileDir, 'audio.mp3');
+    } else if (name === 'songlist') {
+      saveTo = path.join(fileDir, 'songlist.txt');
+    } else if (name === 'artwork') {
+      // Extract file extension from original filename or default to .jpg
+      const ext = path.extname(filename) || '.jpg';
+      saveTo = path.join(fileDir, `artwork${ext}`);
+      // Store the artwork filename in metadata for later reference
+      metadata.artworkFilename = `artwork${ext}`;
+    } else {
+      // Skip unknown files
+      console.log(`Skipping unknown file type: ${name}`);
+      return;
+    }
+    
     file.pipe(fs.createWriteStream(saveTo));
   });
   
@@ -155,6 +172,27 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     }
     
     console.log(`Songlist file exists and has size: ${fs.statSync(songlistFilePath).size} bytes`);
+    
+    // Check for artwork file
+    const artworkFilePath = path.join(fileDir, metadata.artworkFilename || 'artwork.jpg');
+    
+    if (!fs.existsSync(artworkFilePath)) {
+      console.log(`Artwork file does not exist at path: ${artworkFilePath}`);
+      return res.status(400).json({
+        error: 'Invalid file',
+        message: 'Artwork file is missing'
+      });
+    }
+    
+    if (fs.statSync(artworkFilePath).size === 0) {
+      console.log(`Artwork file is empty (0 bytes)`);
+      return res.status(400).json({
+        error: 'Invalid file',
+        message: 'Artwork file is empty'
+      });
+    }
+    
+    console.log(`Artwork file exists and has size: ${fs.statSync(artworkFilePath).size} bytes`);
     
     // Create initial status file with 'received' status
     fs.writeFileSync(

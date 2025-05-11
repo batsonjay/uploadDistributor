@@ -26,6 +26,7 @@ export interface SendMetadata {
 export interface SendFiles {
   audioFile: File | Buffer | NodeJS.ReadableStream;
   songlistFile: File | Buffer | NodeJS.ReadableStream;
+  artworkFile?: File | Buffer | NodeJS.ReadableStream;
 }
 
 export interface SendCallbacks {
@@ -141,6 +142,11 @@ function createFormData(metadata: SendMetadata, files: SendFiles): any {
     // Add files
     formData.append('audio', files.audioFile);
     formData.append('songlist', files.songlistFile);
+    
+    // Add artwork if provided
+    if (files.artworkFile) {
+      formData.append('artwork', files.artworkFile);
+    }
   } else {
     // Node.js environment
     // We need to use the form-data package
@@ -158,6 +164,11 @@ function createFormData(metadata: SendMetadata, files: SendFiles): any {
     // Add files
     formData.append('audio', files.audioFile);
     formData.append('songlist', files.songlistFile);
+    
+    // Add artwork if provided
+    if (files.artworkFile) {
+      formData.append('artwork', files.artworkFile);
+    }
   }
   
   return formData;

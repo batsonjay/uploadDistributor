@@ -33,7 +33,8 @@ Receives files from clients.
   },
   "files": {
     "audio": "base64-encoded .mp3",
-    "songlist": "base64-encoded songlist file"
+    "songlist": "base64-encoded songlist file",
+    "artwork": "base64-encoded image file (jpg/png)"
   }
 }
 ```
@@ -85,6 +86,10 @@ Health check endpoint.
 - Avoids buffering entire files in memory to support files up to 200MB+.
 - Express is configured to bypass default body parsers for multipart data.
 - Files are stored in the `received-files` directory.
+- Each upload requires three files:
+  - `audio.mp3`: The audio file to be uploaded
+  - `songlist.txt`: The tracklist information
+  - `artwork.jpg/png`: Cover image for the broadcast
 - Temporary files are cleaned up after processing.
 
 ## Versioning

@@ -183,19 +183,32 @@ async function processFiles() {
     const cetTimestamp = utcToCet(utcTimestamp);
     const [cetDate, cetTime] = cetTimestamp.split(' ');
     
+    // Get artwork file path
+    const artworkFilename = metadata.artworkFilename || 'artwork.jpg';
+    const artworkFile = path.join(fileDir, artworkFilename);
+    
+    // Verify artwork file exists
+    if (!fs.existsSync(artworkFile)) {
+      process.stderr.write(`Artwork file not found: ${artworkFile}\n`);
+      statusManager.updateStatus('error', 'Artwork file not found');
+      process.exit(1);
+    }
+    
     // Create metadata objects for each platform
     const azuraCastMetadata = {
       title: songlist.broadcast_data.setTitle || 'Untitled Set',
       artist: songlist.broadcast_data.DJ || 'Unknown DJ',
       album: `${cetDate || new Date().toISOString().split('T')[0]} Broadcast`,
-      genre: songlist.broadcast_data.genre || 'Radio Show'
+      genre: songlist.broadcast_data.genre || 'Radio Show',
+      artwork: artworkFile
     };
     
     const mixcloudMetadata = {
       title: songlist.broadcast_data.setTitle || 'Untitled Set',
       artist: songlist.broadcast_data.DJ || 'Unknown DJ',
       description: `Broadcast on ${cetDate || new Date().toISOString().split('T')[0]} at ${cetTime || '00:00:00'}`,
-      track_list: songlist.track_list || []
+      track_list: songlist.track_list || [],
+      artwork: artworkFile
     };
     
     const soundCloudMetadata = {
@@ -204,8 +217,7 @@ async function processFiles() {
       description: `Broadcast on ${cetDate || new Date().toISOString().split('T')[0]} at ${cetTime || '00:00:00'}`,
       genre: songlist.broadcast_data.genre || 'Radio Show',
       sharing: 'public' as 'public',
-      // Add a dummy artwork path for testing
-      artwork: 'dummy-artwork-path'
+      artwork: artworkFile
     };
     
     // Upload to selected platforms sequentially
@@ -309,13 +321,17 @@ async function processFiles() {
  * Create a minimal songlist from metadata
  */
 function createMinimalSonglist(metadata: any): SonglistData {
+  // Get artwork filename from metadata
+  const artworkFilename = metadata.artworkFilename || 'artwork.jpg';
+  
   return {
     broadcast_data: {
       broadcast_date: new Date().toISOString().split('T')[0] || new Date().toISOString(),
       broadcast_time: new Date().toISOString().split('T')[1]?.substring(0, 8) || '00:00:00',
       DJ: metadata.djName || 'Unknown DJ',
       setTitle: metadata.title || 'Untitled Set',
-      duration: '01:00:00'
+      duration: '01:00:00',
+      artwork: artworkFilename
     },
     track_list: [
       {

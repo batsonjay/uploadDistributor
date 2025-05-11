@@ -475,6 +475,7 @@ For detailed information about the authentication implementation, see [Authentic
 - Directory verification for DJs is implemented to ensure valid upload paths
 - Terminology has been standardized throughout the codebase
 - Directory structure has been updated to reflect the new terminology
+- Artwork handling has been implemented for all uploads
 - A deployment plan has been created for production deployment
 - The project has a solid foundation for further development
 
@@ -482,6 +483,7 @@ For detailed information about the authentication implementation, see [Authentic
 - Restructure uploaded files directories to incorporate DJ name
 - Double-check contents of songfile (as-is, vs JSON)
 - Improve precision of metadata associated with files sent to daemon
+- Implement client-side validation for artwork files
 - Continue replacing mocks with actual API integrations:
   - Complete AzuraCast API integration for file uploads
   - Implement proper error handling for network issues
