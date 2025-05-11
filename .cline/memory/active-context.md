@@ -1,10 +1,9 @@
 # Active Context: Upload Distributor Project
 
 ## Most Recently Completed Step
-- Renamed the processor from `upload-processor.ts` to `file-processor.ts` to be consistent with the new terminology
-- Updated the function name from `processUpload()` to `processFiles()`
-- Updated references to the processor in receive.ts
-- Added a new script to package.json: `process-file` for running the processor directly
+- Created a comprehensive deployment plan document (docs/deployment-plan.md)
+- The plan outlines how to deploy the uploadDistributor as a second container on the same Linode instance as AzuraCast
+- Included detailed steps for setup, configuration, maintenance, and troubleshooting
 
 ## Current Task
 - All terminology changes are now complete and fully tested
@@ -13,7 +12,10 @@
 - Directory names now match the new terminology
 - All environment variables have been updated to reflect the new terminology
 - Processor name has been updated to reflect the new terminology
-- Old processor file can be safely deleted
+- Old processor file has been deleted
+- Old uploads directory has been deleted
+- Deployment plan has been created for production deployment
 
 ## Next Steps
 - Update any documentation that might still reference the old terminology
+- Consider implementing the deployment plan for production
