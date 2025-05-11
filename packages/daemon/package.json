@@ -14,7 +14,8 @@
     "test-send-shared": "ts-node __tests__/send-with-shared.test.ts",
     "test-roles": "ts-node src/mocks/test-role-verification.ts",
     "test-azuracast-api": "ts-node src/mocks/test-azuracast-api.ts",
-    "test-azuracast-auth": "ts-node src/mocks/test-azuracast-auth.ts"
+    "test-azuracast-auth": "ts-node src/mocks/test-azuracast-auth.ts",
+    "process-file": "ts-node src/processors/file-processor.ts"
   },
   "dependencies": {
     "@uploadDistributor/shared": "*",

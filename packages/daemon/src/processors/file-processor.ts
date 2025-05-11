@@ -1,5 +1,5 @@
 /**
- * Upload Processor
+ * File Processor
  * 
  * This module is forked by the daemon to process files in isolation.
  * It handles the entire flow:
@@ -96,7 +96,7 @@ const mixcloudService = new MixcloudService(statusManager);
 const soundCloudService = new SoundCloudService(statusManager);
 
 // Main processing function
-async function processUpload() {
+async function processFiles() {
   try {
     // Update status to processing - the receive route already set status to 'received'
     statusManager.updateStatus('processing', 'Processing started');
@@ -328,7 +328,7 @@ function createMinimalSonglist(metadata: any): SonglistData {
 }
 
 // Start processing
-processUpload();
+processFiles();
 
 // Handle unexpected errors
 process.on('uncaughtException', (err) => {

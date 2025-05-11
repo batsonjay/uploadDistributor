@@ -31,3 +31,6 @@
 [azuracast]: success [2025-05-11 19:29:08]: Test Mix, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1746991748394.mp3
 [mixcloud]: success [2025-05-11 19:29:09]: Test Mix, Uploaded to https://www.mixcloud.com/test-dj/test-mix/
 [soundcloud]: success [2025-05-11 19:29:10]: Test Mix, Uploaded to https://soundcloud.com/mock-user/test-mix
+[azuracast]: success [2025-05-11 19:48:10]: Test Mix, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1746992890280.mp3
+[mixcloud]: success [2025-05-11 19:48:11]: Test Mix, Uploaded to https://www.mixcloud.com/test-dj/test-mix/
+[soundcloud]: success [2025-05-11 19:48:12]: Test Mix, Uploaded to https://soundcloud.com/mock-user/test-mix

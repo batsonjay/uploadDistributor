@@ -173,8 +173,8 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     // Use .ts extension in development mode, .js in production
     const fileExt = isDev ? '.ts' : '.js';
     
-    // Fork a process to handle the upload to destinations
-    const processorPath = path.join(__dirname, `../processors/upload-processor${fileExt}`);
+    // Fork a process to handle the file processing and destination uploads
+    const processorPath = path.join(__dirname, `../processors/file-processor${fileExt}`);
     console.log(`Forking process for received files ${fileId} using ${processorPath}`);
     
     try {
