@@ -19,17 +19,22 @@ received-files/
 
 The new structure will:
 1. Receive files in a temporary UUID directory (as currently done)
-2. After processing, move files to an organized archive structure:
+2. After processing, move files to an organized archive structure with descriptive filenames:
 ```
 archive/
   2025/
     2025-05-11_DJ_Name/
-      audio.mp3
-      songlist.txt
-      metadata.json
-      status.json
-      artwork.jpg
+      2025-05-11_DJ_Name_episode-title.mp3
+      2025-05-11_DJ_Name_episode-title.txt
+      2025-05-11_DJ_Name_episode-title.json
+      2025-05-11_DJ_Name_episode-title_status.json
+      2025-05-11_DJ_Name_episode-title.jpg
 ```
+
+The filenames will include:
+- Date (yyyy-mm-dd)
+- DJ name (with spaces replaced by hyphens)
+- Episode title (with spaces replaced by hyphens)
 
 ## Implementation Steps
 
@@ -88,11 +93,35 @@ export class FileManager {
       fs.mkdirSync(finalDir, { recursive: true });
     }
     
-    // Move all files from temp directory to final directory
+    // Create the base filename prefix
+    const sanitizedTitle = songlist.broadcast_data.setTitle.replace(/[^a-zA-Z0-9]/g, '-');
+    const filenamePrefix = `${year}-${month}-${day}_${sanitizedDjName}_${sanitizedTitle}`;
+    
+    // Move all files from temp directory to final directory with descriptive names
     const files = fs.readdirSync(tempDir);
     for (const file of files) {
       const sourcePath = path.join(tempDir, file);
-      const destPath = path.join(finalDir, file);
+      
+      // Determine the new filename based on the original extension
+      let destFilename;
+      if (file === 'audio.mp3') {
+        destFilename = `${filenamePrefix}.mp3`;
+      } else if (file === 'songlist.txt') {
+        destFilename = `${filenamePrefix}.txt`;
+      } else if (file === 'metadata.json') {
+        destFilename = `${filenamePrefix}.json`;
+      } else if (file === 'status.json') {
+        destFilename = `${filenamePrefix}_status.json`;
+      } else if (file.startsWith('artwork')) {
+        // Preserve the artwork extension
+        const ext = path.extname(file);
+        destFilename = `${filenamePrefix}${ext}`;
+      } else {
+        // For any other files, just use the original name
+        destFilename = file;
+      }
+      
+      const destPath = path.join(finalDir, destFilename);
       
       // Copy the file
       fs.copyFileSync(sourcePath, destPath);

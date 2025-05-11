@@ -27,6 +27,7 @@ import { StatusManager } from '../services/StatusManager';
 import { AzuraCastService } from '../services/AzuraCastService';
 import { MixcloudService } from '../services/MixcloudService';
 import { SoundCloudService } from '../services/SoundCloudService';
+import { FileManager } from '../services/FileManager';
 
 // Load environment variables
 dotenv.config();
@@ -52,8 +53,9 @@ const songlistFile = path.join(fileDir, 'songlist.txt');
 const metadataFile = path.join(fileDir, 'metadata.json');
 const statusFile = path.join(fileDir, 'status.json');
 
-// Initialize status manager
+// Initialize services
 const statusManager = new StatusManager(fileId);
+const fileManager = new FileManager();
 
 // Check if required files exist
 if (!fs.existsSync(fileDir)) {
@@ -90,7 +92,7 @@ try {
   process.exit(1);
 }
 
-// Initialize services
+// Initialize platform services
 const azuraCastService = new AzuraCastService(statusManager);
 const mixcloudService = new MixcloudService(statusManager);
 const soundCloudService = new SoundCloudService(statusManager);
@@ -301,6 +303,29 @@ async function processFiles() {
     } else {
       // For Admin users, we show detailed destination status
       statusManager.updateStatus('completed', 'Processing completed successfully', destinations);
+    }
+    
+    // Step 3: Move files to archive directory AFTER updating status to completed
+    process.stdout.write('Moving files to archive directory...\n');
+    
+    try {
+      // Move files to archive directory
+      const { archivePath, fileMap } = fileManager.moveToArchive(fileId, songlist);
+      process.stdout.write(`Files moved to archive: ${archivePath}\n`);
+      process.stdout.write(`File mapping: ${JSON.stringify(fileMap, null, 2)}\n`);
+      
+      // Add archive path to destinations
+      destinations.archive = {
+        success: true,
+        path: archivePath,
+        files: fileMap
+      };
+    } catch (err) {
+      process.stderr.write(`Error moving files to archive: ${err}\n`);
+      destinations.archive = {
+        success: false,
+        error: (err as Error).message
+      };
     }
     process.stdout.write(`Files for ${fileId} processed successfully\n`);
     process.stdout.write(`Destination upload results: ${JSON.stringify(destinations, null, 2)}\n`);

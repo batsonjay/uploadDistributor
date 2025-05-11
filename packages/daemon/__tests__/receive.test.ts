@@ -56,8 +56,10 @@ console.log(`Using test MP3 file: ${testMp3Path}`);
 console.log(`Using test songlist file: ${testSonglistPath}`);
 console.log(`Using test artwork file: ${testArtworkPath}`);
 
-// Fixed test file ID to reuse the same directory
-const TEST_FILE_ID = 'f66ca46e-5282-4795-a825-ef97a0935c34';
+// Generate a unique test file ID for each test run
+import { v4 as uuidv4 } from 'uuid';
+const TEST_FILE_ID = uuidv4();
+console.log(`Generated unique test file ID: ${TEST_FILE_ID}`);
 
 // Function to send test files with progress tracking
 async function sendTestFiles(userRole: string = USER_ROLES.ADMIN) {

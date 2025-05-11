@@ -16,6 +16,7 @@ import {
 } from '../utils/LoggingUtils';
 
 export interface StatusData {
+  fileId: string;
   status: string;
   message: string;
   timestamp: string;
@@ -63,6 +64,7 @@ export class StatusManager {
    */
   public updateStatus(status: string, message: string, destinations?: any): void {
     const statusData: StatusData = {
+      fileId: this.fileId,
       status,
       message,
       timestamp: new Date().toISOString()
