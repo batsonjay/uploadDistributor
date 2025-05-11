@@ -106,6 +106,7 @@ This document outlines the proposed implementation steps for the Upload Distribu
 - Implement role-based UI (DJ vs Admin interfaces)
 - Build upload form and metadata entry
 - Implement timezone handling (collect in CET, convert to UTC for storage)
+- Validate content before accepting upload & provide error notification (and check for .jpeg vs .jpg spelling)
 - Develop appropriate status tracking UI based on user role:
   - DJ: Simple upload confirmation
   - Admin: Detailed destination status
@@ -116,6 +117,7 @@ This document outlines the proposed implementation steps for the Upload Distribu
 - Set up Electron with React
 - Implement role-based UI (DJ vs Admin interfaces)
 - Create FileZilla-like UI with role-appropriate controls
+- Validate content before accepting upload & provide error notification (and check for .jpeg vs .jpg spelling)
 - Build file selection and upload flow
 - Implement timezone handling (collect in CET, convert to UTC for storage)
 - Develop appropriate status tracking based on user role:
