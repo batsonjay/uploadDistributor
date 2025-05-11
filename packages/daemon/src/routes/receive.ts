@@ -10,12 +10,12 @@ import { anyAuthenticated } from '../middleware/roleVerification';
 
 const router = express.Router();
 
-// Get uploads directory from environment or use default
-const uploadsDir = process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads');
+// Get received files directory from environment or use default
+const receivedFilesDir = process.env.RECEIVED_FILES_DIR || path.join(__dirname, '../../received-files');
 
-// Create uploads directory if it doesn't exist
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+// Create received files directory if it doesn't exist
+if (!fs.existsSync(receivedFilesDir)) {
+  fs.mkdirSync(receivedFilesDir, { recursive: true });
 }
 
 /**
@@ -32,7 +32,7 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
   const fileId = req.headers['x-file-id'] || uuidv4();
   
   // Create directory for this file set
-  const fileDir = path.join(uploadsDir, fileId as string);
+  const fileDir = path.join(receivedFilesDir, fileId as string);
   
   // If directory exists, clean it up for reuse
   if (fs.existsSync(fileDir)) {

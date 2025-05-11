@@ -5,8 +5,8 @@ import { anyAuthenticated } from '../middleware/roleVerification';
 
 const router = express.Router();
 
-// Path to uploads directory
-const uploadsDir = path.join(__dirname, '../../uploads');
+// Path to received files directory
+const receivedFilesDir = path.join(__dirname, '../../received-files');
 
 /**
  * Status endpoint
@@ -25,7 +25,7 @@ router.get('/:fileId', anyAuthenticated, (req: Request, res: Response) => {
   }
   
   // Check if file directory exists
-  const fileDir = path.join(uploadsDir, fileId);
+  const fileDir = path.join(receivedFilesDir, fileId);
   if (!fs.existsSync(fileDir)) {
     return res.status(404).json({
       error: 'File not found',

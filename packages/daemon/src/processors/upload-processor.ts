@@ -44,9 +44,9 @@ if (!fileId || fileId === 'default-file-id') {
 }
 
 // Define paths
-const uploadsDir = process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads');
-process.stdout.write(`Files directory: ${uploadsDir}\n`);
-const fileDir = path.join(uploadsDir, fileId);
+const receivedFilesDir = process.env.RECEIVED_FILES_DIR || path.join(__dirname, '../../received-files');
+process.stdout.write(`Files directory: ${receivedFilesDir}\n`);
+const fileDir = path.join(receivedFilesDir, fileId);
 const audioFile = path.join(fileDir, 'audio.mp3');
 const songlistFile = path.join(fileDir, 'songlist.txt');
 const metadataFile = path.join(fileDir, 'metadata.json');

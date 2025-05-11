@@ -36,20 +36,20 @@ export class StatusManager {
     // We need to handle both cases to ensure the path is correct
     let filesDir: string;
     
-    if (process.env.UPLOAD_DIR) {
-      filesDir = process.env.UPLOAD_DIR;
+    if (process.env.RECEIVED_FILES_DIR) {
+      filesDir = process.env.RECEIVED_FILES_DIR;
     } else {
       // Check if we're in src or dist directory
       const dirParts = __dirname.split(path.sep);
       const srcOrDistIndex = dirParts.findIndex(part => part === 'src' || part === 'dist');
       
       if (srcOrDistIndex !== -1) {
-        // Go up to the daemon directory and then to uploads
+        // Go up to the daemon directory and then to received-files
         const daemonDir = dirParts.slice(0, srcOrDistIndex).join(path.sep);
-        filesDir = path.join(daemonDir, 'uploads');
+        filesDir = path.join(daemonDir, 'received-files');
       } else {
         // Fallback to a relative path from current directory
-        filesDir = path.join(__dirname, '../../../uploads');
+        filesDir = path.join(__dirname, '../../../received-files');
       }
     }
     
