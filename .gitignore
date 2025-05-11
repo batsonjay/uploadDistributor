@@ -24,6 +24,7 @@ Thumbs.db
 
 # Turborepo cache
 **/turbo/
+.turbo/cookies/*
 
 # Editor directories and files
 .vscode/
