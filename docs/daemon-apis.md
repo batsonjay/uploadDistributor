@@ -4,7 +4,7 @@ This document defines the internal APIs exposed by the Upload Distributor daemon
 
 ## Overview
 
-The daemon exposes a RESTful API for use by the web and macOS clients. It handles upload initiation, metadata submission, and status tracking.
+The daemon exposes a RESTful API for use by the web and macOS clients. It handles file receiving, metadata submission, and status tracking. The daemon then processes these files and uploads them to destination platforms.
 
 ## Authentication
 
@@ -18,7 +18,7 @@ The daemon exposes a RESTful API for use by the web and macOS clients. It handle
 
 ### `POST /upload`
 
-Initiates a new upload.
+Receives files from clients. (Note: The endpoint is still named `/upload` for backward compatibility, but it represents the daemon receiving files from clients.)
 
 **Request Body**:
 ```json
@@ -41,14 +41,14 @@ Initiates a new upload.
 **Response**:
 ```json
 {
-  "uploadId": "string",
-  "status": "queued"
+  "fileId": "string",
+  "status": "received"
 }
 ```
 
-### `GET /status/:uploadId`
+### `GET /status/:fileId`
 
-Returns the status of an upload.
+Returns the status of file processing and destination uploads.
 
 **Response**:
 ```json
@@ -79,10 +79,10 @@ Health check endpoint.
   - Directory verification failures: "Media upload folder name mismatch; inform station administrator"
   - File validation failures: "Invalid file format"
 
-## Upload Handling
+## File Handling
 
-- Uses `Busboy` to stream large file uploads directly to disk.
-- Avoids buffering entire files in memory to support uploads up to 200MB+.
+- Uses `Busboy` to stream large files directly to disk.
+- Avoids buffering entire files in memory to support files up to 200MB+.
 - Express is configured to bypass default body parsers for multipart data.
 - Temporary files are cleaned up after processing.
 

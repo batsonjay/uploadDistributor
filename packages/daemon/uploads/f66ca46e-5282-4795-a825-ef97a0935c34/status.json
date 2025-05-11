@@ -1,21 +1,21 @@
 {
   "status": "completed",
   "message": "Processing completed successfully",
-  "timestamp": "2025-05-11T14:57:30.559Z",
+  "timestamp": "2025-05-11T19:04:19.841Z",
   "destinations": {
     "azuracast": {
       "success": true,
-      "id": "mock-azuracast-1746975448242",
-      "path": "/var/azuracast/stations/2/files/mock-azuracast-1746975448242.mp3"
+      "id": "mock-azuracast-1746990257527",
+      "path": "/var/azuracast/stations/2/files/mock-azuracast-1746990257527.mp3"
     },
     "mixcloud": {
       "success": true,
-      "id": "mock-mixcloud-1746975449451",
+      "id": "mock-mixcloud-1746990258734",
       "url": "https://www.mixcloud.com/test-dj/test-mix/"
     },
     "soundcloud": {
       "success": true,
-      "id": "mock-soundcloud-1746975450256",
+      "id": "mock-soundcloud-1746990259538",
       "url": "https://soundcloud.com/mock-user/test-mix"
     }
   }

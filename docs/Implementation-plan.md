@@ -301,7 +301,20 @@ function storeSonglist(uploadId, songlist) {
 
 Total estimated timeline: 10-12 weeks
 
-## Current Progress (as of May 6, 2025)
+## Terminology Clarification
+
+To improve clarity in the codebase, we've implemented consistent terminology to distinguish between:
+
+1. **Sending/Receiving Files**: When clients (web UI, macOS) send files TO the daemon, and the daemon receives them
+2. **Uploading Files**: When the daemon uploads files TO destination platforms (AzuraCast, Mixcloud, SoundCloud)
+
+This distinction helps avoid confusion in the codebase and documentation. The changes include:
+- Renamed `upload.ts` to `receive.ts` to better reflect the daemon's role in receiving files
+- Updated shared module to use `send.ts` for client-side file sending
+- Updated variable names and comments throughout the codebase
+- Maintained API endpoint as `/upload` for backward compatibility
+
+## Current Progress (as of May 11, 2025)
 
 ### Completed Tasks
 
@@ -424,6 +437,7 @@ For detailed information about the authentication implementation, see [Authentic
   - Implement proper error handling for network issues
   - Integrate with Mixcloud and SoundCloud APIs
 - Start work on Web Client Development with role-based UI
+- Continue refining terminology throughout the codebase for clarity
 
 ## Critical Path and Risk Mitigation (Revised)
 

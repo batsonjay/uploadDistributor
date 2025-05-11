@@ -1,2 +1,2 @@
-// Export the upload module
-export * from './upload';
+// Export the send module
+export * from './send';
