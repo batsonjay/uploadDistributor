@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
 import { healthRoutes } from './routes/health';
-import { uploadRoutes } from './routes/upload';
+import { receiveRoutes } from './routes/receive';
 import { statusRoutes } from './routes/status';
 import authRoutes from './routes/auth';
 
@@ -19,7 +19,7 @@ app.use(express.json());
 
 // Routes
 app.use('/health', healthRoutes);
-app.use('/upload', uploadRoutes);
+app.use('/upload', receiveRoutes); // Keep the endpoint as '/upload' for now
 app.use('/status', statusRoutes);
 app.use('/api/auth', authRoutes);
 

@@ -1,8 +1,9 @@
 /**
  * Status Manager
  * 
- * This service handles status updates and logging for upload processes.
- * It provides a centralized way to update status files and log events.
+ * This service handles status updates and logging for file processing.
+ * It provides a centralized way to update status files and log events
+ * for both file receiving and destination uploading.
  */
 
 import * as fs from 'fs';
@@ -23,20 +24,20 @@ export interface StatusData {
 }
 
 export class StatusManager {
-  private uploadId: string;
+  private fileId: string;
   private statusFile: string;
   
-  constructor(uploadId: string) {
-    this.uploadId = uploadId;
+  constructor(fileId: string) {
+    this.fileId = fileId;
     
     // Define status file path
     // When running with ts-node, __dirname is /packages/daemon/src/services
     // When running compiled code, __dirname is /packages/daemon/dist/services
     // We need to handle both cases to ensure the path is correct
-    let uploadsDir: string;
+    let filesDir: string;
     
     if (process.env.UPLOAD_DIR) {
-      uploadsDir = process.env.UPLOAD_DIR;
+      filesDir = process.env.UPLOAD_DIR;
     } else {
       // Check if we're in src or dist directory
       const dirParts = __dirname.split(path.sep);
@@ -45,16 +46,16 @@ export class StatusManager {
       if (srcOrDistIndex !== -1) {
         // Go up to the daemon directory and then to uploads
         const daemonDir = dirParts.slice(0, srcOrDistIndex).join(path.sep);
-        uploadsDir = path.join(daemonDir, 'uploads');
+        filesDir = path.join(daemonDir, 'uploads');
       } else {
         // Fallback to a relative path from current directory
-        uploadsDir = path.join(__dirname, '../../../uploads');
+        filesDir = path.join(__dirname, '../../../uploads');
       }
     }
     
-    process.stdout.write(`Using uploads directory: ${uploadsDir}\n`);
-    const uploadDir = path.join(uploadsDir, uploadId);
-    this.statusFile = path.join(uploadDir, 'status.json');
+    process.stdout.write(`Using files directory: ${filesDir}\n`);
+    const fileDir = path.join(filesDir, this.fileId);
+    this.statusFile = path.join(fileDir, 'status.json');
   }
   
   /**

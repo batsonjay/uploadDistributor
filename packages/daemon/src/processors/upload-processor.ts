@@ -1,11 +1,11 @@
 /**
  * Upload Processor
  * 
- * This module is forked by the daemon to process uploads in isolation.
- * It handles the entire upload flow:
- * 1. Reading files from the upload directory
+ * This module is forked by the daemon to process files in isolation.
+ * It handles the entire flow:
+ * 1. Reading files that were received from clients
  * 2. Normalizing the songlist
- * 3. Uploading to destination platforms
+ * 3. Uploading files to destination platforms (AzuraCast, Mixcloud, SoundCloud)
  * 4. Updating status information
  */
 
@@ -31,33 +31,33 @@ import { SoundCloudService } from '../services/SoundCloudService';
 // Load environment variables
 dotenv.config();
 
-// Get upload ID from command line arguments
-// The upload ID is the last argument passed to the script
-const uploadId: string = process.argv[process.argv.length - 1] || 'default-upload-id';
+// Get file ID from command line arguments
+// The file ID is the last argument passed to the script
+const fileId: string = process.argv[process.argv.length - 1] || 'default-file-id';
 
 process.stdout.write('Process arguments: ' + JSON.stringify(process.argv) + '\n');
-process.stdout.write(`Using upload ID: ${uploadId}\n`);
+process.stdout.write(`Using file ID: ${fileId}\n`);
 
-if (!uploadId || uploadId === 'default-upload-id') {
-  process.stderr.write('No upload ID provided\n');
+if (!fileId || fileId === 'default-file-id') {
+  process.stderr.write('No file ID provided\n');
   process.exit(1);
 }
 
 // Define paths
 const uploadsDir = process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads');
-process.stdout.write(`Uploads directory: ${uploadsDir}\n`);
-const uploadDir = path.join(uploadsDir, uploadId);
-const audioFile = path.join(uploadDir, 'audio.mp3');
-const songlistFile = path.join(uploadDir, 'songlist.txt');
-const metadataFile = path.join(uploadDir, 'metadata.json');
-const statusFile = path.join(uploadDir, 'status.json');
+process.stdout.write(`Files directory: ${uploadsDir}\n`);
+const fileDir = path.join(uploadsDir, fileId);
+const audioFile = path.join(fileDir, 'audio.mp3');
+const songlistFile = path.join(fileDir, 'songlist.txt');
+const metadataFile = path.join(fileDir, 'metadata.json');
+const statusFile = path.join(fileDir, 'status.json');
 
 // Initialize status manager
-const statusManager = new StatusManager(uploadId);
+const statusManager = new StatusManager(fileId);
 
 // Check if required files exist
-if (!fs.existsSync(uploadDir)) {
-  process.stderr.write(`Upload directory not found: ${uploadDir}\n`);
+if (!fs.existsSync(fileDir)) {
+  process.stderr.write(`File directory not found: ${fileDir}\n`);
   process.exit(1);
 }
 
@@ -98,11 +98,11 @@ const soundCloudService = new SoundCloudService(statusManager);
 // Main processing function
 async function processUpload() {
   try {
-    // Update status to processing - the upload route already set status to 'received'
-    statusManager.updateStatus('processing', 'Upload processing started');
+    // Update status to processing - the receive route already set status to 'received'
+    statusManager.updateStatus('processing', 'Processing started');
     
     // Log the start of processing
-    process.stdout.write(`Processing upload ${uploadId}\n`);
+    process.stdout.write(`Processing files for ${fileId}\n`);
     process.stdout.write(`Metadata: ${JSON.stringify(metadata, null, 2)}\n`);
     
     // Get user role from metadata or default to DJ
@@ -143,13 +143,13 @@ async function processUpload() {
         }
         
         // Use type assertion to tell TypeScript that storeSonglist always returns a string
-        const storedPath: string = storeSonglist(uploadId, songlist) as string;
+        const storedPath: string = storeSonglist(fileId, songlist) as string;
         process.stdout.write(`Songlist stored at: ${storedPath}\n`);
         
         // For DJ users, we'll continue processing in the background without updating status again
         // The client already received a 'received' status when the files were validated
         if (isDjUser) {
-          process.stdout.write('DJ user upload continuing in background...\n');
+          process.stdout.write('DJ user processing continuing in background...\n');
           // We don't update the status here, as the client doesn't need to know about the background processing
         }
       } else {
@@ -283,15 +283,15 @@ async function processUpload() {
     // Update final status based on user role
     if (isDjUser) {
       // For DJ users, we don't expose destination details
-      statusManager.updateStatus('completed', 'Upload processing completed successfully', {
-        message: 'Your upload has been processed successfully.'
+      statusManager.updateStatus('completed', 'Processing completed successfully', {
+        message: 'Your files have been processed and uploaded successfully.'
       });
     } else {
       // For Admin users, we show detailed destination status
-      statusManager.updateStatus('completed', 'Upload processing completed successfully', destinations);
+      statusManager.updateStatus('completed', 'Processing completed successfully', destinations);
     }
-    process.stdout.write(`Upload ${uploadId} processed successfully\n`);
-    process.stdout.write(`Destination results: ${JSON.stringify(destinations, null, 2)}\n`);
+    process.stdout.write(`Files for ${fileId} processed successfully\n`);
+    process.stdout.write(`Destination upload results: ${JSON.stringify(destinations, null, 2)}\n`);
     
     // Add a small delay before exiting to ensure the status file is written
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -299,7 +299,7 @@ async function processUpload() {
     // Exit the process
     process.exit(0);
   } catch (err) {
-    process.stderr.write(`Error processing upload: ${err}\n`);
+    process.stderr.write(`Error processing files: ${err}\n`);
     statusManager.updateStatus('error', `Processing error: ${(err as Error).message}`);
     process.exit(1);
   }
