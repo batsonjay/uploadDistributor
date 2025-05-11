@@ -16,9 +16,9 @@ The daemon exposes a RESTful API for use by the web and macOS clients. It handle
 
 ## Endpoints
 
-### `POST /upload`
+### `POST /receive`
 
-Receives files from clients. (Note: The endpoint is still named `/upload` for backward compatibility, but it represents the daemon receiving files from clients.)
+Receives files from clients.
 
 **Request Body**:
 ```json
@@ -53,7 +53,7 @@ Returns the status of file processing and destination uploads.
 **Response**:
 ```json
 {
-  "uploadId": "string",
+  "fileId": "string",
   "status": "queued|processing|completed|error",
   "message": "string (optional)"
 }
@@ -84,6 +84,7 @@ Health check endpoint.
 - Uses `Busboy` to stream large files directly to disk.
 - Avoids buffering entire files in memory to support files up to 200MB+.
 - Express is configured to bypass default body parsers for multipart data.
+- Files are stored in the `received-files` directory.
 - Temporary files are cleaned up after processing.
 
 ## Versioning

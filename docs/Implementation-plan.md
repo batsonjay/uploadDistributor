@@ -151,7 +151,45 @@ This document outlines the proposed implementation steps for the Upload Distribu
 - Create metadata formatting
 - Handle rate limiting and error cases
 
-## Phase 4: Testing Strategy
+## Phase 4: Terminology Refactoring
+
+### 4.1 Terminology Standardization
+- ✅ Defined clear terminology distinction between client-to-daemon transfers ("send"/"receive") and daemon-to-destination transfers ("upload")
+- ✅ Created a comprehensive plan for renaming files, variables, and API endpoints
+- ✅ Implemented changes in a phased approach to ensure testability
+
+### 4.2 Daemon Changes
+- ✅ Renamed `upload.ts` to `receive.ts` to better reflect the daemon's role
+- ✅ Updated route comments and documentation
+- ✅ Changed log messages from "upload" to "receive" terminology
+- ✅ Updated status messages to use "received" instead of "uploaded"
+- ✅ Changed API endpoint from `/upload` to `/receive` for consistency
+
+### 4.3 Shared Module and Test Changes
+- ✅ Renamed `upload.ts` to `send.ts` in the shared module
+- ✅ Renamed functions and interfaces:
+  - `uploadFiles()` → `sendFiles()`
+  - `UploadMetadata` → `SendMetadata`
+  - `UploadFiles` → `SendFiles`
+  - `UploadCallbacks` → `SendCallbacks`
+  - `UploadOptions` → `SendOptions`
+  - `UploadResult` → `SendResult`
+- ✅ Updated test files to use the new terminology
+- ✅ Updated expected status messages in tests
+
+### 4.4 Directory and Processor Renaming
+- ✅ Renamed the "uploads" directory to "received-files"
+- ✅ Updated all code references to the directory
+- ✅ Changed environment variable from UPLOAD_DIR to RECEIVED_FILES_DIR
+- ✅ Renamed processor from `upload-processor.ts` to `file-processor.ts`
+- ✅ Updated function name from `processUpload()` to `processFiles()`
+
+### 4.5 Documentation Updates
+- ✅ Updated API documentation in daemon-apis.md
+- ✅ Updated implementation plan to reflect the new terminology
+- ✅ Created a deployment plan that uses the new terminology
+
+## Phase 5: Testing Strategy
 
 ### 4.1 Testing Harness for Destination APIs
 
@@ -249,7 +287,7 @@ function storeSonglist(uploadId, songlist) {
 - Use Cypress for web client testing
 - Use Spectron for macOS client testing
 
-## Phase 5: Integration and Refinement
+## Phase 6: Integration and Refinement
 
 ### 5.1 Component Integration
 - Connect daemon with web and macOS clients
@@ -271,7 +309,7 @@ function storeSonglist(uploadId, songlist) {
 - Improve concurrent upload processing
 - Enhance UI responsiveness
 
-## Phase 6: Deployment and Documentation
+## Phase 7: Deployment and Documentation
 
 ### 6.1 Deployment
 - Create Docker containers for daemon
@@ -295,9 +333,10 @@ function storeSonglist(uploadId, songlist) {
 | 1. Project Setup | 1 week | None |
 | 2. Core Components (Revised) | 4 weeks | Phase 1 |
 | 3. Authentication & API Integration | 3 weeks | Phase 2 |
-| 4. Testing | 2 weeks (parallel with Phase 3) | Phase 2 |
-| 5. Integration | 2 weeks | Phases 3 & 4 |
-| 6. Deployment | 1 week | Phase 5 |
+| 4. Terminology Refactoring | 1 week | Phase 3 |
+| 5. Testing | 2 weeks (parallel with Phase 3) | Phase 2 |
+| 6. Integration | 2 weeks | Phases 3, 4 & 5 |
+| 7. Deployment | 1 week | Phase 6 |
 
 Total estimated timeline: 10-12 weeks
 
@@ -312,7 +351,10 @@ This distinction helps avoid confusion in the codebase and documentation. The ch
 - Renamed `upload.ts` to `receive.ts` to better reflect the daemon's role in receiving files
 - Updated shared module to use `send.ts` for client-side file sending
 - Updated variable names and comments throughout the codebase
-- Maintained API endpoint as `/upload` for backward compatibility
+- Changed API endpoint from `/upload` to `/receive` for consistency
+- Renamed `uploadId` to `fileId` in all API responses and internal code
+- Renamed the "uploads" directory to "received-files" to match the new terminology
+- Renamed the processor from `upload-processor.ts` to `file-processor.ts`
 
 ## Current Progress (as of May 11, 2025)
 
@@ -429,9 +471,15 @@ For detailed information about the authentication implementation, see [Authentic
 - Password obfuscation is implemented to avoid plaintext passwords
 - Role-based access control is implemented with middleware for route protection
 - Directory verification for DJs is implemented to ensure valid upload paths
+- Terminology has been standardized throughout the codebase
+- Directory structure has been updated to reflect the new terminology
+- A deployment plan has been created for production deployment
 - The project has a solid foundation for further development
 
 ### Next Steps
+- Restructure uploaded files directories to incorporate DJ name
+- Double-check contents of songfile (as-is, vs JSON)
+- Improve precision of metadata associated with files sent to daemon
 - Continue replacing mocks with actual API integrations:
   - Complete AzuraCast API integration for file uploads
   - Implement proper error handling for network issues
