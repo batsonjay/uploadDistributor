@@ -1,8 +1,8 @@
 /**
- * Test Upload Script
+ * Test Receive Script
  * 
- * This script simulates a client uploading files to the daemon.
- * It sends a test MP3 file and songlist to the upload endpoint.
+ * This script simulates a client sending files to the daemon.
+ * It sends a test MP3 file and songlist to the receive endpoint.
  */
 
 import * as fs from 'fs';
@@ -46,13 +46,13 @@ if (!fs.existsSync(testSonglistPath)) {
 console.log(`Using test MP3 file: ${testMp3Path}`);
 console.log(`Using test songlist file: ${testSonglistPath}`);
 
-// Fixed test upload ID to reuse the same directory
-const TEST_UPLOAD_ID = 'f66ca46e-5282-4795-a825-ef97a0935c34';
+// Fixed test file ID to reuse the same directory
+const TEST_FILE_ID = 'f66ca46e-5282-4795-a825-ef97a0935c34';
 
-// Function to send test upload with progress tracking
-async function sendTestUpload(userRole: string = USER_ROLES.ADMIN) {
+// Function to send test files with progress tracking
+async function sendTestFiles(userRole: string = USER_ROLES.ADMIN) {
   try {
-    console.log('Preparing test upload...');
+    console.log('Preparing test files...');
     
     // Create form data
     const form = new FormData();
@@ -78,7 +78,7 @@ async function sendTestUpload(userRole: string = USER_ROLES.ADMIN) {
     console.log(`Audio file size: ${fs.statSync(testMp3Path).size} bytes`);
     console.log(`Songlist file size: ${fs.statSync(testSonglistPath).size} bytes`);
     
-    console.log('Sending upload to daemon...');
+    console.log('Sending files to daemon...');
     
     // Get auth token
     const email = userRole === USER_ROLES.ADMIN ? 'batsonjay@mac.com' : 'miker@mrobs.co.uk';
@@ -88,19 +88,19 @@ async function sendTestUpload(userRole: string = USER_ROLES.ADMIN) {
     const config = {
       headers: {
         ...form.getHeaders(),
-        'x-upload-id': TEST_UPLOAD_ID,
+        'x-file-id': TEST_FILE_ID,
         'Authorization': `Bearer ${token}`
       },
       onUploadProgress: (progressEvent: any) => {
         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-        console.log(`Upload progress: ${percentCompleted}%`);
+        console.log(`Send progress: ${percentCompleted}%`);
       }
     };
     
     // Send request with progress tracking
-    const response = await axios.post(`${DAEMON_URL}/upload`, form, config);
+    const response = await axios.post(`${DAEMON_URL}/receive`, form, config);
     
-    console.log('Upload response:', response.data);
+    console.log('Response:', response.data);
     
     // Verify the response contains the expected 'received' status
     if (response.data.status !== 'received') {
@@ -109,23 +109,23 @@ async function sendTestUpload(userRole: string = USER_ROLES.ADMIN) {
       console.log('✅ Files successfully received and validated by daemon');
     }
     
-    // Use the fixed test upload ID instead of the generated one
-    console.log(`Using fixed test upload ID: ${TEST_UPLOAD_ID}`);
-    await pollUploadStatus(TEST_UPLOAD_ID);
+    // Use the fixed test file ID instead of the generated one
+    console.log(`Using fixed test file ID: ${TEST_FILE_ID}`);
+    await pollFileStatus(TEST_FILE_ID);
   } catch (err) {
-    console.error('Error sending test upload:', (err as Error).message);
+    console.error('Error sending test files:', (err as Error).message);
     if ((err as any).response) {
       console.error('Response data:', (err as any).response.data);
     }
   }
 }
 
-// Function to poll upload status with improved status tracking
-async function pollUploadStatus(uploadId: string, userRole: string = USER_ROLES.ADMIN) {
+// Function to poll file status with improved status tracking
+async function pollFileStatus(fileId: string, userRole: string = USER_ROLES.ADMIN) {
   // Get auth token
   const email = userRole === USER_ROLES.ADMIN ? 'batsonjay@mac.com' : 'miker@mrobs.co.uk';
   const token = await getAuthToken(email);
-  console.log(`Polling status for upload ${uploadId}...`);
+  console.log(`Polling status for file ${fileId}...`);
   
   let completed = false;
   let attempts = 0;
@@ -134,7 +134,7 @@ async function pollUploadStatus(uploadId: string, userRole: string = USER_ROLES.
   
   while (!completed && attempts < 30) {
     try {
-      const response = await axios.get(`${DAEMON_URL}/status/${uploadId}`, {
+      const response = await axios.get(`${DAEMON_URL}/status/${fileId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -187,4 +187,4 @@ async function pollUploadStatus(uploadId: string, userRole: string = USER_ROLES.
 }
 
 // Run the test with Admin role
-sendTestUpload(USER_ROLES.ADMIN);
+sendTestFiles(USER_ROLES.ADMIN);

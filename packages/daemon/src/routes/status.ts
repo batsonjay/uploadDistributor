@@ -10,31 +10,38 @@ const uploadsDir = path.join(__dirname, '../../uploads');
 
 /**
  * Status endpoint
- * @route GET /status/:uploadId
- * @param {string} req.params.uploadId - Upload ID
- * @returns {object} 200 - Upload status
+ * @route GET /status/:fileId
+ * @param {string} req.params.fileId - File ID
+ * @returns {object} 200 - File status
  */
-router.get('/:uploadId', anyAuthenticated, (req: Request, res: Response) => {
-  const { uploadId } = req.params;
+router.get('/:fileId', anyAuthenticated, (req: Request, res: Response) => {
+  const { fileId } = req.params;
   
-  // Check if upload directory exists
-  const uploadDir = path.join(uploadsDir, uploadId);
-  if (!fs.existsSync(uploadDir)) {
+  if (!fileId) {
+    return res.status(400).json({
+      error: 'Invalid request',
+      message: 'File ID is required'
+    });
+  }
+  
+  // Check if file directory exists
+  const fileDir = path.join(uploadsDir, fileId);
+  if (!fs.existsSync(fileDir)) {
     return res.status(404).json({
-      error: 'Upload not found',
-      message: `No upload found with ID ${uploadId}`
+      error: 'File not found',
+      message: `No file found with ID ${fileId}`
     });
   }
   
   // Check if status file exists
-  const statusFile = path.join(uploadDir, 'status.json');
+  const statusFile = path.join(fileDir, 'status.json');
   if (fs.existsSync(statusFile)) {
     try {
       const status = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
       
       // Get metadata if available
       let metadata: Record<string, any> = {};
-      const metadataFile = path.join(uploadDir, 'metadata.json');
+      const metadataFile = path.join(fileDir, 'metadata.json');
       if (fs.existsSync(metadataFile)) {
         try {
           metadata = JSON.parse(fs.readFileSync(metadataFile, 'utf8'));
@@ -45,8 +52,8 @@ router.get('/:uploadId', anyAuthenticated, (req: Request, res: Response) => {
       
       // Get file information
       const files: Record<string, any> = {};
-      const audioFile = path.join(uploadDir, 'audio.mp3');
-      const songlistFile = path.join(uploadDir, 'songlist.txt');
+      const audioFile = path.join(fileDir, 'audio.mp3');
+      const songlistFile = path.join(fileDir, 'songlist.txt');
       
       if (fs.existsSync(audioFile)) {
         const audioStats = fs.statSync(audioFile);
@@ -73,7 +80,7 @@ router.get('/:uploadId', anyAuthenticated, (req: Request, res: Response) => {
       }
       
       return res.json({
-        uploadId,
+        fileId,
         ...status,
         metadata,
         files
@@ -89,9 +96,9 @@ router.get('/:uploadId', anyAuthenticated, (req: Request, res: Response) => {
   
   // If no status file, assume it's still queued
   return res.json({
-    uploadId,
+    fileId,
     status: 'queued',
-    message: 'Upload is queued for processing'
+    message: 'Files are queued for processing'
   });
 });
 

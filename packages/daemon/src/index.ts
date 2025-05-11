@@ -19,7 +19,7 @@ app.use(express.json());
 
 // Routes
 app.use('/health', healthRoutes);
-app.use('/upload', receiveRoutes); // Keep the endpoint as '/upload' for now
+app.use('/receive', receiveRoutes); // Updated to use the new endpoint name
 app.use('/status', statusRoutes);
 app.use('/api/auth', authRoutes);
 

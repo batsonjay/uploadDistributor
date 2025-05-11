@@ -77,7 +77,7 @@ export async function sendFiles(
       headers: {
         ...(formData.getHeaders ? formData.getHeaders() : {}),
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        ...(fileId ? { 'x-upload-id': fileId } : {})
+        ...(fileId ? { 'x-file-id': fileId } : {})
       },
       onUploadProgress: (progressEvent) => {
         // Handle case where total might be undefined
@@ -90,7 +90,7 @@ export async function sendFiles(
     };
     
     // Send the files request
-    const response = await axios.post(`${apiUrl}/upload`, formData, config);
+    const response = await axios.post(`${apiUrl}/receive`, formData, config);
     
     // Extract file ID from response
     const responseFileId = response.data.fileId || response.data.uploadId;
@@ -251,13 +251,4 @@ export async function getFileStatus(
   }
 }
 
-// For backward compatibility, export the old function names as aliases
-export const uploadFiles = sendFiles;
-export const getUploadStatus = getFileStatus;
-
-// Export types with old names for backward compatibility
-export type UploadMetadata = SendMetadata;
-export type UploadFiles = SendFiles;
-export type UploadCallbacks = SendCallbacks;
-export type UploadOptions = SendOptions;
-export type UploadResult = SendResult;
+// No backward compatibility exports needed as we're fully migrating to the new terminology

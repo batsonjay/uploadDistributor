@@ -20,7 +20,7 @@ if (!fs.existsSync(uploadsDir)) {
 
 /**
  * Receive endpoint - handles files sent from clients to the daemon
- * @route POST /upload
+ * @route POST /receive
  * @param {object} req.body.metadata - File metadata
  * @param {file} req.files.audio - Audio file
  * @param {file} req.files.songlist - Songlist file
@@ -29,7 +29,7 @@ if (!fs.existsSync(uploadsDir)) {
 router.post('/', anyAuthenticated, (req: any, res: any) => {
   // Get file ID from request or generate a new one
   // This allows tests to reuse the same ID
-  const fileId = req.headers['x-upload-id'] || uuidv4();
+  const fileId = req.headers['x-file-id'] || uuidv4();
   
   // Create directory for this file set
   const fileDir = path.join(uploadsDir, fileId as string);
@@ -210,7 +210,7 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     
     // Return file ID to client with 'received' status
     res.json({
-      uploadId: fileId, // Keep uploadId in the response for backward compatibility
+      fileId: fileId,
       status: 'received',
       message: 'Files successfully received and validated'
     });
