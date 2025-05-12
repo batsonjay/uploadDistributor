@@ -31,6 +31,9 @@ Thumbs.db
 .idea/
 *.swp
 
+# Big sample files
+apps/tf/*
+
 # Optional lockfiles (if you want to ignore them)
 # package-lock.json
 # yarn.lock
