@@ -32,7 +32,16 @@ export class TXTParser implements SonglistParser {
         content = content.slice(1);
       }
     }
-    const lines = content.split('\n').filter(line => line.trim() !== '');
+    const allLines = content.split('\n').filter(line => line.trim() !== '');
+    
+    // Find first line that starts with a number followed by a period
+    const firstTrackIndex = allLines.findIndex(line => /^\d+\./.test(line));
+    
+    // If no track lines found, return empty array
+    if (firstTrackIndex === -1) return [];
+    
+    // Only process lines from first track onward
+    const lines = allLines.slice(firstTrackIndex);
     
     return lines.map(line => {
       // Remove track numbers if present
