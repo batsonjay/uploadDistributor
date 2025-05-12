@@ -1,4 +1,5 @@
 import { NMLParser } from './parsers/nmlParser';
+import { TXTParser } from './parsers/txtParser';
 import { Song } from './types';
 
 function parseSonglist(filePath: string, format: string): Song[] {
@@ -7,6 +8,9 @@ function parseSonglist(filePath: string, format: string): Song[] {
   switch (format.toLowerCase()) {
     case 'nml':
       parser = new NMLParser();
+      break;
+    case 'txt':
+      parser = new TXTParser();
       break;
     default:
       throw new Error(`Unsupported file format: ${format}`);

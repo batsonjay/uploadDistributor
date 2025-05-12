@@ -1,0 +1,58 @@
+import { Song } from '../types';
+import { SonglistParser } from './parser';
+import * as fs from 'fs';
+
+export class TXTParser implements SonglistParser {
+  parse(filePath: string): Song[] {
+    // Read file and detect encoding
+    const buffer = fs.readFileSync(filePath);
+    let content: string;
+    
+    // Check for UTF-16 LE BOM
+    if (buffer[0] === 0xFF && buffer[1] === 0xFE) {
+      content = buffer.toString('utf16le');
+      // Remove BOM if present
+      if (content.charCodeAt(0) === 0xFEFF) {
+        content = content.slice(1);
+      }
+    }
+    // Check for UTF-16 BE BOM
+    else if (buffer[0] === 0xFE && buffer[1] === 0xFF) {
+      content = buffer.toString('utf16le');
+      // Remove BOM if present
+      if (content.charCodeAt(0) === 0xFEFF) {
+        content = content.slice(1);
+      }
+    }
+    // Default to UTF-8
+    else {
+      content = buffer.toString('utf8');
+      // Remove BOM if present
+      if (content.charCodeAt(0) === 0xFEFF) {
+        content = content.slice(1);
+      }
+    }
+    const lines = content.split('\n').filter(line => line.trim() !== '');
+    
+    return lines.map(line => {
+      // Remove track numbers if present
+      const cleanedLine = line.replace(/^\d+\.\s*/, '');
+      
+      // Split on first occurrence of ' - ' or ' – ' (different dashes)
+      const [firstPart, secondPart] = cleanedLine.split(/ - | – /);
+      
+      // For Phase 2, just return the parts as-is without determining order
+      if (!firstPart) {
+        return {
+          title: 'Unknown Title',
+          artist: 'Unknown Artist'
+        };
+      }
+      
+      return {
+        title: firstPart.trim(),
+        artist: secondPart?.trim() || 'Unknown Artist'
+      };
+    });
+  }
+}
