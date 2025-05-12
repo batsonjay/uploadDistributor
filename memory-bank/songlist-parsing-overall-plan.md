@@ -75,17 +75,17 @@ For non-NML files:
 3. Output normalized array assuming title/artist order
 4. Add unit tests for TXT parsing
 
-### Phase 3: TXT Order Verification
-1. Add user prompt for title/artist order
-2. Implement order swapping functionality
-3. Update output to reflect correct order
-4. Add unit tests for order handling
-
-### Phase 4: Additional File Formats
+### Phase 3: Additional File Formats
 1. Add RTF file support
 2. Implement DOC file parsing
 3. Add DOCX file handling
 4. Add unit tests for each new format
+
+### Phase 4: TXT Order Verification
+1. Add user prompt for title/artist order
+2. Implement order swapping functionality
+3. Update output to reflect correct order
+4. Add unit tests for order handling
 
 ### Phase 5: Future Enhancements
 1. Develop editable table interface

@@ -1,11 +1,11 @@
-import { Song } from '../types';
-import { SonglistParser } from './parser';
-import * as fs from 'fs';
+import { Song } from '../types.js';
+import { SonglistParser } from './parser.js';
+import { readFile } from 'fs/promises';
 
 export class TXTParser implements SonglistParser {
-  parse(filePath: string): Song[] {
+  async parse(filePath: string): Promise<Song[]> {
     // Read file and detect encoding
-    const buffer = fs.readFileSync(filePath);
+    const buffer = await readFile(filePath);
     let content: string;
     
     // Check for UTF-16 LE BOM
