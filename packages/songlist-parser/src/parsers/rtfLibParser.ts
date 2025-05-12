@@ -49,12 +49,16 @@ export class RTFLibParser implements SonglistParser {
       const rtfContent = rtfBuffer.toString();
       const doc = await rtfParser(rtfContent) as RTFDocumentWithMeta;
       
+      if (!doc) {
+        throw new Error('RTF parsing returned null document');
+      }
+      
       process.stdout.write('3. Parser success, document structure:\n' + 
         JSON.stringify({
-          contentLength: doc?.content?.length,
-          fonts: doc?.fonts?.length,
-          colors: doc?.colors?.length,
-          style: doc?.style
+          contentLength: doc.content?.length,
+          fonts: doc.fonts?.length,
+          colors: doc.colors?.length,
+          style: doc.style
         }, null, 2)
       );
       
