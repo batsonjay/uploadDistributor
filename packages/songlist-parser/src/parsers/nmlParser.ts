@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as xml2js from 'xml2js';
 import { Song } from '../types';
-import { SonglistParser } from './parser';
+import SonglistParser from './parser.js';
 
 export class NMLParser implements SonglistParser {
   parse(filePath: string): Song[] {
