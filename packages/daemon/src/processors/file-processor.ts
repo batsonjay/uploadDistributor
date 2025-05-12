@@ -196,31 +196,10 @@ async function processFiles() {
       process.exit(1);
     }
     
-    // Create metadata objects for each platform
-    const azuraCastMetadata = {
-      title: songlist.broadcast_data.setTitle || 'Untitled Set',
-      artist: songlist.broadcast_data.DJ || 'Unknown DJ',
-      album: `${cetDate || new Date().toISOString().split('T')[0]} Broadcast`,
-      genre: songlist.broadcast_data.genre || 'Radio Show',
-      artwork: artworkFile
-    };
-    
-    const mixcloudMetadata = {
-      title: songlist.broadcast_data.setTitle || 'Untitled Set',
-      artist: songlist.broadcast_data.DJ || 'Unknown DJ',
-      description: `Broadcast on ${cetDate || new Date().toISOString().split('T')[0]} at ${cetTime || '00:00:00'}`,
-      track_list: songlist.track_list || [],
-      artwork: artworkFile
-    };
-    
-    const soundCloudMetadata = {
-      title: songlist.broadcast_data.setTitle || 'Untitled Set',
-      artist: songlist.broadcast_data.DJ || 'Unknown DJ',
-      description: `Broadcast on ${cetDate || new Date().toISOString().split('T')[0]} at ${cetTime || '00:00:00'}`,
-      genre: songlist.broadcast_data.genre || 'Radio Show',
-      sharing: 'public' as 'public',
-      artwork: artworkFile
-    };
+    // Create metadata objects for each platform using the service methods
+    const azuraCastMetadata = azuraCastService.createMetadataFromSonglist(songlist);
+    const mixcloudMetadata = mixcloudService.createMetadataFromSonglist(songlist);
+    const soundCloudMetadata = soundCloudService.createMetadataFromSonglist(songlist, artworkFile);
     
     // Upload to selected platforms sequentially
     const destinations: any = {};

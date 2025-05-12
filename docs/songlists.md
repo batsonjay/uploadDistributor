@@ -66,7 +66,56 @@ The following is the approved list of genres that can be used in the `genre` fie
 This restricted list ensures compatibility with Mixcloud's genre categorization system and will be used for both Mixcloud and SoundCloud uploads.
 
 ## Example (JSON)
-TODO: NEEDS GENERATED
+
+```json
+{
+  "broadcast_data": {
+    "broadcast_date": "2025-05-04",
+    "broadcast_time": "20:00:00",
+    "DJ": "Test DJ",
+    "setTitle": "Deep House Sessions Vol. 42",
+    "duration": "02:00:00",
+    "genre": "Deep House",
+    "tags": ["electronic", "house", "deep", "melodic"],
+    "artwork": "artwork.jpg",
+    "description": "A journey through the deeper sounds of house music, featuring new releases and classic tracks."
+  },
+  "track_list": [
+    {
+      "title": "Underwater Love",
+      "artist": "Deep Dive"
+    },
+    {
+      "title": "Midnight Groove",
+      "artist": "Luna Waves"
+    },
+    {
+      "title": "Echoes of You",
+      "artist": "Soulful Strings feat. Vocal Harmony"
+    },
+    {
+      "title": "Ocean Floor",
+      "artist": "Aquatic Sounds"
+    },
+    {
+      "title": "Distant Memories",
+      "artist": "Nostalgic Beats"
+    }
+  ],
+  "platform_specific": {
+    "mixcloud": {
+      "tags": ["deep house", "electronic", "dj mix"],
+      "publish_date": "2025-05-05T12:00:00Z"
+    },
+    "soundcloud": {
+      "sharing": "public",
+      "license": "cc-by-nc-sa"
+    }
+  },
+  "user_role": "DJ",
+  "version": "1.0"
+}
+```
 
 ## Persistent Storage
 

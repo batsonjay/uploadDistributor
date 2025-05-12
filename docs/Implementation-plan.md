@@ -361,6 +361,20 @@ This distinction helps avoid confusion in the codebase and documentation. The ch
 ## Current Progress (as of May 11, 2025)
 
 ### Completed Tasks
+- ✅ Implemented RetryUtils module for standardized retry logic:
+  - Created a flexible retry utility with configurable options
+  - Added support for custom retry conditions and backoff strategies
+  - Implemented retry attempt logging and error handling
+  - Centralized retry logic to avoid code duplication across services
+- ✅ Refactored destination services to use RetryUtils:
+  - Updated AzuraCastService to use standardized retry logic
+  - Enhanced MixcloudService with custom retry logic for track list validation
+  - Improved SoundCloudService with specialized retry for privacy setting fallback
+- ✅ Implemented DRY principle for metadata creation:
+  - Added createMetadataFromSonglist methods to each service class
+  - Moved platform-specific metadata creation from file-processor.ts to respective service classes
+  - Eliminated code duplication between file-processor.ts and service classes
+  - Improved maintainability by centralizing metadata creation logic
 
 #### Phase 1: Project Setup and Infrastructure
 - ✅ Initialized Turborepo structure
@@ -480,8 +494,6 @@ For detailed information about the authentication implementation, see [Authentic
 - The project has a solid foundation for further development
 
 ### Next Steps
-- Restructure uploaded files directories to incorporate DJ name
-- Double-check contents of songfile (as-is, vs JSON)
 - Improve precision of metadata associated with files sent to daemon
 - Implement client-side validation for artwork files
 - Continue replacing mocks with actual API integrations:

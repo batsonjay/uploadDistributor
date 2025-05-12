@@ -11,6 +11,9 @@
 import { AzuraCastApiMock, AzuraCastMetadata, AzuraCastUploadResponse } from '../mocks/AzuraCastApiMock';
 import { StatusManager } from './StatusManager';
 import { ErrorType } from '../utils/LoggingUtils';
+import { retry, RetryOptions } from '../utils/RetryUtils';
+import { SonglistData } from '../storage/SonglistStorage';
+import { utcToCet } from '../utils/TimezoneUtils';
 
 export class AzuraCastService {
   private api: AzuraCastApiMock;
@@ -22,6 +25,28 @@ export class AzuraCastService {
   }
   
   /**
+   * Create AzuraCast metadata from a songlist
+   * 
+   * @param songlist The songlist data
+   * @returns AzuraCast metadata object
+   */
+  public createMetadataFromSonglist(songlist: SonglistData): AzuraCastMetadata {
+    // Convert UTC timestamps to CET
+    const broadcastDate = songlist.broadcast_data.broadcast_date;
+    const broadcastTime = songlist.broadcast_data.broadcast_time;
+    const utcTimestamp = `${broadcastDate}T${broadcastTime}Z`;
+    const cetTimestamp = utcToCet(utcTimestamp);
+    const [cetDate] = cetTimestamp.split(' ');
+    
+    return {
+      title: songlist.broadcast_data.setTitle || 'Untitled Set',
+      artist: songlist.broadcast_data.DJ || 'Unknown DJ',
+      album: `${cetDate || new Date().toISOString().split('T')[0]} Broadcast`,
+      genre: songlist.broadcast_data.genre || 'Radio Show'
+    };
+  }
+  
+  /**
    * Upload a file to AzuraCast with retry logic
    */
   public async uploadFile(
@@ -30,42 +55,35 @@ export class AzuraCastService {
   ): Promise<{ success: boolean; id?: string; path?: string; error?: string }> {
     process.stdout.write('Uploading to AzuraCast...\n');
     
-    // AzuraCast-specific recovery logic: retry up to 2 times with exponential backoff
-    let result: AzuraCastUploadResponse = { success: false, id: '', error: 'Not attempted' };
-    let retryCount = 0;
-    const maxRetries = 2;
+    // Define retry options
+    const retryOptions: RetryOptions = {
+      maxRetries: 2,
+      initialDelay: 1000,
+      backoffFactor: 2,
+      onRetry: (attempt, error, delay) => {
+        process.stdout.write(`AzuraCast operation failed, retrying in ${delay/1000}s... (${attempt}/${retryOptions.maxRetries})\n`);
+      }
+    };
     
-    while (retryCount <= maxRetries) {
-      try {
+    try {
+      // Use the retry utility to handle the entire upload process
+      const result = await retry(async () => {
         // Step 1: Upload the file
-        result = await this.api.uploadFile(audioFilePath, metadata);
+        const uploadResult = await this.api.uploadFile(audioFilePath, metadata);
         
-        if (!result.success) {
+        if (!uploadResult.success) {
           this.statusManager.logError(
             'azuracast',
             metadata.title,
-            result.error || 'Unknown error',
+            uploadResult.error || 'Unknown error',
             ErrorType.UNKNOWN,
-            { audioFilePath, metadata },
-            retryCount + 1
+            { audioFilePath, metadata }
           );
-          
-          if (retryCount < maxRetries) {
-            const backoffTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s, etc.
-            process.stdout.write(`AzuraCast upload failed, retrying in ${backoffTime/1000}s... (${retryCount + 1}/${maxRetries})\n`);
-            await new Promise(resolve => setTimeout(resolve, backoffTime));
-            retryCount++;
-            continue;
-          } else {
-            return {
-              success: false,
-              error: result.error || 'Unknown error'
-            };
-          }
+          throw new Error(uploadResult.error || 'Upload failed');
         }
         
         // Step 2: Set metadata
-        const metadataResult = await this.api.setMetadata(result.id, metadata);
+        const metadataResult = await this.api.setMetadata(uploadResult.id, metadata);
         
         if (!metadataResult.success) {
           this.statusManager.logError(
@@ -73,26 +91,13 @@ export class AzuraCastService {
             metadata.title,
             metadataResult.error || 'Failed to set metadata',
             ErrorType.UNKNOWN,
-            { trackId: result.id, metadata },
-            retryCount + 1
+            { trackId: uploadResult.id, metadata }
           );
-          
-          if (retryCount < maxRetries) {
-            const backoffTime = Math.pow(2, retryCount) * 1000;
-            process.stdout.write(`AzuraCast metadata update failed, retrying in ${backoffTime/1000}s... (${retryCount + 1}/${maxRetries})\n`);
-            await new Promise(resolve => setTimeout(resolve, backoffTime));
-            retryCount++;
-            continue;
-          } else {
-            return {
-              success: false,
-              error: metadataResult.error || 'Failed to set metadata'
-            };
-          }
+          throw new Error(metadataResult.error || 'Failed to set metadata');
         }
         
         // Step 3: Add to playlist
-        const playlistResult = await this.api.addToPlaylist(result.id);
+        const playlistResult = await this.api.addToPlaylist(uploadResult.id);
         
         if (!playlistResult.success) {
           this.statusManager.logError(
@@ -100,52 +105,16 @@ export class AzuraCastService {
             metadata.title,
             playlistResult.error || 'Failed to add to playlist',
             ErrorType.UNKNOWN,
-            { trackId: result.id },
-            retryCount + 1
+            { trackId: uploadResult.id }
           );
-          
-          if (retryCount < maxRetries) {
-            const backoffTime = Math.pow(2, retryCount) * 1000;
-            process.stdout.write(`AzuraCast playlist update failed, retrying in ${backoffTime/1000}s... (${retryCount + 1}/${maxRetries})\n`);
-            await new Promise(resolve => setTimeout(resolve, backoffTime));
-            retryCount++;
-            continue;
-          } else {
-            return {
-              success: false,
-              error: playlistResult.error || 'Failed to add to playlist'
-            };
-          }
+          throw new Error(playlistResult.error || 'Failed to add to playlist');
         }
         
-        // All steps succeeded, break out of retry loop
-        break;
-      } catch (err) {
-        this.statusManager.logError(
-          'azuracast',
-          metadata.title,
-          (err as Error).message,
-          ErrorType.UNKNOWN,
-          { audioFilePath, metadata },
-          retryCount + 1
-        );
-        
-        if (retryCount < maxRetries) {
-          const backoffTime = Math.pow(2, retryCount) * 1000;
-          process.stdout.write(`AzuraCast upload error, retrying in ${backoffTime/1000}s... (${retryCount + 1}/${maxRetries})\n`);
-          await new Promise(resolve => setTimeout(resolve, backoffTime));
-          retryCount++;
-        } else {
-          return {
-            success: false,
-            error: (err as Error).message
-          };
-        }
-      }
-    }
-    
-    // If we got here, the upload was successful
-    if (result.success) {
+        // All steps succeeded, return the result
+        return uploadResult;
+      }, retryOptions);
+      
+      // Log success
       this.statusManager.logSuccess(
         'azuracast',
         metadata.title,
@@ -157,12 +126,20 @@ export class AzuraCastService {
         id: result.id,
         path: result.path
       };
+    } catch (err) {
+      // Final error after all retries
+      this.statusManager.logError(
+        'azuracast',
+        metadata.title,
+        (err as Error).message,
+        ErrorType.UNKNOWN,
+        { audioFilePath, metadata }
+      );
+      
+      return {
+        success: false,
+        error: (err as Error).message
+      };
     }
-    
-    // This should never happen, but just in case
-    return {
-      success: false,
-      error: 'Unknown error occurred'
-    };
   }
 }

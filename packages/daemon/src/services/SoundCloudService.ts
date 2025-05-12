@@ -10,6 +10,9 @@
 import { SoundCloudApiMock, SoundCloudMetadata, SoundCloudUploadResponse } from '../mocks/SoundCloudApiMock';
 import { StatusManager } from './StatusManager';
 import { ErrorType } from '../utils/LoggingUtils';
+import { retry, RetryOptions } from '../utils/RetryUtils';
+import { SonglistData } from '../storage/SonglistStorage';
+import { utcToCet } from '../utils/TimezoneUtils';
 
 export class SoundCloudService {
   private api: SoundCloudApiMock;
@@ -18,6 +21,35 @@ export class SoundCloudService {
   constructor(statusManager: StatusManager) {
     this.api = new SoundCloudApiMock();
     this.statusManager = statusManager;
+  }
+  
+  /**
+   * Create SoundCloud metadata from a songlist
+   * 
+   * @param songlist The songlist data
+   * @param artworkFile Path to the artwork file
+   * @returns SoundCloud metadata object
+   */
+  public createMetadataFromSonglist(songlist: SonglistData, artworkFile: string): SoundCloudMetadata {
+    // Convert UTC timestamps to CET
+    const broadcastDate = songlist.broadcast_data.broadcast_date;
+    const broadcastTime = songlist.broadcast_data.broadcast_time;
+    const utcTimestamp = `${broadcastDate}T${broadcastTime}Z`;
+    const cetTimestamp = utcToCet(utcTimestamp);
+    const [cetDate, cetTime] = cetTimestamp.split(' ');
+    
+    // Get sharing setting from platform-specific data or default to public
+    const sharing = songlist.platform_specific?.soundcloud?.sharing || 'public';
+    
+    return {
+      title: songlist.broadcast_data.setTitle || 'Untitled Set',
+      artist: songlist.broadcast_data.DJ || 'Unknown DJ',
+      description: songlist.broadcast_data.description || 
+                  `Broadcast on ${cetDate || new Date().toISOString().split('T')[0]} at ${cetTime || '00:00:00'}`,
+      genre: songlist.broadcast_data.genre || 'Radio Show',
+      sharing: sharing as 'public' | 'private',
+      artwork: artworkFile
+    };
   }
   
   /**
@@ -32,128 +64,153 @@ export class SoundCloudService {
   ): Promise<{ success: boolean; id?: string; url?: string; error?: string; note?: string }> {
     process.stdout.write('Uploading to SoundCloud...\n');
     
-    try {
-      // SoundCloud-specific recovery logic: retry with privacy setting fallback
-      let result: SoundCloudUploadResponse = { success: false, id: '', error: 'Not attempted' };
-      let note: string | undefined;
-      
-      try {
-        // Step 1: Upload the file (first attempt with original metadata)
-        process.stdout.write('SoundCloud Step 1: Uploading file...\n');
-        result = await this.api.uploadFile(audioFilePath, metadata);
+    // Track whether we've already tried with private sharing
+    let usedPrivateSharing = false;
+    let currentMetadata = { ...metadata };
+    let note: string | undefined;
+    let uploadResult: SoundCloudUploadResponse | null = null;
+    
+    // Define retry options for the file upload step
+    const uploadRetryOptions: RetryOptions = {
+      maxRetries: 1, // Only retry once for SoundCloud
+      initialDelay: 1000,
+      onRetry: (attempt, error, delay) => {
+        process.stdout.write(`SoundCloud upload failed, retrying with modified settings in ${delay/1000}s... (${attempt}/1)\n`);
+      },
+      // Custom function to determine if an error is retryable and to modify the metadata
+      isRetryable: (error: Error) => {
+        // If we've already tried with private sharing, don't retry again
+        if (usedPrivateSharing) {
+          return false;
+        }
         
-        // If upload failed due to quota or permission issues, try with private sharing
-        if (!result.success && 
-            (result.error?.includes('quota') || 
-             result.error?.includes('permission') ||
-             result.error?.includes('artwork'))) {
+        // If the error is related to quota, permission, or artwork issues, modify the metadata
+        if (error.message.includes('quota') || 
+            error.message.includes('permission') || 
+            error.message.includes('artwork')) {
           
-          process.stdout.write('SoundCloud upload failed, retrying with modified settings...\n');
+          process.stdout.write('SoundCloud upload failed due to quota/permission/artwork issues, retrying with private sharing...\n');
           
+          // Create modified metadata with private sharing and dummy artwork
+          currentMetadata = { 
+            ...currentMetadata,
+            sharing: 'private',
+            // Add a dummy artwork path to bypass the artwork check
+            artwork: currentMetadata.artwork || 'dummy-artwork-path'
+          };
+          
+          usedPrivateSharing = true;
+          note = 'Uploaded as private due to quota/permission constraints';
+          return true;
+        }
+        
+        // For other errors, don't retry
+        return false;
+      }
+    };
+    
+    try {
+      // Step 1: Upload the file with retry logic
+      process.stdout.write('SoundCloud Step 1: Uploading file...\n');
+      
+      uploadResult = await retry(async () => {
+        // Attempt to upload with current metadata
+        const result = await this.api.uploadFile(audioFilePath, currentMetadata);
+        
+        if (!result.success) {
           this.statusManager.logError(
             'soundcloud',
             metadata.title,
             result.error || 'Unknown error',
             ErrorType.UNKNOWN,
-            { audioFilePath, metadata },
-            1
+            { audioFilePath, metadata: currentMetadata }
           );
           
-          // Create modified metadata with private sharing and no artwork requirement
-          const privateMetadata: SoundCloudMetadata = { 
-            ...metadata,
-            sharing: 'private',
-            // Add a dummy artwork path to bypass the artwork check
-            artwork: metadata.artwork || 'dummy-artwork-path'
-          };
-          
-          // Second attempt with modified metadata
-          process.stdout.write('SoundCloud Step 1 (retry): Uploading file with modified settings...\n');
-          result = await this.api.uploadFile(audioFilePath, privateMetadata);
-          
-          // If successful, note that it was uploaded as private
-          if (result.success) {
-            note = 'Uploaded as private due to quota/permission constraints';
-          }
+          throw new Error(result.error || 'Upload failed');
         }
         
-        // If Step 1 was successful, proceed to Step 2
-        if (result.success) {
-          process.stdout.write(`SoundCloud Step 2: Updating metadata for track ${result.id}...\n`);
+        return result;
+      }, uploadRetryOptions);
+      
+      // Step 2: Update metadata if Step 1 was successful
+      if (uploadResult && uploadResult.success) {
+        process.stdout.write(`SoundCloud Step 2: Updating metadata for track ${uploadResult.id}...\n`);
+        
+        try {
+          // No retry for metadata update - if it fails, we still consider the upload successful
+          const metadataResult = await this.api.updateTrackMetadata(uploadResult.id, metadata);
           
-          // Step 2: Update the metadata
-          const metadataResult = await this.api.updateTrackMetadata(result.id, metadata);
-          
-          // If metadata update failed, log the error but consider the upload successful
           if (!metadataResult.success) {
             this.statusManager.logError(
               'soundcloud',
               metadata.title,
               metadataResult.error || 'Failed to update metadata',
               ErrorType.UNKNOWN,
-              { trackId: result.id, metadata },
-              1
+              { trackId: uploadResult.id, metadata }
             );
             
             process.stdout.write(`SoundCloud metadata update failed: ${metadataResult.error}\n`);
             
             // The file was uploaded successfully, but metadata update failed
-            // We'll return success but with a note about the metadata issue
             if (!note) {
               note = 'File uploaded but metadata update failed';
             } else {
               note += '; metadata update failed';
             }
           } else {
-            // Both steps succeeded
-            result = metadataResult;
+            // Both steps succeeded, use the metadata result as the final result
+            uploadResult = metadataResult;
+          }
+        } catch (err) {
+          // Log the metadata update error but don't fail the overall upload
+          this.statusManager.logError(
+            'soundcloud',
+            metadata.title,
+            (err as Error).message,
+            ErrorType.UNKNOWN,
+            { trackId: uploadResult.id, metadata }
+          );
+          
+          if (!note) {
+            note = `File uploaded but metadata update failed: ${(err as Error).message}`;
+          } else {
+            note += `; metadata update failed: ${(err as Error).message}`;
           }
         }
-      } catch (err) {
-        // Log the error and re-throw
-        this.statusManager.logError(
-          'soundcloud',
-          metadata.title,
-          (err as Error).message,
-          ErrorType.UNKNOWN,
-          { audioFilePath, metadata },
-          1
-        );
-        
-        throw err;
       }
       
       // Check final result
-      if (result.success) {
+      if (uploadResult && uploadResult.success) {
         this.statusManager.logSuccess(
           'soundcloud',
           metadata.title,
-          `Uploaded to ${result.permalink_url}`
+          `Uploaded to ${uploadResult.permalink_url}`
         );
         
         return {
           success: true,
-          id: result.id,
-          url: result.permalink_url,
+          id: uploadResult.id,
+          url: uploadResult.permalink_url,
           note
         };
       } else {
-        this.statusManager.logError(
-          'soundcloud',
-          metadata.title,
-          result.error || 'Unknown error',
-          ErrorType.UNKNOWN,
-          { audioFilePath, metadata },
-          2
-        );
-        
+        // This should never happen since we throw errors for failed uploads
         return {
           success: false,
-          error: result.error || 'Unknown error'
+          error: 'Unknown error occurred'
         };
       }
     } catch (err) {
+      // Final error after all retries
       process.stderr.write(`SoundCloud upload error: ${err}\n`);
+      
+      this.statusManager.logError(
+        'soundcloud',
+        metadata.title,
+        (err as Error).message,
+        ErrorType.UNKNOWN,
+        { audioFilePath, metadata: currentMetadata }
+      );
       
       return {
         success: false,

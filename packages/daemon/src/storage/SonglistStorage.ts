@@ -81,19 +81,6 @@ export function storeSonglist(uploadId: string, songlist: SonglistData): string 
 }
 
 /**
- * Get a songlist by upload ID
- * 
- * @param uploadId The ID of the upload
- * @returns The songlist data or null if not found
- */
-export function getSonglistByUploadId(uploadId: string): SonglistData | null {
-  // For now, we don't have a direct mapping from upload ID to songlist file
-  // This would be implemented in a real database-backed system
-  // For testing, we'll just return null
-  return null;
-}
-
-/**
  * Get a songlist by DJ and title
  * 
  * @param dj The DJ name

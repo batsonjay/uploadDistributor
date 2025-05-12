@@ -20,24 +20,23 @@ The daemon exposes a RESTful API for use by the web and macOS clients. It handle
 
 Receives files from clients.
 
-**Request Body**:
-```json
-{
-  "userId": "string",
-  "authToken": "string",
-  "metadata": {
-    "title": "string",
-    "djName": "string",
-    "azcFolder": "string",
-    "azcPlaylist": "string"
-  },
-  "files": {
-    "audio": "base64-encoded .mp3",
-    "songlist": "base64-encoded songlist file",
-    "artwork": "base64-encoded image file (jpg/png)"
-  }
-}
-```
+**Request**:
+Multipart form data with the following fields:
+
+- `userId`: User ID string
+- `title`: Title of the broadcast
+- `djName`: Name of the DJ
+- `azcFolder`: AzuraCast folder name
+- `azcPlaylist`: AzuraCast playlist name
+- `userRole`: User role (optional)
+- `destinations`: Comma-separated list of destinations (optional)
+- `audio`: Audio file (.mp3)
+- `songlist`: Songlist file (.txt)
+- `artwork`: Artwork image file (.jpg/.png)
+
+Headers:
+- `Authorization`: Bearer token for authentication
+- `x-file-id`: Optional file ID for testing/reuse
 
 **Response**:
 ```json

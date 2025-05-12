@@ -66,4 +66,4 @@ The system is composed of three main components:
 
 ### Azuracast development server
 
-[Destination APIs](docs/destiantion0-apis.md) provides informaiton on an AzuraCast server available for dev/test as well as a discussion of the mocks & stubs required for development before attempting to test against live services, which have no test capability.
+[Destination APIs](docs/destination-apis.md) provides information on an AzuraCast server available for dev/test as well as a discussion of the mocks & stubs required for development before attempting to test against live services, which have no test capability.
