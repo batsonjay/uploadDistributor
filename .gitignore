@@ -22,9 +22,9 @@ Thumbs.db
 .env.test.local
 .env.production.local
 
-# Turborepo cache
+# Turbo
+.turbo/
 **/turbo/
-.turbo/cookies/*
 
 # Editor directories and files
 .vscode/
