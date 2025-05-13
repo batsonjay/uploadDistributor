@@ -28,13 +28,43 @@ export class TextractParser implements SonglistParser {
       
       // Split into lines and find where tracks start
       const lines = textContent.split(/\r\n|\r|\n/);
-      const trackStartIndex = lines.findIndex((line: string) => /^\d+[\.\)]?\s/.test(line));
+      
+      // Find where tracks start - either numbered lines or lines with artist-title delimiters
+      const trackStartIndex = lines.findIndex((line: string, index: number) => {
+        const trimmed = line.trim();
+        // Skip empty lines and header lines
+        if (!trimmed || index === 0 || trimmed.includes('TrackList') || trimmed.includes('Track List')) {
+          return false;
+        }
+        return (
+          /^\d+[\.\)]?\s/.test(trimmed) || // Numbered tracks
+          /\s[-–]\s/.test(trimmed) || // Lines with hyphen or en dash delimiters
+          /^[^,]+(,\s*[^,]+)*\s+[-–]\s/.test(trimmed) // Artist(s) followed by delimiter
+        );
+      });
       
       // Get only the track lines
       const tracks = lines
         .slice(trackStartIndex)
         .map((line: string) => line.trim())
-        .filter((line: string) => /^\d+[\.\)]?\s/.test(line) && line.length > 0);
+        .filter((line: string) => {
+          const trimmed = line.trim();
+          // Skip empty lines, headers, and file names
+          if (!trimmed || 
+              trimmed.includes('TrackList') || 
+              trimmed.includes('Track List') ||
+              trimmed.includes('.docx') ||
+              trimmed.includes('.txt') ||
+              trimmed.includes('.rtf')) {
+            return false;
+          }
+          return (
+            (/^\d+[\.\)]?\s/.test(trimmed) || // Numbered tracks
+             /\s[-–]\s/.test(trimmed) || // Lines with hyphen or en dash delimiters
+             /^[^,]+(,\s*[^,]+)*\s+[-–]\s/.test(trimmed)) && // Artist(s) followed by delimiter
+            line.length > 0
+          );
+        });
       const songs = tracks.map((track: string) => {
         // Remove track numbers at start of line
         const cleanedTrack = track.replace(/^\d+[\.\)]?\s+/, '');

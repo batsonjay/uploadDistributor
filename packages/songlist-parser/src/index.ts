@@ -29,6 +29,7 @@ export async function parseSonglist(filePath: string): Promise<Song[]> {
         parser = new TXTParser();
         break;
       case 'rtf':
+      case 'docx':
         parser = new TextractParser();
         break;
       default:
