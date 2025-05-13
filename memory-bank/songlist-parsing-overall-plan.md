@@ -81,13 +81,18 @@ For non-NML files:
 3. Add DOCX file handling
 4. Add unit tests for each new format
 
-### Phase 4: TXT Order Verification
+### Phase 4: Rekordbox support
+1. Implement Rekordbox-specific parsing
+2. Add unit test for new format
+
+### Phase 5: TXT Order Verification
 1. Add user prompt for title/artist order
 2. Implement order swapping functionality
 3. Update output to reflect correct order
 4. Add unit tests for order handling
 
-### Phase 5: Future Enhancements
+
+### Phase 6: Future Enhancements
 1. Develop editable table interface
 2. Add "Swap All" functionality
 3. Implement validation indicators
