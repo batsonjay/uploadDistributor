@@ -2,6 +2,7 @@
   "name": "@uploadDistributor/shared",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -11,7 +12,8 @@
   },
   "dependencies": {
     "axios": "^1.6.0",
-    "form-data": "^4.0.0"
+    "form-data": "^4.0.0",
+    "@uploadDistributor/songlist-parser": "*"
   },
   "devDependencies": {
     "@uploadDistributor/eslint-config": "*",

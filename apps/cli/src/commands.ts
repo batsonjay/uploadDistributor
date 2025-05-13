@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { UploadFiles, UploadMetadata, ProcessedFiles } from './types';
+import { UploadFiles, UploadMetadata, ProcessedFiles } from './types.js';
 
 export async function authenticate(credentials: { djName: string; password: string }) {
   // TODO: Implement authentication

@@ -1,5 +1,5 @@
 import * as readline from 'readline/promises';
-import { UploadFiles, UploadMetadata } from './types';
+import { UploadFiles, UploadMetadata } from './types.js';
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -37,4 +37,10 @@ export async function promptForMetadata(): Promise<UploadMetadata> {
     azcPlaylist: await prompt('AzuraCast playlist:', 'catalyst-mixes'),
     genre: await prompt('Genre:')
   };
+}
+
+export async function promptForSwap(): Promise<boolean> {
+  const answer = await prompt('Should title and artist be swapped? [y/N]:', 'N');
+  rl.close();
+  return answer.toLowerCase() === 'y';
 }

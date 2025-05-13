@@ -32,6 +32,59 @@ export class TXTParser implements SonglistParser {
         content = content.slice(1);
       }
     }
+
+    // Check if this is a Rekordbox file
+    if (this.isRekordboxFile(content)) {
+      return this.parseRekordbox(content);
+    }
+
+    // Fall back to generic TXT parsing
+    return this.parseGenericTXT(content);
+  }
+
+  private isRekordboxFile(content: string): boolean {
+    return content.startsWith('#\tArtwork\tTrack Title\tArtist');
+  }
+
+  private parseRekordbox(content: string): Song[] {
+    const lines = content.split('\n').filter(line => line.trim() !== '');
+    
+    // Skip header line
+    const trackLines = lines.slice(1);
+    
+    return trackLines.map(line => {
+      // Split on tabs and convert empty/undefined values to empty strings
+      const columns = line.split('\t').map(col => col?.trim() || '');
+      
+      // Find the first non-numeric, non-empty column after artwork (index 1)
+      // This should be the title
+      let titleIndex = -1;
+      for (let i = 2; i < columns.length; i++) {  // Start at index 2 (Track Title column)
+        const col = columns[i];
+        if (col && !/^\d/.test(col)) {
+          titleIndex = i;
+          break;
+        }
+      }
+      
+      // Get the title
+      const title = (titleIndex >= 0 && columns[titleIndex]) || 'Unknown Title';
+      
+      // Look for artist in the next column after title
+      let artist = 'Unknown Artist';
+      if (titleIndex >= 0 && titleIndex + 1 < columns.length) {
+        const nextCol = columns[titleIndex + 1];
+        // Only use it if it's not a BPM value
+        if (nextCol && !/^\d+\.\d+$/.test(nextCol)) {
+          artist = nextCol || 'Unknown Artist';
+        }
+      }
+      
+      return { title, artist };
+    });
+  }
+
+  private parseGenericTXT(content: string): Song[] {
     const allLines = content.split('\n').filter(line => line.trim() !== '');
     
     // Find first line that starts with a number followed by a period
@@ -50,7 +103,6 @@ export class TXTParser implements SonglistParser {
       // Split on first occurrence of ' - ' or ' – ' (different dashes)
       const [firstPart, secondPart] = cleanedLine.split(/ - | – /);
       
-      // For Phase 2, just return the parts as-is without determining order
       if (!firstPart) {
         return {
           title: 'Unknown Title',

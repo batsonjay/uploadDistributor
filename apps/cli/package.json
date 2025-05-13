@@ -2,11 +2,15 @@
   "name": "@uploadDistributor/cli",
   "version": "0.1.0",
   "description": "CLI client for Upload Distributor",
+  "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "songlist": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts"
+    "dev": "ts-node --esm src/index.ts"
   },
   "dependencies": {
     "@uploadDistributor/shared": "*",

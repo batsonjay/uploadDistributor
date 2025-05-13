@@ -86,7 +86,7 @@ For non-NML files:
 2. Add unit test for new format
 
 ### Phase 5: TXT Order Verification
-1. Add user prompt for title/artist order
+1. Implement client-side user prompt to confirm title/artist order after initial parsing
 2. Implement order swapping functionality
 3. Update output to reflect correct order
 4. Add unit tests for order handling
