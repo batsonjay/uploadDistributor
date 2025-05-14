@@ -1,7 +1,5 @@
-import { Song } from '../types.js';
+import { Song, ParseResult } from '../types.js';
 
-export interface SonglistParser {
-  parse(filePath: string): Promise<Song[]>;
+export interface SonglistParser<T = ParseResult> {
+  parse(filePath: string): Promise<T>;
 }
-
-export default SonglistParser;

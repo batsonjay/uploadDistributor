@@ -1,7 +1,6 @@
-import { Song } from '../types.js';
+import { Song, ParseResult, ParseError } from '../types.js';
 import { SonglistParser } from './parser.js';
 import textract from 'textract';
-import { promisify } from 'util';
 
 const extractText = (filePath: string) => {
   return new Promise<string>((resolve, reject) => {
@@ -19,11 +18,14 @@ const extractText = (filePath: string) => {
 };
 
 export class TextractParser implements SonglistParser {
-  async parse(filePath: string): Promise<Song[]> {
+  async parse(filePath: string): Promise<ParseResult> {
     try {
-      const textContent = await extractText(filePath) as string;
+      const textContent = await extractText(filePath);
       if (!textContent) {
-        throw new Error('Failed to extract text from file');
+        return {
+          songs: [],
+          error: ParseError.FILE_READ_ERROR
+        };
       }
       
       // Split into lines and find where tracks start
@@ -39,9 +41,19 @@ export class TextractParser implements SonglistParser {
         return (
           /^\d+[\.\)]?\s/.test(trimmed) || // Numbered tracks
           /\s[-–]\s/.test(trimmed) || // Lines with hyphen or en dash delimiters
-          /^[^,]+(,\s*[^,]+)*\s+[-–]\s/.test(trimmed) // Artist(s) followed by delimiter
+          /^[^,]+(,\s*[^,]+)*\s+[-–]\s/.test(trimmed) || // Artist(s) followed by delimiter
+          /\s{2,}(?!featuring)/.test(trimmed) || // Two or more spaces (if not before "featuring")
+          /\t+/.test(trimmed) || // One or more tabs
+          /\s*,\s*/.test(trimmed) // Comma with optional spaces
         );
       });
+      
+      if (trackStartIndex === -1) {
+        return {
+          songs: [],
+          error: ParseError.NO_TRACKS_DETECTED
+        };
+      }
       
       // Get only the track lines
       const tracks = lines
@@ -58,28 +70,28 @@ export class TextractParser implements SonglistParser {
               trimmed.includes('.rtf')) {
             return false;
           }
-          return (
-            (/^\d+[\.\)]?\s/.test(trimmed) || // Numbered tracks
-             /\s[-–]\s/.test(trimmed) || // Lines with hyphen or en dash delimiters
-             /^[^,]+(,\s*[^,]+)*\s+[-–]\s/.test(trimmed)) && // Artist(s) followed by delimiter
-            line.length > 0
-          );
+          return true;
         });
+      
+      if (tracks.length === 0) {
+        return {
+          songs: [],
+          error: ParseError.NO_TRACKS_DETECTED
+        };
+      }
+
+      const delimiters = [
+        /\s+[-–]\s+/,          // Hyphen with spaces
+        /\s{2,}(?!featuring)/,  // Two or more spaces (if not before "featuring")
+        /\t+/,                  // One or more tabs
+        /\s*,\s*/,             // Comma with optional spaces
+        /(?<!\d)[-–](?![^(]*\))/ // Fallback: hyphen not in parentheses
+      ];
+      
       const songs = tracks.map((track: string) => {
         // Remove track numbers at start of line
         const cleanedTrack = track.replace(/^\d+[\.\)]?\s+/, '');
         
-        // Try each delimiter pattern in order
-        const delimiters = [
-          /\s+[-–]\s+/,          // Hyphen with spaces on both sides
-          /\s+[-–]|[-–]\s+/,     // Hyphen with space on either side
-          /(?<!\d\s*)[-–](?![^(]*\))(?!\d)/, // Bare hyphen (but not within parentheses and not after a number)
-          /\s{3,}/,              // Multiple spaces (3 or more)
-          /\t+/,                 // Tabs
-          /(?<!\d)[-–](?![^(]*\))/ // Fallback: any hyphen not preceded by a number and not within parentheses
-        ];
-        
-        // Try each delimiter until we find one that gives a valid split
         let title = cleanedTrack;
         let artist = 'Unknown Artist';
 
@@ -105,10 +117,24 @@ export class TextractParser implements SonglistParser {
         };
       });
       
-      return songs;
-    } catch (error: unknown) {
-      process.stderr.write(`Error parsing file: ${error}\n`);
-      throw error;
+      if (songs.length === 0) {
+        return {
+          songs: [],
+          error: ParseError.NO_VALID_SONGS
+        };
+      }
+      
+      return {
+        songs,
+        error: ParseError.NONE
+      };
+      
+    } catch (error) {
+      console.error(`Error parsing file: ${error}`);
+      return {
+        songs: [],
+        error: ParseError.UNKNOWN_ERROR
+      };
     }
   }
 }

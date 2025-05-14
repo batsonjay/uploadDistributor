@@ -1,45 +1,61 @@
-import { Song } from '../types.js';
+import { Song, ParseResult, ParseError } from '../types.js';
 import { SonglistParser } from './parser.js';
 import { readFile } from 'fs/promises';
 
 export class TXTParser implements SonglistParser {
-  async parse(filePath: string): Promise<Song[]> {
-    // Read file and detect encoding
-    const buffer = await readFile(filePath);
-    let content: string;
-    
-    // Check for UTF-16 LE BOM
-    if (buffer[0] === 0xFF && buffer[1] === 0xFE) {
-      content = buffer.toString('utf16le');
-      // Remove BOM if present
-      if (content.charCodeAt(0) === 0xFEFF) {
-        content = content.slice(1);
+  async parse(filePath: string): Promise<ParseResult> {
+    try {
+      // Read file and detect encoding
+      const buffer = await readFile(filePath);
+      let content: string;
+      
+      // Check for UTF-16 LE BOM
+      if (buffer[0] === 0xFF && buffer[1] === 0xFE) {
+        content = buffer.toString('utf16le');
+        // Remove BOM if present
+        if (content.charCodeAt(0) === 0xFEFF) {
+          content = content.slice(1);
+        }
       }
-    }
-    // Check for UTF-16 BE BOM
-    else if (buffer[0] === 0xFE && buffer[1] === 0xFF) {
-      content = buffer.toString('utf16le');
-      // Remove BOM if present
-      if (content.charCodeAt(0) === 0xFEFF) {
-        content = content.slice(1);
+      // Check for UTF-16 BE BOM
+      else if (buffer[0] === 0xFE && buffer[1] === 0xFF) {
+        content = buffer.toString('utf16le');
+        // Remove BOM if present
+        if (content.charCodeAt(0) === 0xFEFF) {
+          content = content.slice(1);
+        }
       }
-    }
-    // Default to UTF-8
-    else {
-      content = buffer.toString('utf8');
-      // Remove BOM if present
-      if (content.charCodeAt(0) === 0xFEFF) {
-        content = content.slice(1);
+      // Default to UTF-8
+      else {
+        content = buffer.toString('utf8');
+        // Remove BOM if present
+        if (content.charCodeAt(0) === 0xFEFF) {
+          content = content.slice(1);
+        }
       }
-    }
 
-    // Check if this is a Rekordbox file
-    if (this.isRekordboxFile(content)) {
-      return this.parseRekordbox(content);
-    }
+      // Check if this is a Rekordbox file
+      if (this.isRekordboxFile(content)) {
+        const songs = this.parseRekordbox(content);
+        return {
+          songs,
+          error: songs.length > 0 ? ParseError.NONE : ParseError.NO_VALID_SONGS
+        };
+      }
 
-    // Fall back to generic TXT parsing
-    return this.parseGenericTXT(content);
+      // Fall back to generic TXT parsing
+      const songs = this.parseGenericTXT(content);
+      return {
+        songs,
+        error: songs.length > 0 ? ParseError.NONE : ParseError.NO_TRACKS_DETECTED
+      };
+    } catch (error) {
+      console.error(`Error parsing file: ${error}`);
+      return {
+        songs: [],
+        error: ParseError.FILE_READ_ERROR
+      };
+    }
   }
 
   private isRekordboxFile(content: string): boolean {

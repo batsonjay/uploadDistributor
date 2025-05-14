@@ -1,4 +1,4 @@
-import { Song } from '../types.js';
+import { Song, ParseResult, ParseError } from '../types.js';
 import { SonglistParser } from './parser.js';
 import { readFile } from 'fs/promises';
 import type { RTFDocument } from 'rtf-parser';
@@ -29,15 +29,17 @@ interface RTFGroupContent {
 }
 
 type RTFContent = string | RTFGroupContent;
+
 export class RTFLibParser implements SonglistParser {
-  async parse(filePath: string): Promise<Song[]> {
+  async parse(filePath: string): Promise<ParseResult> {
     process.stdout.write('=== RTFLibParser.parse() START ===\n');
     process.stdout.write(`Reading file: ${filePath}\n`);
-    const rtfBuffer = await readFile(filePath);  // Read as buffer
-    process.stdout.write(`File read complete. Buffer length: ${rtfBuffer.length}\n`);
-    process.stdout.write(`First 100 bytes: ${rtfBuffer.toString('utf8', 0, 100)}\n`);
     
     try {
+      const rtfBuffer = await readFile(filePath);  // Read as buffer
+      process.stdout.write(`File read complete. Buffer length: ${rtfBuffer.length}\n`);
+      process.stdout.write(`First 100 bytes: ${rtfBuffer.toString('utf8', 0, 100)}\n`);
+      
       process.stdout.write('\n=== RTF Parsing Phase ===\n');
       
       // Import rtf-parser dynamically since we're in ES module
@@ -50,7 +52,10 @@ export class RTFLibParser implements SonglistParser {
       const doc = await rtfParser(rtfContent) as RTFDocumentWithMeta;
       
       if (!doc) {
-        throw new Error('RTF parsing returned null document');
+        return {
+          songs: [],
+          error: ParseError.FILE_READ_ERROR
+        };
       }
       
       process.stdout.write('3. Parser success, document structure:\n' + 
@@ -62,14 +67,14 @@ export class RTFLibParser implements SonglistParser {
         }, null, 2)
       );
       
-      // Log the full document structure to understand what we're getting
-      process.stdout.write(`RTF parsing successful, full doc: ${JSON.stringify(doc, null, 2)}\n`);
-      
       process.stdout.write('\n=== Text Extraction Phase ===\n');
       // Extract text content from RTF document
       const textContent = this.extractText(doc);
       if (!textContent) {
-        throw new Error('Failed to extract text from RTF document');
+        return {
+          songs: [],
+          error: ParseError.FILE_READ_ERROR
+        };
       }
       process.stdout.write(`Raw extracted text: ${textContent}\n`);
       
@@ -78,6 +83,13 @@ export class RTFLibParser implements SonglistParser {
       const lines = textContent.split(/\r\n|\r|\n/);
       process.stdout.write(`Split into lines: ${JSON.stringify(lines, null, 2)}\n`);
       const trackStartIndex = lines.findIndex((line: string) => /^\d+[\.\)]?\s/.test(line));
+      
+      if (trackStartIndex === -1) {
+        return {
+          songs: [],
+          error: ParseError.NO_TRACKS_DETECTED
+        };
+      }
       
       process.stdout.write(`Track start index: ${trackStartIndex}\n`);
       
@@ -94,6 +106,13 @@ export class RTFLibParser implements SonglistParser {
           process.stdout.write(`Line is track? ${isTrack} : ${line}\n`);
           return isTrack;
         });
+
+      if (tracks.length === 0) {
+        return {
+          songs: [],
+          error: ParseError.NO_TRACKS_DETECTED
+        };
+      }
 
       process.stdout.write(`Tracks after splitting: ${JSON.stringify(tracks, null, 2)}\n`);
       
@@ -160,11 +179,20 @@ export class RTFLibParser implements SonglistParser {
       process.stdout.write(`Parsed songs: ${JSON.stringify(songs, null, 2)}\n`);
       process.stdout.write('=== RTFLibParser.parse() END ===\n\n');
       
-      return songs;
+      return {
+        songs,
+        error: songs.length > 0 ? ParseError.NONE : ParseError.NO_VALID_SONGS
+      };
+      
     } catch (error: unknown) {
       process.stderr.write(`Error parsing RTF: ${error}\n`);
-      process.stderr.write(`RTF content that failed: ${rtfBuffer.toString('hex')}\n`);
-      throw error;
+      if (error instanceof Error) {
+        process.stderr.write(`Error details: ${error.message}\n`);
+      }
+      return {
+        songs: [],
+        error: ParseError.UNKNOWN_ERROR
+      };
     }
   }
 

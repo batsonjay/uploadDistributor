@@ -1,9 +1,9 @@
 import { readFile } from 'fs/promises';
 import * as xml2js from 'xml2js';
 import { Song } from '../types.js';
-import SonglistParser from './parser.js';
+import { SonglistParser } from './parser.js';
 
-export class NMLParser implements SonglistParser {
+export class NMLParser implements SonglistParser<Song[]> {
   async parse(filePath: string): Promise<Song[]> {
     const xml = await readFile(filePath, 'utf8');
     const parser = new xml2js.Parser();
