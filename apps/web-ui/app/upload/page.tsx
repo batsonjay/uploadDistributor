@@ -14,8 +14,11 @@ export default function UploadPage() {
   const [audioFile, setAudioFile] = useState<FileState>({ file: null, error: "" });
   const [songlistFile, setSonglistFile] = useState<FileState>({ file: null, error: "" });
   const [artworkFile, setArtworkFile] = useState<FileState>({ file: null, error: "" });
-  const [title, setTitle] = useState("");
+  const [setTitle, setSetTitle] = useState("");
   const [genre, setGenre] = useState("");
+  const [description, setDescription] = useState("");
+  const [broadcastDate, setBroadcastDate] = useState("");
+  const [broadcastTime, setBroadcastTime] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   // Hidden file input refs
@@ -173,19 +176,57 @@ export default function UploadPage() {
             </div>
           </section>
 
-          {/* Metadata Section */}
+          {/* Broadcast Details Section */}
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Metadata</h2>
+            <h2 className={styles.sectionTitle}>Broadcast Details</h2>
+            
+            <div className={styles.dateTimeGroup}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="broadcastDate" className={styles.label}>
+                  Broadcast Date
+                </label>
+                <input
+                  id="broadcastDate"
+                  type="date"
+                  className={styles.input}
+                  value={broadcastDate}
+                  onChange={(e) => setBroadcastDate(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label htmlFor="broadcastTime" className={styles.label}>
+                  Broadcast Time
+                </label>
+                <input
+                  id="broadcastTime"
+                  type="time"
+                  className={styles.input}
+                  value={broadcastTime}
+                  onChange={(e) => setBroadcastTime(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Mix Details Section */}
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Mix Details</h2>
+            
             <div className={styles.inputGroup}>
-              <label htmlFor="title" className={styles.label}>
-                Title
+              <label htmlFor="setTitle" className={styles.label}>
+                Set Title
               </label>
               <input
-                id="title"
+                id="setTitle"
                 type="text"
                 className={styles.input}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={setTitle}
+                onChange={(e) => setSetTitle(e.target.value)}
                 required
                 placeholder="Enter mix title"
                 disabled={isLoading}
@@ -203,8 +244,23 @@ export default function UploadPage() {
                 value={genre}
                 onChange={(e) => setGenre(e.target.value)}
                 required
-                placeholder="Enter genre"
+                placeholder="Enter primary genre"
                 disabled={isLoading}
+              />
+            </div>
+
+            <div className={styles.inputGroup}>
+              <label htmlFor="description" className={styles.label}>
+                Description
+              </label>
+              <textarea
+                id="description"
+                className={styles.textarea}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter mix description"
+                disabled={isLoading}
+                rows={4}
               />
             </div>
           </section>

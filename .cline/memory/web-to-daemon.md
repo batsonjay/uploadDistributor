@@ -111,6 +111,10 @@ This document outlines the implementation plan for the web client interface and 
    - MP3 extension check
    - JPG format verification
    - Basic size checks
+3. Genre list validation
+   - Display approved list in distinctive block on page adjacent to input field
+   - Each genre name is toggle clickable to indicate selection
+   - Selected genres are included in songlist sent to daemon
 3. Implement form state management:
    - React form handling
    - File state tracking
@@ -126,6 +130,7 @@ This document outlines the implementation plan for the web client interface and 
    - File reading and validation
    - Format detection
    - Parse songlist data
+   - Validate genre tags
 3. Create results display component:
    - Table view of parsed songs
    - Error highlighting
