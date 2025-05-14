@@ -1,0 +1,185 @@
+.validatePage {
+  display: grid;
+  grid-template-rows: 20px 1fr 20px;
+  align-items: start;
+  min-height: 100svh;
+  padding: 80px;
+  gap: 64px;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  grid-row-start: 2;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.title {
+  font-family: var(--font-geist-sans);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid var(--gray-alpha-200);
+}
+
+.sectionTitle {
+  font-family: var(--font-geist-sans);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.songTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-geist-sans);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.songTable th {
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid var(--gray-alpha-200);
+  font-weight: 500;
+}
+
+.songTable td {
+  padding: 12px;
+  border-bottom: 1px solid var(--gray-alpha-200);
+}
+
+.songTable tr:last-child td {
+  border-bottom: none;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.backButton {
+  appearance: none;
+  border-radius: 128px;
+  height: 48px;
+  padding: 0 20px;
+  border: 1px solid var(--gray-alpha-200);
+  font-family: var(--font-geist-sans);
+  background: transparent;
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.backButton:hover {
+  background: var(--button-secondary-hover);
+}
+
+.uploadButton {
+  appearance: none;
+  border-radius: 128px;
+  height: 48px;
+  padding: 0 20px;
+  border: none;
+  font-family: var(--font-geist-sans);
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.uploadButton:hover {
+  background: var(--button-primary-hover);
+}
+
+.uploadButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.swapButton {
+  appearance: none;
+  border-radius: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--gray-alpha-200);
+  font-family: var(--font-geist-sans);
+  background: transparent;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  align-self: flex-start;
+}
+
+.swapButton:hover {
+  background: var(--button-secondary-hover);
+}
+
+.error {
+  color: #e11d48;
+  font-family: var(--font-geist-sans);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+@media (max-width: 600px) {
+  .validatePage {
+    padding: 32px;
+  }
+  
+  .title {
+    font-size: 20px;
+    line-height: 28px;
+  }
+  
+  .section {
+    padding: 16px;
+  }
+  
+  .sectionTitle {
+    font-size: 16px;
+    line-height: 24px;
+  }
+  
+  .buttonGroup {
+    flex-direction: column;
+  }
+  
+  .backButton,
+  .uploadButton {
+    width: 100%;
+    height: 40px;
+    font-size: 14px;
+  }
+  
+  .songTable {
+    font-size: 12px;
+  }
+  
+  .songTable th,
+  .songTable td {
+    padding: 8px;
+  }
+}

@@ -1,6 +1,71 @@
 # Deployment Plan: uploadDistributor
 
-This document outlines the deployment strategy for the uploadDistributor daemon on a Linode instance that already hosts AzuraCast.
+## Development vs Production Environments
+
+### Local Development Setup
+
+The development environment runs directly on your local machine:
+
+```bash
+# Terminal 1: Run the daemon
+cd packages/daemon
+npm run dev  # Runs on localhost:3001
+
+# Terminal 2: Run the web client
+cd apps/web-ui
+npm run dev  # Runs on localhost:3000
+```
+
+Key development environment characteristics:
+- Services run directly with Node/npm (no containers)
+- Uses localhost URLs for communication
+- Files stored in project directory structure
+- Mock APIs enabled by default (controlled by USE_MOCK_APIS in .env)
+- CORS configured for localhost development
+- Hot reloading enabled for rapid development
+
+Required development environment variables:
+```bash
+# In packages/daemon/.env
+USE_MOCK_APIS=true
+PORT=3001
+
+# In apps/web-ui/.env
+NEXT_PUBLIC_DAEMON_URL=http://localhost:3001
+```
+
+### Transitioning to Production
+
+Key differences in production:
+1. Daemon:
+   - Runs in Docker container on Linode
+   - Uses real APIs instead of mocks
+   - Proper file storage paths
+   - Production CORS settings
+   - No hot reloading
+
+2. Web Client:
+   - Deployed to Vercel or similar platform
+   - Points to production daemon URL
+   - Production environment variables
+   - Static file serving
+
+Steps to transition from development to production:
+1. Update daemon environment variables:
+   ```bash
+   USE_MOCK_APIS=false
+   USE_REAL_AZURACAST=true
+   # Update other API settings as needed
+   ```
+
+2. Update web client environment variables:
+   ```bash
+   NEXT_PUBLIC_DAEMON_URL=https://your-production-daemon-url
+   ```
+
+3. Configure CORS in daemon for production web client domain
+4. Follow deployment steps below for daemon containerization
+5. Deploy web client to hosting platform
 
 ## Overview
 
