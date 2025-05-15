@@ -1,32 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "../auth/AuthContext";
 import styles from "./page.module.css";
-import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setIsLoading(true);
 
-    // TODO: Implement actual login logic
-    // For now, just simulate a delay and redirect
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    router.push("/upload");
+    const result = await login(email, password);
+    if (!result.success) {
+      setError(result.error || "Login failed");
+    }
   };
 
   return (
     <div className={styles.loginPage}>
       <main className={styles.main}>
-        <h1 className={styles.title}>Sign in to Upload Distributor</h1>
+        <h1 className={styles.title}>Login</h1>
         
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.inputGroup}>
@@ -40,7 +37,6 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              autoComplete="email"
               placeholder="Enter your email"
               disabled={isLoading}
             />
@@ -57,7 +53,6 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              autoComplete="current-password"
               placeholder="Enter your password"
               disabled={isLoading}
             />
@@ -65,12 +60,12 @@ export default function LoginPage() {
 
           {error && <div className={styles.error}>{error}</div>}
 
-          <button 
-            type="submit" 
-            className={styles.submitButton}
+          <button
+            type="submit"
+            className={styles.loginButton}
             disabled={isLoading}
           >
-            {isLoading ? "Signing in..." : "Sign in"}
+            {isLoading ? "Logging in..." : "Login"}
           </button>
         </form>
       </main>

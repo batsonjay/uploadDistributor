@@ -17,12 +17,44 @@
   margin: 0 auto;
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
 .title {
   font-family: var(--font-geist-sans);
   font-size: 24px;
   line-height: 32px;
   font-weight: 500;
   margin: 0;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: var(--font-geist-sans);
+  font-size: 14px;
+}
+
+.logoutButton {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-family: var(--font-geist-sans);
+  font-size: 14px;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.logoutButton:hover {
+  background: var(--gray-alpha-100);
 }
 
 .form {

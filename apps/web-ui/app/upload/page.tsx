@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../auth/AuthContext";
 import styles from "./page.module.css";
 
 interface FileState {
@@ -11,6 +12,7 @@ interface FileState {
 
 export default function UploadPage() {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const [audioFile, setAudioFile] = useState<FileState>({ file: null, error: "" });
   const [songlistFile, setSonglistFile] = useState<FileState>({ file: null, error: "" });
   const [artworkFile, setArtworkFile] = useState<FileState>({ file: null, error: "" });
@@ -89,7 +91,15 @@ export default function UploadPage() {
   return (
     <div className={styles.uploadPage}>
       <main className={styles.main}>
-        <h1 className={styles.title}>Upload New Mix</h1>
+        <div className={styles.header}>
+          <h1 className={styles.title}>Upload New Mix</h1>
+          <div className={styles.userInfo}>
+            <span>Logged in as {user?.displayName}</span>
+            <button onClick={logout} className={styles.logoutButton}>
+              Logout
+            </button>
+          </div>
+        </div>
 
         <form className={styles.form} onSubmit={handleSubmit}>
           {/* Audio File Section */}

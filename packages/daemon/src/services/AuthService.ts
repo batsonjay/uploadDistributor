@@ -42,12 +42,18 @@ export class AuthService {
   private mockUsers: UserProfile[] = [
     {
       id: '1',
-      email: 'batsonjay@mac.com',
-      displayName: 'catalyst',
+      email: 'batsonjay@gmail.com',
+      displayName: 'Jay Batson',
       role: USER_ROLES.ADMIN
     },
     {
       id: '2',
+      email: 'batsonjay@mac.com',
+      displayName: 'catalyst',
+      role: USER_ROLES.DJ
+    },
+    {
+      id: '3',
       email: 'miker@mrobs.co.uk',
       displayName: 'Chewee',
       role: USER_ROLES.DJ
