@@ -16,73 +16,81 @@ const router = express.Router();
  */
 router.post('/', anyAuthenticated, (req: Request, res: Response) => {
   const fileId = uuidv4();
-  const tempDir = path.join(
-    path.dirname(new URL(import.meta.url).pathname),
-    '../../temp',
-    fileId
-  );
+  const tempDir = path.join(process.cwd(), 'temp', fileId);
   
-  // Create temp directory
-  fs.mkdirSync(tempDir, { recursive: true });
-  
-  // Set up busboy to handle file receiving
-  const bb = busboy({ headers: req.headers });
-  let songlistPath: string | null = null;
-  
-  // Handle file receiving
-  bb.on('file', (name: string, file: NodeJS.ReadableStream, info: { filename: string }) => {
-    if (name === 'songlist') {
-      // Save file with original extension
-      const ext = path.extname(info.filename);
-      songlistPath = path.join(tempDir, `songlist${ext}`);
-      file.pipe(fs.createWriteStream(songlistPath));
-    }
-  });
-  
-  // Handle completion
-  bb.on('finish', async () => {
-    try {
-      if (!songlistPath) {
-        throw new Error('No songlist file received');
+  try {
+    // Create temp directory
+    fs.mkdirSync(tempDir, { recursive: true });
+    
+    // Set up busboy to handle file receiving
+    const bb = busboy({ headers: req.headers });
+    let songlistPath: string | null = null;
+    
+    // Handle file receiving
+    bb.on('file', (name: string, file: NodeJS.ReadableStream, info: { filename: string }) => {
+      if (name === 'songlist') {
+        // Save file with original extension
+        const ext = path.extname(info.filename);
+        songlistPath = path.join(tempDir, `songlist${ext}`);
+        file.pipe(fs.createWriteStream(songlistPath));
       }
-      
-      // Parse the songlist
-      const parseResult: ParseResult = await parseSonglist(songlistPath);
-      
-      // Clean up temp files
-      fs.rmSync(tempDir, { recursive: true, force: true });
-      
-      // Return the parse result
-      res.json(parseResult);
-      
-    } catch (err) {
+    });
+    
+    // Handle completion
+    bb.on('finish', async () => {
+      try {
+        if (!songlistPath) {
+          throw new Error('No songlist file received');
+        }
+        
+        // Parse the songlist
+        const parseResult: ParseResult = await parseSonglist(songlistPath);
+        
+        // Clean up temp files
+        fs.rmSync(tempDir, { recursive: true, force: true });
+        
+        // Return the parse result
+        res.json(parseResult);
+        
+      } catch (err) {
+        // Clean up temp files
+        if (tempDir) {
+          fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+        
+        res.status(400).json({
+          error: 'Parse failed',
+          message: (err as Error).message
+        });
+      }
+    });
+    
+    // Handle errors
+    bb.on('error', (err: Error) => {
       // Clean up temp files
       if (tempDir) {
         fs.rmSync(tempDir, { recursive: true, force: true });
       }
       
-      res.status(400).json({
-        error: 'Parse failed',
-        message: (err as Error).message
+      res.status(500).json({
+        error: 'File receiving failed',
+        message: err.message
       });
-    }
-  });
-  
-  // Handle errors
-  bb.on('error', (err: Error) => {
-    // Clean up temp files
-    if (tempDir) {
+    });
+    
+    // Pipe request to busboy
+    req.pipe(bb);
+  } catch (err) {
+    // Clean up temp files if directory was created
+    if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
     
     res.status(500).json({
-      error: 'File receiving failed',
-      message: err.message
+      error: 'Setup failed',
+      message: (err as Error).message
     });
-  });
-  
-  // Pipe request to busboy
-  req.pipe(bb);
+  }
 });
 
 export { router as parseSonglistRoutes };
