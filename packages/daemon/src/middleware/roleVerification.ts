@@ -6,7 +6,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { AuthService, UserRole, USER_ROLES } from '../services/AuthService';
+import { AuthService, UserRole, USER_ROLES } from '../services/AuthService.js';
 
 const authService = AuthService.getInstance();
 

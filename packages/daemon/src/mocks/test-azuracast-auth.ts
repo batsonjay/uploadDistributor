@@ -5,8 +5,8 @@
  * credentials and verifies that the returned DJ name is "catalyst".
  */
 
-import { AuthService } from '../services/AuthService';
-import { encodePassword } from '../utils/PasswordUtils';
+import { AuthService } from '../services/AuthService.js';
+import { encodePassword } from '../utils/PasswordUtils.js';
 
 async function testAzuraCastAuth() {
   try {

@@ -8,12 +8,12 @@
  * - Error handling and retries
  */
 
-import { AzuraCastApiMock, AzuraCastMetadata, AzuraCastUploadResponse } from '../mocks/AzuraCastApiMock';
-import { StatusManager } from './StatusManager';
-import { ErrorType } from '../utils/LoggingUtils';
-import { retry, RetryOptions } from '../utils/RetryUtils';
-import { SonglistData } from '../storage/SonglistStorage';
-import { utcToCet } from '../utils/TimezoneUtils';
+import { AzuraCastApiMock, AzuraCastMetadata, AzuraCastUploadResponse } from '../mocks/AzuraCastApiMock.js';
+import { StatusManager } from './StatusManager.js';
+import { ErrorType } from '../utils/LoggingUtils.js';
+import { retry, RetryOptions } from '../utils/RetryUtils.js';
+import { SonglistData } from '../storage/SonglistStorage.js';
+import { utcToCet } from '../utils/TimezoneUtils.js';
 
 export class AzuraCastService {
   private api: AzuraCastApiMock;

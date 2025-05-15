@@ -1,10 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
-import { healthRoutes } from './routes/health';
-import { receiveRoutes } from './routes/receive';
-import { statusRoutes } from './routes/status';
-import authRoutes from './routes/auth';
+import { healthRoutes } from './routes/health.js';
+import { receiveRoutes } from './routes/receive.js';
+import { statusRoutes } from './routes/status.js';
+import { default as authRoutes } from './routes/auth.js';
+import { parseSonglistRoutes } from './routes/parse-songlist.js';
 
 // Load environment variables
 dotenv.config();
@@ -22,6 +23,7 @@ app.use('/health', healthRoutes);
 app.use('/receive', receiveRoutes); // Updated to use the new endpoint name
 app.use('/status', statusRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/parse-songlist', parseSonglistRoutes);
 
 // Start server
 app.listen(PORT, () => {

@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 
 const router = express.Router();
 
@@ -7,7 +7,7 @@ const router = express.Router();
  * @route GET /health
  * @returns {object} 200 - Health status
  */
-router.get('/', (req, res) => {
+router.get('/', (req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 

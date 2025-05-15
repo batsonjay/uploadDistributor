@@ -7,12 +7,12 @@
  * - Error handling and recovery
  */
 
-import { SoundCloudApiMock, SoundCloudMetadata, SoundCloudUploadResponse } from '../mocks/SoundCloudApiMock';
-import { StatusManager } from './StatusManager';
-import { ErrorType } from '../utils/LoggingUtils';
-import { retry, RetryOptions } from '../utils/RetryUtils';
-import { SonglistData } from '../storage/SonglistStorage';
-import { utcToCet } from '../utils/TimezoneUtils';
+import { SoundCloudApiMock, SoundCloudMetadata, SoundCloudUploadResponse } from '../mocks/SoundCloudApiMock.js';
+import { StatusManager } from './StatusManager.js';
+import { ErrorType } from '../utils/LoggingUtils.js';
+import { retry, RetryOptions } from '../utils/RetryUtils.js';
+import { SonglistData } from '../storage/SonglistStorage.js';
+import { utcToCet } from '../utils/TimezoneUtils.js';
 
 export class SoundCloudService {
   private api: SoundCloudApiMock;

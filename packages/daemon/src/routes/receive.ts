@@ -1,17 +1,18 @@
-// Use require for express and busboy to avoid TypeScript import issues
-const express = require('express');
-const busboy = require('busboy');
+import express from 'express';
+import busboy from 'busboy';
 import * as path from 'path';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
-// Ensure TypeScript can find the uuid module
-import { fork } from 'child_process';
-import { anyAuthenticated } from '../middleware/roleVerification';
+import { fork, spawn } from 'child_process';
+import { anyAuthenticated } from '../middleware/roleVerification.js';
 
 const router = express.Router();
 
 // Get received files directory from environment or use default
-const receivedFilesDir = process.env.RECEIVED_FILES_DIR || path.join(__dirname, '../../received-files');
+const receivedFilesDir = process.env.RECEIVED_FILES_DIR || path.join(
+  path.dirname(new URL(import.meta.url).pathname),
+  '../../received-files'
+);
 
 // Create received files directory if it doesn't exist
 if (!fs.existsSync(receivedFilesDir)) {
@@ -212,7 +213,10 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     const fileExt = isDev ? '.ts' : '.js';
     
     // Fork a process to handle the file processing and destination uploads
-    const processorPath = path.join(__dirname, `../processors/file-processor${fileExt}`);
+    const processorPath = path.join(
+      path.dirname(new URL(import.meta.url).pathname),
+      `../processors/file-processor${fileExt}`
+    );
     console.log(`Forking process for received files ${fileId} using ${processorPath}`);
     
     try {
@@ -220,7 +224,6 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
       let child;
       if (isDev) {
         // For development mode, use the child_process.spawn method with ts-node
-        const { spawn } = require('child_process');
         console.log(`Spawning ts-node process for ${processorPath} with file ID ${fileId}`);
         
         // Use spawn instead of fork for better control

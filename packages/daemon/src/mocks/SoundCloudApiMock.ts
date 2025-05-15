@@ -4,7 +4,7 @@
  * This mock simulates the SoundCloud API for testing purposes.
  */
 
-import { DestinationApiMock } from './DestinationApiMock';
+import { DestinationApiMock } from './DestinationApiMock.js';
 import * as fs from 'fs';
 
 export interface SoundCloudUploadResponse {

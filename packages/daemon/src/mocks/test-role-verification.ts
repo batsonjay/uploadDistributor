@@ -6,8 +6,8 @@
  */
 
 import axios from 'axios';
-import { AuthService, USER_ROLES } from '../services/AuthService';
-import { encodePassword } from '../utils/PasswordUtils';
+import { AuthService, USER_ROLES } from '../services/AuthService.js';
+import { encodePassword } from '../utils/PasswordUtils.js';
 
 // Base URL for API requests
 const API_BASE_URL = 'http://localhost:3001';

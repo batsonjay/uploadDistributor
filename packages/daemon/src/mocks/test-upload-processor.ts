@@ -11,9 +11,9 @@ import * as path from 'path';
 import { fork } from 'child_process';
 
 // Import our mocks
-import { AzuraCastApiMock } from './AzuraCastApiMock';
-import { MixcloudApiMock } from './MixcloudApiMock';
-import { SoundCloudApiMock } from './SoundCloudApiMock';
+import { AzuraCastApiMock } from './AzuraCastApiMock.js';
+import { MixcloudApiMock } from './MixcloudApiMock.js';
+import { SoundCloudApiMock } from './SoundCloudApiMock.js';
 
 // Use a fixed test ID to avoid creating multiple test directories
 const testUploadId = 'test-upload-123';

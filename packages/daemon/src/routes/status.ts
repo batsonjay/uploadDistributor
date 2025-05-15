@@ -2,8 +2,8 @@ import express, { Request, Response } from 'express';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as glob from 'glob';
-import { anyAuthenticated } from '../middleware/roleVerification';
-import { FileManager } from '../services/FileManager';
+import { anyAuthenticated } from '../middleware/roleVerification.js';
+import { FileManager } from '../services/FileManager.js';
 
 const router = express.Router();
 

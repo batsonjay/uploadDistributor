@@ -8,8 +8,8 @@
  */
 
 import express from 'express';
-import { AuthService } from '../services/AuthService';
-import { encodePassword } from '../utils/PasswordUtils';
+import { AuthService } from '../services/AuthService.js';
+import { encodePassword } from '../utils/PasswordUtils.js';
 
 const router = express.Router();
 const authService = AuthService.getInstance();

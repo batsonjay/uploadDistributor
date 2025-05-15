@@ -6,7 +6,7 @@
  */
 
 import axios from 'axios';
-import { ErrorType } from '../utils/LoggingUtils';
+import { ErrorType } from '../utils/LoggingUtils.js';
 
 export class AzuraCastApi {
   private baseUrl: string;

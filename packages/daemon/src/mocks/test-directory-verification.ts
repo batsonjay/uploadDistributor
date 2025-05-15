@@ -6,8 +6,8 @@
  * those without valid directories receive an appropriate error message.
  */
 
-import { AuthService } from '../services/AuthService';
-import { encodePassword } from '../utils/PasswordUtils';
+import { AuthService } from '../services/AuthService.js';
+import { encodePassword } from '../utils/PasswordUtils.js';
 
 // Test users
 const DJ_WITH_DIRECTORY = {

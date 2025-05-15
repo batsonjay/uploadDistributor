@@ -15,19 +15,19 @@ import * as dotenv from 'dotenv';
 
 // Import our modules
 import { 
-  SonglistData, 
-  parseSonglist, 
+  SonglistData,
   storeSonglist 
-} from '../storage/SonglistStorage';
-import { USER_ROLES, UserRole } from '../services/AuthService';
-import { utcToCet } from '../utils/TimezoneUtils';
+} from '../storage/SonglistStorage.js';
+import { parseSonglist, ParseResult, ParseError } from '@uploadDistributor/songlist-parser';
+import { USER_ROLES, UserRole } from '../services/AuthService.js';
+import { utcToCet } from '../utils/TimezoneUtils.js';
 
 // Import services
-import { StatusManager } from '../services/StatusManager';
-import { AzuraCastService } from '../services/AzuraCastService';
-import { MixcloudService } from '../services/MixcloudService';
-import { SoundCloudService } from '../services/SoundCloudService';
-import { FileManager } from '../services/FileManager';
+import { StatusManager } from '../services/StatusManager.js';
+import { AzuraCastService } from '../services/AzuraCastService.js';
+import { MixcloudService } from '../services/MixcloudService.js';
+import { SoundCloudService } from '../services/SoundCloudService.js';
+import { FileManager } from '../services/FileManager.js';
 
 // Load environment variables
 dotenv.config();
@@ -120,20 +120,33 @@ async function processFiles() {
     // Step 1: Parse and normalize songlist
     process.stdout.write('Parsing songlist...\n');
     
-    // For now, we'll use our sample songlist as a stub
-    // In a real implementation, we would parse the actual songlist file
-    const sampleSonglistPath = path.join(__dirname, '../../songlists/sample-songlist.json');
     let songlist: SonglistData;
     
     try {
-      // If the sample songlist exists, use it
-      if (fs.existsSync(sampleSonglistPath)) {
-        songlist = parseSonglist(sampleSonglistPath);
-        process.stdout.write(`Using sample songlist: ${sampleSonglistPath}\n`);
-      } else {
-        // Otherwise, create a minimal songlist from the metadata
-        process.stdout.write('Sample songlist not found, creating minimal songlist from metadata\n');
+      // Parse the actual songlist file
+      const parseResult: ParseResult = await parseSonglist(songlistFile);
+      
+      if (parseResult.error !== ParseError.NONE) {
+        throw new Error(`Failed to parse songlist: ${parseResult.error}`);
+      }
+      
+      if (!parseResult.songs || parseResult.songs.length === 0) {
+        process.stdout.write('No valid songs found in songlist, creating minimal songlist from metadata\n');
         songlist = createMinimalSonglist(metadata);
+      } else {
+        // Convert parsed songs to SonglistData format
+        songlist = {
+          broadcast_data: {
+            broadcast_date: new Date().toISOString().split('T')[0] || new Date().toISOString(),
+            broadcast_time: (new Date().toISOString().split('T')[1] || '').substring(0, 8) || '00:00:00',
+            DJ: metadata.djName || 'Unknown DJ',
+            setTitle: metadata.title || 'Untitled Set',
+            duration: '01:00:00', // TODO: Calculate actual duration from MP3 file
+            artwork: metadata.artworkFilename || 'artwork.jpg'
+          },
+          track_list: parseResult.songs,
+          version: '1.0'
+        };
       }
       
       // Store the songlist
@@ -331,7 +344,7 @@ function createMinimalSonglist(metadata: any): SonglistData {
   return {
     broadcast_data: {
       broadcast_date: new Date().toISOString().split('T')[0] || new Date().toISOString(),
-      broadcast_time: new Date().toISOString().split('T')[1]?.substring(0, 8) || '00:00:00',
+      broadcast_time: (new Date().toISOString().split('T')[1] || '').substring(0, 8) || '00:00:00',
       DJ: metadata.djName || 'Unknown DJ',
       setTitle: metadata.title || 'Untitled Set',
       duration: '01:00:00',

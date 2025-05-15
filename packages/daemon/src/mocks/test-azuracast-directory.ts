@@ -5,8 +5,8 @@
  * exists for a DJ in the station's files.
  */
 
-import { AzuraCastApi } from '../apis/AzuraCastApi';
-import { logDetailedError, ErrorType } from '../utils/LoggingUtils';
+import { AzuraCastApi } from '../apis/AzuraCastApi.js';
+import { logDetailedError, ErrorType } from '../utils/LoggingUtils.js';
 
 // Station ID for the dev/test station
 const STATION_ID = '2';

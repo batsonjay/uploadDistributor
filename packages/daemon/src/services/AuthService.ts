@@ -10,9 +10,9 @@
  * in AzuraCast before allowing uploads.
  */
 
-import { decodePassword } from '../utils/PasswordUtils';
-import { AzuraCastApi } from '../apis/AzuraCastApi';
-import { ErrorType, logDetailedError } from '../utils/LoggingUtils';
+import { decodePassword } from '../utils/PasswordUtils.js';
+import { AzuraCastApi } from '../apis/AzuraCastApi.js';
+import { ErrorType, logDetailedError } from '../utils/LoggingUtils.js';
 
 // Define user roles as constants for easy modification
 export const USER_ROLES = {

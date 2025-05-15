@@ -13,7 +13,7 @@ import {
   logDetailedError, 
   LogType, 
   ErrorType 
-} from '../utils/LoggingUtils';
+} from '../utils/LoggingUtils.js';
 
 export interface StatusData {
   fileId: string;

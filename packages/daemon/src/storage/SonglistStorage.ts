@@ -8,7 +8,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { USER_ROLES, UserRole } from '../services/AuthService';
+import { USER_ROLES, UserRole } from '../services/AuthService.js';
 
 // Define the songlist data structure
 export interface TrackData {

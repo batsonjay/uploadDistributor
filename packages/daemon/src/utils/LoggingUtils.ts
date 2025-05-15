@@ -11,7 +11,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 // Define log file paths
-const logsDir = process.env.LOGS_DIR || path.join(__dirname, '../../logs');
+const logsDir = process.env.LOGS_DIR || path.join(
+  path.dirname(new URL(import.meta.url).pathname),
+  '../../logs'
+);
 const successErrorLogFile = path.join(logsDir, 'destination-status.log');
 const detailedErrorLogFile = path.join(logsDir, 'destination-errors.log');
 

@@ -6,10 +6,10 @@
  * Password handling is done using simple XOR obfuscation to avoid plaintext passwords.
  */
 
-import { DestinationApiMock } from './DestinationApiMock';
+import { DestinationApiMock } from './DestinationApiMock.js';
 import * as fs from 'fs';
-import { AuthService } from '../services/AuthService';
-import { encodePassword } from '../utils/PasswordUtils';
+import { AuthService } from '../services/AuthService.js';
+import { encodePassword } from '../utils/PasswordUtils.js';
 
 export interface AzuraCastUploadResponse {
   success: boolean;

@@ -11,15 +11,21 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { SonglistData } from '../storage/SonglistStorage';
+import { SonglistData } from '../storage/SonglistStorage.js';
 
 export class FileManager {
   private receivedFilesDir: string;
   private archiveDir: string;
   
   constructor() {
-    this.receivedFilesDir = process.env.RECEIVED_FILES_DIR || path.join(__dirname, '../../received-files');
-    this.archiveDir = process.env.ARCHIVE_DIR || path.join(__dirname, '../../archive');
+    this.receivedFilesDir = process.env.RECEIVED_FILES_DIR || path.join(
+      path.dirname(new URL(import.meta.url).pathname),
+      '../../received-files'
+    );
+    this.archiveDir = process.env.ARCHIVE_DIR || path.join(
+      path.dirname(new URL(import.meta.url).pathname),
+      '../../archive'
+    );
     
     // Ensure archive directory exists
     if (!fs.existsSync(this.archiveDir)) {

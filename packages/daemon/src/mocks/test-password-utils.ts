@@ -5,7 +5,7 @@
  * It encodes a password, then decodes it, and verifies that the original password is recovered.
  */
 
-import { encodePassword, decodePassword } from '../utils/PasswordUtils';
+import { encodePassword, decodePassword } from '../utils/PasswordUtils.js';
 
 // Test passwords
 const passwords = [
