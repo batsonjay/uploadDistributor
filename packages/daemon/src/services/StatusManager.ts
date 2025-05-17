@@ -41,7 +41,7 @@ export class StatusManager {
       filesDir = process.env.RECEIVED_FILES_DIR;
     } else {
       // Check if we're in src or dist directory
-      const dirParts = __dirname.split(path.sep);
+      const dirParts = path.dirname(new URL(import.meta.url).pathname).split(path.sep);
       const srcOrDistIndex = dirParts.findIndex(part => part === 'src' || part === 'dist');
       
       if (srcOrDistIndex !== -1) {
@@ -50,7 +50,7 @@ export class StatusManager {
         filesDir = path.join(daemonDir, 'received-files');
       } else {
         // Fallback to a relative path from current directory
-        filesDir = path.join(__dirname, '../../../received-files');
+        filesDir = path.join(path.dirname(new URL(import.meta.url).pathname), '../../../received-files');
       }
     }
     

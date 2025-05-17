@@ -65,7 +65,7 @@ export class FileManager {
     const month = dateParts[1] || String(now.getMonth() + 1).padStart(2, '0');
     const day = dateParts[2] || String(now.getDate()).padStart(2, '0');
     
-    // Create directory structure: yyyy/yyyy-mm-dd_djname
+    // Create directory structure: yyyy/
     const yearDir = path.join(this.archiveDir, year as string);
     if (!fs.existsSync(yearDir)) {
       fs.mkdirSync(yearDir, { recursive: true });
@@ -75,14 +75,8 @@ export class FileManager {
     const djName = songlist.broadcast_data?.DJ || 'Unknown_DJ';
     const sanitizedDjName = djName.replace(/[^a-zA-Z0-9]/g, '_');
     
-    // Create the final directory name
-    const dirName = `${year}-${month}-${day}_${sanitizedDjName}`;
-    const finalDir = path.join(yearDir, dirName);
-    
-    // Create the directory if it doesn't exist
-    if (!fs.existsSync(finalDir)) {
-      fs.mkdirSync(finalDir, { recursive: true });
-    }
+    // Use year directory as the final directory
+    const finalDir = yearDir;
     
     // Create the base filename prefix
     const title = songlist.broadcast_data?.setTitle || 'Untitled_Set';

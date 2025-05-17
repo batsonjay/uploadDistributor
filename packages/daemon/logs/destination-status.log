@@ -64,3 +64,6 @@
 [azuracast]: success [2025-05-11 23:36:30]: Test Mix, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747006590235.mp3
 [mixcloud]: success [2025-05-11 23:36:31]: Test Mix, Uploaded to https://www.mixcloud.com/test-dj/test-mix/
 [soundcloud]: success [2025-05-11 23:36:32]: Test Mix, Uploaded to https://soundcloud.com/mock-user/test-mix
+[azuracast]: success [2025-05-17 04:07:08]: title, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747454828359.mp3
+[mixcloud]: success [2025-05-17 04:07:09]: title, Uploaded to https://www.mixcloud.com/jay-batson/title/
+[soundcloud]: success [2025-05-17 04:07:10]: title, Uploaded to https://soundcloud.com/mock-user/title

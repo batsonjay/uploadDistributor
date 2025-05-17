@@ -48,7 +48,7 @@ export interface SonglistData {
 }
 
 // Base directory for songlist storage
-const SONGLISTS_DIR = process.env.SONGLISTS_DIR || path.join(__dirname, '../../../songlists');
+const SONGLISTS_DIR = process.env.SONGLISTS_DIR || path.join(path.dirname(new URL(import.meta.url).pathname), '../../../songlists');
 
 /**
  * Store a songlist persistently

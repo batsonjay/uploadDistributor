@@ -12,7 +12,7 @@ const router = express.Router();
 const receivedFilesDir = process.env.RECEIVED_FILES_DIR || path.join(
   path.dirname(new URL(import.meta.url).pathname),
   '../../received-files'
-);
+).replace(/^\/([A-Za-z]):/, "$1:"); // Fix Windows paths
 
 // Create received files directory if it doesn't exist
 if (!fs.existsSync(receivedFilesDir)) {
@@ -53,6 +53,10 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     userId: (req.user?.id || ''),
     title: '',
     djName: '',
+    broadcastDate: '',
+    broadcastTime: '',
+    genre: '',
+    description: '',
     azcFolder: '',
     azcPlaylist: '',
     userRole: (req.user?.role || ''),
@@ -63,29 +67,26 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
   // Set up busboy to handle file receiving
   const bb = busboy({ headers: req.headers });
   
+  // Buffer to store files until we have metadata
+  const fileBuffers: { [key: string]: { buffer: Buffer[], info: any } } = {};
+
   // Handle file receiving
   bb.on('file', (name: string, file: NodeJS.ReadableStream, info: { filename: string; encoding: string; mimeType: string }) => {
     const { filename, encoding, mimeType } = info;
     console.log(`Processing ${name} file: ${filename}, encoding: ${encoding}, mimeType: ${mimeType}`);
     
-    let saveTo;
-    if (name === 'audio') {
-      saveTo = path.join(fileDir, 'audio.mp3');
-    } else if (name === 'songlist') {
-      saveTo = path.join(fileDir, 'songlist.txt');
-    } else if (name === 'artwork') {
-      // Extract file extension from original filename or default to .jpg
-      const ext = path.extname(filename) || '.jpg';
-      saveTo = path.join(fileDir, `artwork${ext}`);
-      // Store the artwork filename in metadata for later reference
-      metadata.artworkFilename = `artwork${ext}`;
-    } else {
-      // Skip unknown files
-      console.log(`Skipping unknown file type: ${name}`);
-      return;
-    }
-    
-    file.pipe(fs.createWriteStream(saveTo));
+    // Initialize buffer for this file
+    fileBuffers[name] = {
+      buffer: [],
+      info
+    };
+
+    // Collect file data in memory
+    file.on('data', (data) => {
+      if (fileBuffers[name]) {
+        fileBuffers[name].buffer.push(data);
+      }
+    });
   });
   
   // Handle metadata fields
@@ -98,6 +99,42 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
   
   // Handle completion
   bb.on('finish', async () => {
+    // Check if we have all required metadata
+    if (!metadata.broadcastDate || !metadata.djName || !metadata.title) {
+      return res.status(400).json({
+        error: 'Invalid metadata',
+        message: 'Missing required metadata fields'
+      });
+    }
+
+    // Now that we have metadata, save the buffered files
+    const normalizedBase = `${metadata.broadcastDate}_${metadata.djName.replace(/\s+/g, '_')}_${metadata.title.replace(/\s+/g, '_')}`;
+
+    // Save each buffered file
+    for (const [name, fileData] of Object.entries(fileBuffers)) {
+      if (!fileData.buffer || !fileData.info) {
+        console.log(`Missing buffer or info for file: ${name}`);
+        continue;
+      }
+      let saveTo;
+      if (name === 'audio') {
+        saveTo = path.join(fileDir, `${normalizedBase}.mp3`);
+      } else if (name === 'songlist') {
+        const ext = path.extname(fileData.info.filename);
+        saveTo = path.join(fileDir, `${normalizedBase}${ext}`);
+      } else if (name === 'artwork') {
+        const ext = path.extname(fileData.info.filename) || '.jpg';
+        saveTo = path.join(fileDir, `${normalizedBase}${ext}`);
+        metadata.artworkFilename = `${normalizedBase}${ext}`;
+      } else {
+        console.log(`Skipping unknown file type: ${name}`);
+        continue;
+      }
+
+      // Write the buffered file to disk
+      fs.writeFileSync(saveTo, Buffer.concat(fileData.buffer));
+    }
+
     // Save metadata
     fs.writeFileSync(
       path.join(fileDir, 'metadata.json'),
@@ -109,8 +146,17 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Validate files before proceeding
-    const audioFilePath = path.join(fileDir, 'audio.mp3');
-    const songlistFilePath = path.join(fileDir, 'songlist.txt');
+    const audioFilePath = path.join(fileDir, `${normalizedBase}.mp3`);
+    // Find the songlist file by checking for both .txt and .rtf extensions
+    let songlistFilePath = '';
+    const possibleExtensions = ['.txt', '.rtf'];
+    for (const ext of possibleExtensions) {
+      const testPath = path.join(fileDir, `${normalizedBase}${ext}`);
+      if (fs.existsSync(testPath)) {
+        songlistFilePath = testPath;
+        break;
+      }
+    }
     
     // Check if files exist and have content
     console.log(`Checking audio file at path: ${audioFilePath}`);
@@ -175,7 +221,7 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     console.log(`Songlist file exists and has size: ${fs.statSync(songlistFilePath).size} bytes`);
     
     // Check for artwork file
-    const artworkFilePath = path.join(fileDir, metadata.artworkFilename || 'artwork.jpg');
+    const artworkFilePath = path.join(fileDir, metadata.artworkFilename || `${normalizedBase}.jpg`);
     
     if (!fs.existsSync(artworkFilePath)) {
       console.log(`Artwork file does not exist at path: ${artworkFilePath}`);
@@ -212,42 +258,7 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     // Use .ts extension in development mode, .js in production
     const fileExt = isDev ? '.ts' : '.js';
     
-    // Fork a process to handle the file processing and destination uploads
-    const processorPath = path.join(
-      path.dirname(new URL(import.meta.url).pathname),
-      `../processors/file-processor${fileExt}`
-    );
-    console.log(`Forking process for received files ${fileId} using ${processorPath}`);
-    
-    try {
-      // In development mode, we need to use ts-node to execute TypeScript files
-      let child;
-      if (isDev) {
-        // For development mode, use the child_process.spawn method with ts-node
-        console.log(`Spawning ts-node process for ${processorPath} with file ID ${fileId}`);
-        
-        // Use spawn instead of fork for better control
-        child = spawn('npx', ['ts-node', processorPath, fileId], {
-          stdio: 'inherit', // Inherit stdio to see output in parent process
-          detached: false   // Keep the child process attached to the parent
-        });
-      } else {
-        // For production mode, use the compiled JS file directly
-        child = fork(processorPath, [fileId]);
-      }
-      
-      // Log when child process exits
-      child.on('exit', (code: number | null) => {
-        console.log(`Child process for file ID ${fileId} exited with code ${code}`);
-      });
-      
-      // We don't need to wait for the child process or communicate with it
-      console.log(`Forked process for file ID ${fileId}`);
-    } catch (err) {
-      console.error(`Error forking process for file ID ${fileId}:`, err);
-      // We still return success to the client, as the files were received
-      // The status endpoint will show any processing errors
-    }
+    // Worker-based processing now happens after confirmation, so no fork/spawn here
     
     // Return file ID to client with 'received' status
     res.json({

@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../auth/AuthContext";
+import { encodePassword } from "../utils/PasswordUtils";
 import styles from "./page.module.css";
 
 interface FileState {
@@ -22,6 +23,7 @@ export default function UploadPage() {
   const [broadcastDate, setBroadcastDate] = useState("");
   const [broadcastTime, setBroadcastTime] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   // Hidden file input refs
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -82,10 +84,76 @@ export default function UploadPage() {
     }
 
     setIsLoading(true);
-    // TODO: Implement actual file upload logic
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    router.push("/upload/validate");
+
+    try {
+      // First get an auth token
+      const authResponse = await fetch("http://localhost:3001/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: "batsonjay@gmail.com",
+          encodedPassword: encodePassword("test123")
+        }),
+      });
+
+      if (!authResponse.ok) {
+        throw new Error("Authentication failed");
+      }
+
+      const authData = await authResponse.json();
+
+      // Create form data with files and metadata
+      const formData = new FormData();
+      formData.append("audio", audioFile.file);
+      formData.append("songlist", songlistFile.file);
+      if (artworkFile.file) {
+        formData.append("artwork", artworkFile.file);
+      }
+
+      // Add metadata fields
+      formData.append("title", setTitle);
+      formData.append("djName", user?.displayName || "");
+      formData.append("broadcastDate", broadcastDate);
+      formData.append("broadcastTime", broadcastTime);
+      formData.append("genre", genre);
+      formData.append("description", description);
+
+      // Send files to daemon
+      const response = await fetch("http://localhost:3001/receive", {
+        method: "POST",
+        body: formData,
+        headers: {
+          "Authorization": `Bearer ${authData.token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const result = await response.json();
+      
+      // Store the fileId and metadata for the validate page
+      sessionStorage.setItem("uploadData", JSON.stringify({
+        fileId: result.fileId,
+        metadata: {
+          title: setTitle,
+          djName: user?.displayName,
+          broadcastDate,
+          broadcastTime,
+          genre,
+          description
+        }
+      }));
+
+      router.push("/upload/validate");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

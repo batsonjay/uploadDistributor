@@ -32,56 +32,39 @@ import { FileManager } from '../services/FileManager.js';
 // Load environment variables
 dotenv.config();
 
-// Get file ID from command line arguments
-// The file ID is the last argument passed to the script
-const fileId: string = process.argv[process.argv.length - 1] || 'default-file-id';
+import { workerData } from 'worker_threads';
 
-process.stdout.write('Process arguments: ' + JSON.stringify(process.argv) + '\n');
-process.stdout.write(`Using file ID: ${fileId}\n`);
+const fileId: string = workerData;
 
-if (!fileId || fileId === 'default-file-id') {
-  process.stderr.write('No file ID provided\n');
+if (!fileId || typeof fileId !== 'string') {
+  process.stderr.write('Invalid or missing fileId in workerData\n');
   process.exit(1);
 }
 
 // Define paths
-const receivedFilesDir = process.env.RECEIVED_FILES_DIR || path.join(__dirname, '../../received-files');
+const receivedFilesDir = process.env.RECEIVED_FILES_DIR || path.join(path.dirname(new URL(import.meta.url).pathname), '../../received-files');
 process.stdout.write(`Files directory: ${receivedFilesDir}\n`);
 const fileDir = path.join(receivedFilesDir, fileId);
-const audioFile = path.join(fileDir, 'audio.mp3');
-const songlistFile = path.join(fileDir, 'songlist.txt');
 const metadataFile = path.join(fileDir, 'metadata.json');
-const statusFile = path.join(fileDir, 'status.json');
 
 // Initialize services
 const statusManager = new StatusManager(fileId);
 const fileManager = new FileManager();
 
-// Check if required files exist
+// Check if directory exists
 if (!fs.existsSync(fileDir)) {
   process.stderr.write(`File directory not found: ${fileDir}\n`);
   process.exit(1);
 }
 
-if (!fs.existsSync(audioFile)) {
-  process.stderr.write(`Audio file not found: ${audioFile}\n`);
-  statusManager.updateStatus('error', 'Audio file not found');
-  process.exit(1);
-}
-
-if (!fs.existsSync(songlistFile)) {
-  process.stderr.write(`Songlist file not found: ${songlistFile}\n`);
-  statusManager.updateStatus('error', 'Songlist file not found');
-  process.exit(1);
-}
-
+// Check if metadata file exists
 if (!fs.existsSync(metadataFile)) {
   process.stderr.write(`Metadata file not found: ${metadataFile}\n`);
   statusManager.updateStatus('error', 'Metadata file not found');
   process.exit(1);
 }
 
-// Read metadata
+// Read metadata first to determine actual filenames
 let metadata: any;
 try {
   const metadataContent = fs.readFileSync(metadataFile, 'utf8');
@@ -92,13 +75,43 @@ try {
   process.exit(1);
 }
 
+// Construct normalized filenames based on metadata
+const normalizedBase = `${metadata.broadcastDate}_${metadata.djName.replace(/\s+/g, '_')}_${metadata.title.replace(/\s+/g, '_')}`;
+const audioFile = path.join(fileDir, `${normalizedBase}.mp3`);
+const songlistExt = metadata.artworkFilename ? path.extname(metadata.artworkFilename).replace('.jpg', '.rtf') : '.rtf';
+let songlistFile = path.join(fileDir, `${normalizedBase}${songlistExt}`);
+
+// Check if required files exist with normalized names
+if (!fs.existsSync(audioFile)) {
+  process.stderr.write(`Audio file not found: ${audioFile}\n`);
+  statusManager.updateStatus('error', 'Audio file not found');
+  process.exit(1);
+}
+
+if (!fs.existsSync(songlistFile)) {
+  // Try to find any songlist file with the normalized base
+  const files = fs.readdirSync(fileDir);
+  const possibleSonglistFile = files.find(file => 
+    file.startsWith(normalizedBase) && 
+    (file.endsWith('.txt') || file.endsWith('.rtf') || file.endsWith('.docx'))
+  );
+  
+  if (possibleSonglistFile) {
+    process.stdout.write(`Found alternative songlist file: ${possibleSonglistFile}\n`);
+    songlistFile = path.join(fileDir, possibleSonglistFile);
+  } else {
+    process.stderr.write(`Songlist file not found: ${songlistFile}\n`);
+    statusManager.updateStatus('error', 'Songlist file not found');
+    process.exit(1);
+  }
+}
+
 // Initialize platform services
 const azuraCastService = new AzuraCastService(statusManager);
 const mixcloudService = new MixcloudService(statusManager);
 const soundCloudService = new SoundCloudService(statusManager);
 
-// Main processing function
-async function processFiles() {
+export async function processFile(fileId: string) {
   try {
     // Update status to processing - the receive route already set status to 'received'
     statusManager.updateStatus('processing', 'Processing started');
@@ -360,8 +373,6 @@ function createMinimalSonglist(metadata: any): SonglistData {
   };
 }
 
-// Start processing
-processFiles();
 
 // Handle unexpected errors
 process.on('uncaughtException', (err) => {

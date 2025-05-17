@@ -33,6 +33,7 @@ Thumbs.db
 
 # Big sample files
 apps/tf/*
+packages/daemon/archive/*
 
 # Optional lockfiles (if you want to ignore them)
 # package-lock.json

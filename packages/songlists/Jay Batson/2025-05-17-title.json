@@ -1,0 +1,54 @@
+{
+  "broadcast_data": {
+    "broadcast_date": "2025-05-17",
+    "broadcast_time": "04:07:07",
+    "DJ": "Jay Batson",
+    "setTitle": "title",
+    "duration": "01:00:00",
+    "artwork": "2025-05-17_Jay_Batson_title.jpg"
+  },
+  "track_list": [
+    {
+      "title": "Adán Vulcano",
+      "artist": "Vector (original mix)"
+    },
+    {
+      "title": "Forty Cats",
+      "artist": "Nocturne (Kyotto remix)"
+    },
+    {
+      "title": "Rodrigues",
+      "artist": "Distortion (original mix)"
+    },
+    {
+      "title": "Marco Amoazoo",
+      "artist": "Fields (Akiva remix)"
+    },
+    {
+      "title": "Erich LH",
+      "artist": "Noise Generation- Reflection (original mix)"
+    },
+    {
+      "title": "Mind Echoes",
+      "artist": "Unsafe numbers (Tonaco & Tomas Garcia remix)"
+    },
+    {
+      "title": "Zuccasam",
+      "artist": "2 Nobody (original mix)"
+    },
+    {
+      "title": "Serious Dancers",
+      "artist": "Echo (Kebin Van Reeken remix)"
+    },
+    {
+      "title": "Sasha",
+      "artist": "Super Flu- Astra (original mix)"
+    },
+    {
+      "title": "Mashk",
+      "artist": "Black Sharp- Lavinia (René Diehl remix)"
+    }
+  ],
+  "version": "1.0",
+  "user_role": "Super Administrator"
+}

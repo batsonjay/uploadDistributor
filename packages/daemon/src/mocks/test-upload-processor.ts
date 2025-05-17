@@ -17,7 +17,7 @@ import { SoundCloudApiMock } from './SoundCloudApiMock.js';
 
 // Use a fixed test ID to avoid creating multiple test directories
 const testUploadId = 'test-upload-123';
-const uploadsDir = path.join(__dirname, '../../uploads');
+const uploadsDir = path.join(path.dirname(new URL(import.meta.url).pathname), '../../uploads');
 const testUploadDir = path.join(uploadsDir, testUploadId);
 
 // Clean up existing test directories
@@ -29,7 +29,7 @@ function cleanupExistingTestDirectories() {
   }
   
   // Clean up any songlist files created by previous tests
-  const songlistsDir = path.join(__dirname, '../../../../packages/songlists');
+  const songlistsDir = path.join(path.dirname(new URL(import.meta.url).pathname), '../../../../packages/songlists');
   const testDjDir = path.join(songlistsDir, 'Test DJ');
   if (fs.existsSync(testDjDir)) {
     process.stdout.write(`Cleaning up songlist files in: ${testDjDir}\n`);
@@ -61,8 +61,8 @@ if (!fs.existsSync(uploadsDir)) {
 fs.mkdirSync(testUploadDir, { recursive: true });
 
 // Create test files
-const testAudioFile = path.join(__dirname, '../../test-files/test.mp3');
-const testSonglistFile = path.join(__dirname, '../../test-files/test-songlist.txt');
+const testAudioFile = path.join(path.dirname(new URL(import.meta.url).pathname), '../../test-files/test.mp3');
+const testSonglistFile = path.join(path.dirname(new URL(import.meta.url).pathname), '../../test-files/test-songlist.txt');
 
 // Copy test files to upload directory
 fs.copyFileSync(testAudioFile, path.join(testUploadDir, 'audio.mp3'));
@@ -104,7 +104,7 @@ process.stdout.write(`Initial status set to pending\n`);
 // Run the upload processor
 process.stdout.write(`Running upload processor for upload ID: ${testUploadId}\n`);
 
-const processorPath = path.join(__dirname, '../processors/upload-processor.ts');
+const processorPath = path.join(path.dirname(new URL(import.meta.url).pathname), '../processors/upload-processor.ts');
 const child = fork(processorPath, [testUploadId], {
   stdio: 'pipe'
 });
@@ -184,7 +184,7 @@ child.on('close', async (code) => {
   process.stdout.write(`Test upload directory removed: ${testUploadDir}\n`);
   
   // Clean up songlist files
-  const songlistsDirPath = path.join(__dirname, '../../../../packages/songlists');
+  const songlistsDirPath = path.join(path.dirname(new URL(import.meta.url).pathname), '../../../../packages/songlists');
   const testDjDir = path.join(songlistsDirPath, testMetadata.djName);
   if (fs.existsSync(testDjDir)) {
     process.stdout.write(`Cleaning up songlist files in: ${testDjDir}\n`);
