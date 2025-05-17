@@ -160,99 +160,107 @@ export default function UploadPage() {
     <div className={styles.uploadPage}>
       <main className={styles.main}>
         <div className={styles.header}>
-          <h1 className={styles.title}>Upload New Mix</h1>
-          <div className={styles.userInfo}>
-            <span>Logged in as {user?.displayName}</span>
-            <button onClick={logout} className={styles.logoutButton}>
-              Logout
-            </button>
+          <div className={styles.titleRow}>
+            <div className={styles.titleColumn}>
+              <h1 className={styles.title}>Upload New Mix</h1>
+              <p className={styles.requiredNote}>All fields are required</p>
+            </div>
+            <div className={styles.userInfo}>
+              <span>Logged in as {user?.displayName}</span>
+              <button onClick={logout} className={styles.logoutButton}>
+                Logout
+              </button>
+            </div>
           </div>
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit}>
-          {/* Audio File Section */}
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Audio File</h2>
-            <div className={styles.fileInput}>
-              <label className={styles.fileInputLabel}>MP3 File (Required)</label>
-              <div
-                className={styles.dropzone}
-                onDrop={(e) => handleDrop(e, setAudioFile, ["mp3"])}
-                onDragOver={(e) => e.preventDefault()}
-                onClick={() => audioInputRef.current?.click()}
-              >
-                <input
-                  ref={audioInputRef}
-                  type="file"
-                  accept=".mp3"
-                  onChange={(e) => handleFileChange(e, setAudioFile, ["mp3"])}
-                  style={{ display: "none" }}
-                />
-                <p className={`${styles.dropzoneText} ${audioFile.file ? styles.dropzoneFilename : styles.dropzonePlaceholder}`}>
-                  {audioFile.file
-                    ? audioFile.file.name
-                    : "Click or drag and drop MP3 file here"}
-                </p>
+          {/* File Upload Row */}
+          <div className={styles.fileUploadRow}>
+            {/* Audio File Section */}
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Audio File</h2>
+              <div className={styles.fileInput}>
+                <label className={styles.fileInputLabel}>MP3 File</label>
+                <div
+                  className={styles.dropzone}
+                  onDrop={(e) => handleDrop(e, setAudioFile, ["mp3"])}
+                  onDragOver={(e) => e.preventDefault()}
+                  onClick={() => audioInputRef.current?.click()}
+                >
+                  <input
+                    ref={audioInputRef}
+                    type="file"
+                    accept=".mp3"
+                    onChange={(e) => handleFileChange(e, setAudioFile, ["mp3"])}
+                    style={{ display: "none" }}
+                  />
+                  <p className={`${styles.dropzoneText} ${audioFile.file ? styles.dropzoneFilename : styles.dropzonePlaceholder}`}>
+                    {audioFile.file
+                      ? audioFile.file.name
+                      : "Click or drag and drop MP3 file here"}
+                  </p>
+                </div>
+                {audioFile.error && <div className={styles.error}>{audioFile.error}</div>}
               </div>
-              {audioFile.error && <div className={styles.error}>{audioFile.error}</div>}
-            </div>
-          </section>
+            </section>
 
-          {/* Songlist File Section */}
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Songlist</h2>
-            <div className={styles.fileInput}>
-              <label className={styles.fileInputLabel}>Songlist File (Required)</label>
-              <div
-                className={styles.dropzone}
-                onDrop={(e) => handleDrop(e, setSonglistFile, ["txt", "rtf"])}
-                onDragOver={(e) => e.preventDefault()}
-                onClick={() => songlistInputRef.current?.click()}
-              >
-                <input
-                  ref={songlistInputRef}
-                  type="file"
-                  accept=".txt,.rtf"
-                  onChange={(e) => handleFileChange(e, setSonglistFile, ["txt", "rtf"])}
-                  style={{ display: "none" }}
-                />
-                <p className={`${styles.dropzoneText} ${songlistFile.file ? styles.dropzoneFilename : styles.dropzonePlaceholder}`}>
-                  {songlistFile.file
-                    ? songlistFile.file.name
-                    : "Click or drag and drop songlist file here"}
-                </p>
+            {/* Songlist File Section */}
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Songlist</h2>
+              <div className={styles.fileInput}>
+                <label className={styles.fileInputLabel}>Songlist File</label>
+                <div
+                  className={styles.dropzone}
+                  onDrop={(e) => handleDrop(e, setSonglistFile, ["txt", "rtf"])}
+                  onDragOver={(e) => e.preventDefault()}
+                  onClick={() => songlistInputRef.current?.click()}
+                >
+                  <input
+                    ref={songlistInputRef}
+                    type="file"
+                    accept=".txt,.rtf"
+                    onChange={(e) => handleFileChange(e, setSonglistFile, ["txt", "rtf"])}
+                    style={{ display: "none" }}
+                  />
+                  <p className={`${styles.dropzoneText} ${songlistFile.file ? styles.dropzoneFilename : styles.dropzonePlaceholder}`}>
+                    {songlistFile.file
+                      ? songlistFile.file.name
+                      : "Click or drag and drop songlist file here"}
+                  </p>
+                </div>
+                {songlistFile.error && <div className={styles.error}>{songlistFile.error}</div>}
               </div>
-              {songlistFile.error && <div className={styles.error}>{songlistFile.error}</div>}
-            </div>
-          </section>
+            </section>
 
-          {/* Artwork File Section */}
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Artwork</h2>
-            <div className={styles.fileInput}>
-              <label className={styles.fileInputLabel}>Artwork File (Optional)</label>
-              <div
-                className={styles.dropzone}
-                onDrop={(e) => handleDrop(e, setArtworkFile, ["jpg", "jpeg"])}
-                onDragOver={(e) => e.preventDefault()}
-                onClick={() => artworkInputRef.current?.click()}
-              >
-                <input
-                  ref={artworkInputRef}
-                  type="file"
-                  accept=".jpg,.jpeg"
-                  onChange={(e) => handleFileChange(e, setArtworkFile, ["jpg", "jpeg"])}
-                  style={{ display: "none" }}
-                />
-                <p className={`${styles.dropzoneText} ${artworkFile.file ? styles.dropzoneFilename : styles.dropzonePlaceholder}`}>
-                  {artworkFile.file
-                    ? artworkFile.file.name
-                    : "Click or drag and drop artwork file here (1440x1440 JPG)"}
-                </p>
+            {/* Artwork File Section */}
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Artwork</h2>
+              <div className={styles.fileInput}>
+                <label className={styles.fileInputLabel}>Artwork File</label>
+                <div
+                  className={styles.dropzone}
+                  onDrop={(e) => handleDrop(e, setArtworkFile, ["jpg", "jpeg"])}
+                  onDragOver={(e) => e.preventDefault()}
+                  onClick={() => artworkInputRef.current?.click()}
+                >
+                  <input
+                    ref={artworkInputRef}
+                    type="file"
+                    accept=".jpg,.jpeg"
+                    onChange={(e) => handleFileChange(e, setArtworkFile, ["jpg", "jpeg"])}
+                    style={{ display: "none" }}
+                  />
+                  <p className={`${styles.dropzoneText} ${artworkFile.file ? styles.dropzoneFilename : styles.dropzonePlaceholder}`}>
+                    {artworkFile.file
+                      ? artworkFile.file.name
+                      : "Click or drag and drop artwork file here (1440x1440 JPG)"}
+                  </p>
+                </div>
+                {artworkFile.error && <div className={styles.error}>{artworkFile.error}</div>}
               </div>
-              {artworkFile.error && <div className={styles.error}>{artworkFile.error}</div>}
-            </div>
-          </section>
+            </section>
+          </div>
 
           {/* Broadcast Details Section */}
           <section className={styles.section}>
@@ -296,22 +304,6 @@ export default function UploadPage() {
             <h2 className={styles.sectionTitle}>Mix Details</h2>
             
             <div className={styles.inputGroup}>
-              <label htmlFor="setTitle" className={styles.label}>
-                Set Title
-              </label>
-              <input
-                id="setTitle"
-                type="text"
-                className={styles.input}
-                value={setTitle}
-                onChange={(e) => setSetTitle(e.target.value)}
-                required
-                placeholder="Enter mix title"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className={styles.inputGroup}>
               <label htmlFor="genre" className={styles.label}>
                 Genre
               </label>
@@ -323,6 +315,22 @@ export default function UploadPage() {
                 onChange={(e) => setGenre(e.target.value)}
                 required
                 placeholder="Enter primary genre"
+                disabled={isLoading}
+              />
+            </div>
+            
+            <div className={styles.inputGroup}>
+              <label htmlFor="setTitle" className={styles.label}>
+                Set Title
+              </label>
+              <input
+                id="setTitle"
+                type="text"
+                className={styles.input}
+                value={setTitle}
+                onChange={(e) => setSetTitle(e.target.value)}
+                required
+                placeholder="Enter mix title"
                 disabled={isLoading}
               />
             </div>
