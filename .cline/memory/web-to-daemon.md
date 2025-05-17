@@ -77,111 +77,117 @@ This document outlines the implementation plan for the web client interface and 
 - Return success/failure status
 - Prepare for future integration with upload destinations
 
-## Implementation Steps
+## Implementation Status
 
-### Phase 1: Basic Structure
-1. Create Next.js page structure:
+### Completed Work
+
+#### Phase 1: Basic Structure ✅
+1. Created Next.js page structure:
    - /login
    - /upload
    - /upload/validate
    - /upload/progress
-2. Implement basic routing and layouts
-3. Create placeholder components
+2. Implemented basic routing and layouts
+3. Created placeholder components
 
-### Phase 2: Authentication
-1. Port AuthService for web client use:
-   - Extract shared types and interfaces
-   - Create browser-compatible auth utilities
-   - Handle password encoding in browser
-2. Implement auth flow in web client:
+#### Phase 2: Authentication ✅
+1. Ported AuthService for web client use:
+   - Extracted shared types and interfaces
+   - Created browser-compatible auth utilities
+   - Implemented password encoding in browser
+2. Implemented auth flow in web client:
    - Login form with validation
    - Token storage and management
    - Protected route handling
-3. Add auth state management:
+3. Added auth state management:
    - User context provider
    - Role-based access control
    - Session persistence
 
-### Phase 3: Upload Form
-1. Create form components:
+#### Phase 3: Upload Form ✅
+1. Created form components:
    - File upload fields with drag-drop
    - Metadata fields with validation
    - Directory/playlist selection based on DJ
-2. Add basic file type validation:
+2. Added basic file type validation:
    - MP3 extension check
    - JPG format verification
    - Basic size checks
-3. Genre list validation
-   - Display approved list in distinctive block on page adjacent to input field
-   - Each genre name is toggle clickable to indicate selection
-   - Selected genres are included in songlist sent to daemon
-3. Implement form state management:
+3. Implemented genre list validation
+4. Implemented form state management:
    - React form handling
    - File state tracking
    - Validation state
-4. Add "Next" button functionality
+5. Added "Next" button functionality
 
-### Phase 4: Client-side Processing
-1. Port songlist-parser for browser use:
-   - Create browser-compatible version
-   - Handle file reading in browser
-   - Maintain parsing logic
-2. Implement client-side file processing:
-   - File reading and validation
-   - Format detection
-   - Parse songlist data
-   - Validate genre tags
-3. Create results display component:
-   - Table view of parsed songs
-   - Error highlighting
-   - Validation status
-4. Add title/artist swap functionality:
-   - Swap button implementation
-   - Preview updates
-   - State management
-5. Implement artwork validation:
-   - Image format check
-   - Dimension validation if possible
-   - Error feedback
-
-### Phase 5: Upload Implementation
-1. Create upload progress UI:
-   - Progress bars for each file
-   - Status messages
-   - Cancel button
-2. Implement file upload logic:
-   - Chunked file uploads
-   - Progress tracking
-   - Concurrent uploads
-3. Add progress tracking:
-   - Individual file progress
-   - Overall status
-   - Time remaining
-4. Implement cancel functionality:
-   - Cancel individual uploads
-   - Clean up partial uploads
-5. Add error handling:
-   - Retry logic
-   - Error messages
-   - Recovery options
-
-### Phase 6: Daemon Integration
-1. Implement required API endpoints:
+#### Phase 6: Daemon Integration (Partial) ✅
+1. Implemented required API endpoints:
    - Auth endpoint with existing service
    - Upload endpoint with multipart
    - Status endpoint
-2. Add file storage logic:
-   - Use existing FileManager
-   - Handle concurrent uploads
-   - Maintain directory structure
-3. Create status logging:
+   - Added parse-songlist endpoint for songlist processing
+2. Added file storage logic:
+   - Using existing FileManager
+   - Handling concurrent uploads
+   - Maintaining directory structure
+3. Created status logging:
    - Upload progress
    - File receipt confirmation
    - Error logging
-4. Test end-to-end flow:
+
+### Recent Updates
+
+#### Songlist Parser Integration ✅
+1. Integrated songlist-parser package into daemon:
+   - Created SonglistParserService wrapper
+   - Added dedicated parse-songlist API endpoint
+   - Implemented worker thread for background processing
+2. Updated file handling:
+   - Modified file-processor to use normalized filenames from metadata
+   - Simplified archive directory structure for better organization
+   - Removed hardcoded paths in favor of metadata-driven file resolution
+   - Improved file cleanup to properly remove temporary directories
+3. Enhanced error handling and logging:
+   - Added more detailed error messages
+   - Improved status tracking
+   - Rationalized console logging
+
+### In Progress
+
+#### Phase 4: Client-side Validation 🔄
+1. Implementing client-side file validation:
+   - File extension verification
+   - Basic size and format checks
+   - Metadata validation
+
+#### Phase 5: Upload Implementation 🔄
+1. Creating upload progress UI:
+   - Progress bars for each file
+   - Status messages
+   - Cancel button
+2. Implementing file upload logic:
+   - Chunked file uploads
+   - Progress tracking
+   - Concurrent uploads
+
+### Next Steps
+
+1. Enhance the main upload flow (/upload) to use the new parse-songlist endpoint:
+   - Update the upload process to leverage the daemon's integrated songlist parser
+   - Ensure proper handling of parsed results in the validation flow
+   - Maintain title/artist order confirmation functionality
+
+TODO: Add support for Rekordbox .m3u8 playlist parsing (improving reliability of parsing from that DJ information source)
+
+2. Mark the test-parse page as obsolete:
+   - This was only an interim step to bootstrap upload functionality
+   - The main upload flow in /upload now handles the complete process
+
+3. Complete end-to-end testing:
    - Auth flow
-   - File upload
-   - Status updates
+   - File upload with the integrated songlist parser
+   - Status updates and error handling
+   - Archive file verification
 
 ## Success Criteria
 - User can authenticate via AzuraCast
