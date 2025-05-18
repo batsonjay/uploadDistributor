@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../auth/AuthContext";
 import { encodePassword } from "../../utils/PasswordUtils";
@@ -31,6 +31,9 @@ export default function ValidatePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Ref to prevent duplicate API calls in StrictMode
+  const hasFetchedSongs = useRef(false);
+
   useEffect(() => {
     // Load upload data from session storage
     const storedData = sessionStorage.getItem("uploadData");
@@ -44,9 +47,16 @@ export default function ValidatePage() {
 
     // Get auth token and fetch parsed songs
     const fetchSongs = async () => {
+      // Prevent duplicate API calls in StrictMode
+      if (hasFetchedSongs.current) {
+        console.log('Preventing duplicate API call in StrictMode');
+        return;
+      }
+      
       try {
         setIsLoading(true);
         setError("");
+        hasFetchedSongs.current = true;
 
         // Get auth token
         const authResponse = await fetch("http://localhost:3001/api/auth/login", {
@@ -100,9 +110,19 @@ export default function ValidatePage() {
     router.back();
   };
 
+  // Ref to prevent duplicate confirm requests in StrictMode
+  const isConfirming = useRef(false);
+
   const handleUpload = async () => {
     if (!uploadData) return;
 
+    // Prevent duplicate confirm requests in StrictMode
+    if (isConfirming.current) {
+      console.log('Preventing duplicate confirm request in StrictMode');
+      return;
+    }
+
+    isConfirming.current = true;
     setIsLoading(true);
     setError("");
 

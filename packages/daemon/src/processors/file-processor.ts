@@ -78,8 +78,20 @@ try {
 // Construct normalized filenames based on metadata
 const normalizedBase = `${metadata.broadcastDate}_${metadata.djName.replace(/\s+/g, '_')}_${metadata.title.replace(/\s+/g, '_')}`;
 const audioFile = path.join(fileDir, `${normalizedBase}.mp3`);
-const songlistExt = metadata.artworkFilename ? path.extname(metadata.artworkFilename).replace('.jpg', '.rtf') : '.rtf';
-let songlistFile = path.join(fileDir, `${normalizedBase}${songlistExt}`);
+
+// Find the songlist file by checking for all supported extensions
+process.stdout.write(`Using files directory: ${fileDir}\n`);
+const possibleExtensions = ['.txt', '.rtf', '.docx', '.nml', '.m3u8'];
+let songlistFile = '';
+
+for (const ext of possibleExtensions) {
+  const testPath = path.join(fileDir, `${normalizedBase}${ext}`);
+  if (fs.existsSync(testPath)) {
+    songlistFile = testPath;
+    process.stdout.write(`Found songlist file: ${songlistFile}\n`);
+    break;
+  }
+}
 
 // Check if required files exist with normalized names
 if (!fs.existsSync(audioFile)) {
@@ -88,22 +100,10 @@ if (!fs.existsSync(audioFile)) {
   process.exit(1);
 }
 
-if (!fs.existsSync(songlistFile)) {
-  // Try to find any songlist file with the normalized base
-  const files = fs.readdirSync(fileDir);
-  const possibleSonglistFile = files.find(file => 
-    file.startsWith(normalizedBase) && 
-    (file.endsWith('.txt') || file.endsWith('.rtf') || file.endsWith('.docx'))
-  );
-  
-  if (possibleSonglistFile) {
-    process.stdout.write(`Found alternative songlist file: ${possibleSonglistFile}\n`);
-    songlistFile = path.join(fileDir, possibleSonglistFile);
-  } else {
-    process.stderr.write(`Songlist file not found: ${songlistFile}\n`);
-    statusManager.updateStatus('error', 'Songlist file not found');
-    process.exit(1);
-  }
+if (!songlistFile) {
+  process.stderr.write(`Songlist file not found for base: ${normalizedBase}\n`);
+  statusManager.updateStatus('error', 'Songlist file not found');
+  process.exit(1);
 }
 
 // Initialize platform services

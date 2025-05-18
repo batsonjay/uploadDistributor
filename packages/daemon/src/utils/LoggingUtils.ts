@@ -1,10 +1,13 @@
 /**
  * Logging Utilities
  * 
- * This module provides utilities for logging destination status and errors.
- * It implements a two-tier logging system:
- * 1. A status log that shows both success and failure with one line per destination
- * 2. A detailed error log that provides more information about errors
+ * This module provides utilities for logging across the application:
+ * 1. Destination logging: Status and errors for destination uploads
+ * 2. Parser logging: Standardized logging for all parsers
+ * 
+ * The logging system supports different verbosity levels controlled by environment variables:
+ * - LOG_LEVEL: error, warning, info, debug (default: info)
+ * - LOG_TO_FILE: true, false (default: false)
  */
 
 import * as fs from 'fs';
@@ -17,6 +20,7 @@ const logsDir = process.env.LOGS_DIR || path.join(
 );
 const successErrorLogFile = path.join(logsDir, 'destination-status.log');
 const detailedErrorLogFile = path.join(logsDir, 'destination-errors.log');
+const parserLogFile = path.join(logsDir, 'parser-events.log');
 
 // Ensure logs directory exists
 if (!fs.existsSync(logsDir)) {
@@ -26,7 +30,8 @@ if (!fs.existsSync(logsDir)) {
 // Log types
 export enum LogType {
   SUCCESS = 'success',
-  ERROR = 'error'
+  ERROR = 'error',
+  INFO = 'info'
 }
 
 // Error types
@@ -36,6 +41,22 @@ export enum ErrorType {
   NETWORK = 'network',
   SERVER = 'server',
   UNKNOWN = 'unknown'
+}
+
+// Parser log types
+export enum ParserLogType {
+  INFO = 'info',
+  WARNING = 'warning',
+  ERROR = 'error',
+  DEBUG = 'debug'
+}
+
+// Upload stages for progress tracking
+export enum UploadStage {
+  INIT = 'initialization',
+  METADATA = 'metadata',
+  UPLOAD = 'upload',
+  FINALIZE = 'finalization'
 }
 
 /**
@@ -85,4 +106,91 @@ Attempt: ${attempt} of 3
 `;
   
   fs.appendFileSync(detailedErrorLogFile, logEntry);
+}
+
+/**
+ * Log parser events with appropriate level filtering
+ * 
+ * This function logs parser events based on the configured log level:
+ * - ERROR: Always logged
+ * - WARNING: Logged if level is warning, info, or debug
+ * - INFO: Logged if level is info or debug
+ * - DEBUG: Logged only if level is debug
+ * 
+ * @param parserName Name of the parser (e.g., 'M3U8Parser')
+ * @param eventType Type of event (ERROR, WARNING, INFO, DEBUG)
+ * @param message Log message
+ * @param details Optional details object for additional context
+ */
+export function logParserEvent(
+  parserName: string,
+  eventType: ParserLogType,
+  message: string,
+  details?: any
+): void {
+  const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+  
+  // Only log to console based on level and environment setting
+  const logLevel = process.env.LOG_LEVEL || 'info';
+  
+  // Determine if we should log based on level
+  const shouldLog = (
+    (eventType === ParserLogType.ERROR) ||
+    (eventType === ParserLogType.WARNING && logLevel !== 'error') ||
+    (eventType === ParserLogType.INFO && ['info', 'debug'].includes(logLevel)) ||
+    (eventType === ParserLogType.DEBUG && logLevel === 'debug')
+  );
+  
+  if (shouldLog) {
+    switch (eventType) {
+      case ParserLogType.ERROR:
+        console.error(`[${parserName}] [${timestamp}]: ${message}`);
+        break;
+      case ParserLogType.WARNING:
+        console.warn(`[${parserName}] [${timestamp}]: ${message}`);
+        break;
+      case ParserLogType.INFO:
+      case ParserLogType.DEBUG:
+        console.log(`[${parserName}] [${timestamp}]: ${message}`);
+        break;
+    }
+  }
+  
+  // Optionally log to file as well
+  if (process.env.LOG_TO_FILE === 'true') {
+    const logEntry = `[${parserName}] [${eventType}] [${timestamp}]: ${message}${details ? '\nDetails: ' + JSON.stringify(details, null, 2) : ''}\n`;
+    fs.appendFileSync(parserLogFile, logEntry);
+  }
+}
+
+/**
+ * Log upload progress for destination services
+ * 
+ * This function logs the progress of uploads to destination services.
+ * It's designed to provide visibility into the upload process without
+ * cluttering the logs with too much detail.
+ * 
+ * @param serviceName Name of the destination service
+ * @param title Title of the upload
+ * @param stage Current stage of the upload process
+ * @param progress Progress as a decimal (0.0 to 1.0)
+ * @param message Additional context message
+ */
+export function logUploadProgress(
+  serviceName: string,
+  title: string,
+  stage: UploadStage,
+  progress: number,
+  message: string
+): void {
+  const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+  const logEntry = `[${serviceName}]: progress [${timestamp}]: ${title}, ${stage}, ${Math.round(progress * 100)}%, ${message}\n`;
+  
+  // Log to console if not in production or if explicitly enabled
+  if (process.env.NODE_ENV !== 'production' || process.env.LOG_UPLOAD_PROGRESS === 'true') {
+    console.log(logEntry.trim());
+  }
+  
+  // Always log to file
+  fs.appendFileSync(successErrorLogFile, logEntry);
 }

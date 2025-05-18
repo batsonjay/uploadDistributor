@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { anyAuthenticated } from '../middleware/roleVerification.js';
 import { SonglistParserService } from '../services/SonglistParserService.js';
+import { logDestinationStatus, LogType } from '../utils/LoggingUtils.js';
 
 const router = express.Router();
 
@@ -72,7 +73,7 @@ router.get('/:fileId', anyAuthenticated, async (req: express.Request, res: expre
 
     res.json({ songs });
   } catch (err) {
-    console.error('Error parsing songlist:', err);
+    logDestinationStatus('ParseSonglist', LogType.ERROR, fileId, `Error parsing songlist: ${err}`);
     res.status(500).json({
       error: 'Parse failed',
       message: err instanceof Error ? err.message : 'Failed to parse songlist'
@@ -129,21 +130,21 @@ router.post('/:fileId/confirm', anyAuthenticated, async (req: express.Request, r
     const { Worker } = await import('node:worker_threads');
     const workerPath = new URL('../processors/file-processor-worker.js', import.meta.url).pathname;
 
-    console.log(`Launching worker with fileId: ${fileId}`);
+    logDestinationStatus('ParseSonglist', LogType.INFO, fileId, `Launching worker thread`);
     const worker = new Worker(workerPath, {
       workerData: fileId
     });
 
     worker.on('message', (msg) => {
-      console.log(`Worker completed for ${fileId}:`, msg);
+      logDestinationStatus('ParseSonglist', LogType.INFO, fileId, `Worker completed: ${JSON.stringify(msg)}`);
     });
 
     worker.on('error', (err) => {
-      console.error(`Worker error for ${fileId}:`, err);
+      logDestinationStatus('ParseSonglist', LogType.ERROR, fileId, `Worker error: ${err}`);
     });
 
     worker.on('exit', (code) => {
-      console.log(`Worker exited for ${fileId} with code ${code}`);
+      logDestinationStatus('ParseSonglist', LogType.INFO, fileId, `Worker exited with code ${code}`);
     });
 
     res.json({
@@ -151,7 +152,7 @@ router.post('/:fileId/confirm', anyAuthenticated, async (req: express.Request, r
       message: 'Songs confirmed successfully'
     });
   } catch (err) {
-    console.error('Error confirming songs:', err);
+    logDestinationStatus('ParseSonglist', LogType.ERROR, fileId, `Error confirming songs: ${err}`);
     res.status(500).json({
       error: 'Confirmation failed',
       message: err instanceof Error ? err.message : 'Failed to confirm songs'

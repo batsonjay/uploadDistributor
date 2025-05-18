@@ -2,6 +2,8 @@ import { Song, ParseResult, ParseError } from '../types.js';
 import { SonglistParser } from './parser.js';
 import { readFile } from 'fs/promises';
 import type { RTFDocument } from 'rtf-parser';
+import { logParserEvent, ParserLogType } from '../utils/LoggingUtils.js';
+import * as path from 'path';
 
 interface RTFDocumentWithMeta extends RTFDocument {
   type?: string;
@@ -32,33 +34,33 @@ type RTFContent = string | RTFGroupContent;
 
 export class RTFLibParser implements SonglistParser {
   async parse(filePath: string): Promise<ParseResult> {
-    process.stdout.write('=== RTFLibParser.parse() START ===\n');
-    process.stdout.write(`Reading file: ${filePath}\n`);
+    logParserEvent('RTFLibParser', ParserLogType.INFO, `Starting to parse file: ${path.basename(filePath)}`);
     
     try {
       const rtfBuffer = await readFile(filePath);  // Read as buffer
-      process.stdout.write(`File read complete. Buffer length: ${rtfBuffer.length}\n`);
-      process.stdout.write(`First 100 bytes: ${rtfBuffer.toString('utf8', 0, 100)}\n`);
+      logParserEvent('RTFLibParser', ParserLogType.DEBUG, `File read complete. Buffer length: ${rtfBuffer.length}`);
+      logParserEvent('RTFLibParser', ParserLogType.DEBUG, `First 100 bytes: ${rtfBuffer.toString('utf8', 0, 100)}`);
       
-      process.stdout.write('\n=== RTF Parsing Phase ===\n');
+      logParserEvent('RTFLibParser', ParserLogType.DEBUG, 'Starting RTF parsing phase');
       
       // Import rtf-parser dynamically since we're in ES module
       const rtfParser = (await import('rtf-parser')).default;
       
       // Parse RTF content using Promise API
-      process.stdout.write('1. Starting parse operation...\n');
-      process.stdout.write('2. Calling rtfParser...\n');
+      logParserEvent('RTFLibParser', ParserLogType.DEBUG, 'Starting parse operation');
+      logParserEvent('RTFLibParser', ParserLogType.DEBUG, 'Calling rtfParser');
       const rtfContent = rtfBuffer.toString();
       const doc = await rtfParser(rtfContent) as RTFDocumentWithMeta;
       
       if (!doc) {
+        logParserEvent('RTFLibParser', ParserLogType.ERROR, 'RTF parser returned null document');
         return {
           songs: [],
           error: ParseError.FILE_READ_ERROR
         };
       }
       
-      process.stdout.write('3. Parser success, document structure:\n' + 
+      logParserEvent('RTFLibParser', ParserLogType.DEBUG, 'Parser success, document structure: ' + 
         JSON.stringify({
           contentLength: doc.content?.length,
           fonts: doc.fonts?.length,
@@ -67,64 +69,64 @@ export class RTFLibParser implements SonglistParser {
         }, null, 2)
       );
       
-      process.stdout.write('\n=== Text Extraction Phase ===\n');
+      logParserEvent('RTFLibParser', ParserLogType.DEBUG, 'Starting text extraction phase');
       // Extract text content from RTF document
       const textContent = this.extractText(doc);
       if (!textContent) {
+        logParserEvent('RTFLibParser', ParserLogType.ERROR, 'Failed to extract text from RTF document');
         return {
           songs: [],
           error: ParseError.FILE_READ_ERROR
         };
       }
-      process.stdout.write(`Raw extracted text: ${textContent}\n`);
+      logParserEvent('RTFLibParser', ParserLogType.DEBUG, `Raw extracted text: ${textContent}`);
       
-      process.stdout.write('\n=== Track Parsing Phase ===\n');
+      logParserEvent('RTFLibParser', ParserLogType.DEBUG, 'Starting track parsing phase');
       // Split into lines and find where tracks start
       const lines = textContent.split(/\r\n|\r|\n/);
-      process.stdout.write(`Split into lines: ${JSON.stringify(lines, null, 2)}\n`);
+      logParserEvent('RTFLibParser', ParserLogType.DEBUG, `Split into ${lines.length} lines`);
       const trackStartIndex = lines.findIndex((line: string) => /^\d+[\.\)]?\s/.test(line));
       
       if (trackStartIndex === -1) {
+        logParserEvent('RTFLibParser', ParserLogType.WARNING, 'No track lines found in RTF file');
         return {
           songs: [],
           error: ParseError.NO_TRACKS_DETECTED
         };
       }
       
-      process.stdout.write(`Track start index: ${trackStartIndex}\n`);
+      logParserEvent('RTFLibParser', ParserLogType.DEBUG, `Track start index: ${trackStartIndex}`);
       
       // Get only the track lines
       const tracks = lines
         .slice(trackStartIndex)
         .map((line: string) => {
           const trimmed = line.trim();
-          process.stdout.write(`Processing line: ${trimmed}\n`);
+          logParserEvent('RTFLibParser', ParserLogType.DEBUG, `Processing line: ${trimmed}`);
           return trimmed;
         })
         .filter((line: string) => {
           const isTrack = /^\d+[\.\)]?\s/.test(line) && line.length > 0;
-          process.stdout.write(`Line is track? ${isTrack} : ${line}\n`);
+          logParserEvent('RTFLibParser', ParserLogType.DEBUG, `Line is track? ${isTrack} : ${line}`);
           return isTrack;
         });
 
       if (tracks.length === 0) {
+        logParserEvent('RTFLibParser', ParserLogType.WARNING, 'No valid track lines found after filtering');
         return {
           songs: [],
           error: ParseError.NO_TRACKS_DETECTED
         };
       }
 
-      process.stdout.write(`Tracks after splitting: ${JSON.stringify(tracks, null, 2)}\n`);
+      logParserEvent('RTFLibParser', ParserLogType.DEBUG, `Found ${tracks.length} track lines`);
       
-      process.stdout.write('\n=== Track Processing Results ===\n');
-      process.stdout.write(`Found tracks: ${JSON.stringify(tracks, null, 2)}\n`);
-      
-      process.stdout.write('\n=== Artist/Title Extraction ===\n');
+      logParserEvent('RTFLibParser', ParserLogType.DEBUG, 'Starting artist/title extraction');
       const songs = tracks.map((track: string) => {
         // Remove track numbers at start of line
         const cleanedTrack = track.replace(/^\d+[\.\)]?\s+/, '');
         
-        process.stdout.write(`\nProcessing track: ${track}\n`);
+        logParserEvent('RTFLibParser', ParserLogType.DEBUG, `Processing track: ${track}`);
         // Try each delimiter pattern in order
         const delimiters = [
           // Hyphen with spaces on both sides
@@ -141,23 +143,23 @@ export class RTFLibParser implements SonglistParser {
           /(?<!\d)[-–](?![^(]*\))/
         ];
         
-        process.stdout.write(`Cleaned track: ${cleanedTrack}\n`);
+        logParserEvent('RTFLibParser', ParserLogType.DEBUG, `Cleaned track: ${cleanedTrack}`);
         
         // Try each delimiter until we find one that gives a valid split
         let title = cleanedTrack;
         let artist = 'Unknown Artist';
 
         for (const delimiter of delimiters) {
-          process.stdout.write(`Trying delimiter: ${delimiter}\n`);
+          logParserEvent('RTFLibParser', ParserLogType.DEBUG, `Trying delimiter: ${delimiter}`);
           const attempt = cleanedTrack.split(delimiter)
             .map(p => p.trim())
             .filter(p => p.length > 0);
           
-          process.stdout.write(`Split attempt: ${JSON.stringify(attempt, null, 2)}\n`);
+          logParserEvent('RTFLibParser', ParserLogType.DEBUG, `Split attempt: ${JSON.stringify(attempt)}`);
           // Check if we have a valid split with non-empty parts
           const firstPart = attempt[0];
           if (attempt.length >= 2 && firstPart && !firstPart.match(/^\d+$/)) {
-            process.stdout.write('Found valid split!\n');
+            logParserEvent('RTFLibParser', ParserLogType.DEBUG, 'Found valid split');
             title = firstPart;
             const remainingParts = attempt.slice(1);
             if (remainingParts.length > 0) {
@@ -171,13 +173,11 @@ export class RTFLibParser implements SonglistParser {
           title: title.trim(),
           artist: artist.trim()
         };
-        process.stdout.write(`Final result: ${JSON.stringify(result, null, 2)}\n`);
+        logParserEvent('RTFLibParser', ParserLogType.DEBUG, `Parsed track: "${result.title}" by "${result.artist}"`);
         return result;
       });
       
-      process.stdout.write('\n=== Final Results ===\n');
-      process.stdout.write(`Parsed songs: ${JSON.stringify(songs, null, 2)}\n`);
-      process.stdout.write('=== RTFLibParser.parse() END ===\n\n');
+      logParserEvent('RTFLibParser', ParserLogType.INFO, `Completed parsing, found ${songs.length} songs`);
       
       return {
         songs,
@@ -185,9 +185,9 @@ export class RTFLibParser implements SonglistParser {
       };
       
     } catch (error: unknown) {
-      process.stderr.write(`Error parsing RTF: ${error}\n`);
+      logParserEvent('RTFLibParser', ParserLogType.ERROR, `Error parsing RTF: ${error}`);
       if (error instanceof Error) {
-        process.stderr.write(`Error details: ${error.message}\n`);
+        logParserEvent('RTFLibParser', ParserLogType.ERROR, `Error details: ${error.message}`);
       }
       return {
         songs: [],

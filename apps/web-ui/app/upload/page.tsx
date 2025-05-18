@@ -77,12 +77,22 @@ export default function UploadPage() {
     setFile({ file, error: "" });
   };
 
+  // Ref to prevent duplicate form submissions in StrictMode
+  const isSubmitting = useRef(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!audioFile.file || !songlistFile.file) {
       return;
     }
 
+    // Prevent duplicate submissions in StrictMode
+    if (isSubmitting.current) {
+      console.log('Preventing duplicate form submission in StrictMode');
+      return;
+    }
+    
+    isSubmitting.current = true;
     setIsLoading(true);
 
     try {

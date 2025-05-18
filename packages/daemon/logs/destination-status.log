@@ -70,3 +70,24 @@
 [azuracast]: success [2025-05-18 02:39:46]: h, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747535986052.mp3
 [mixcloud]: success [2025-05-18 02:39:47]: h, Uploaded to https://www.mixcloud.com/jay-batson/h/
 [soundcloud]: success [2025-05-18 02:39:48]: h, Uploaded to https://soundcloud.com/mock-user/h
+[SonglistParser]: info [2025-05-18 17:54:59]: 2025-05-18_Jay_Batson_h.m3u8, Starting to parse songlist
+[SonglistParser]: info [2025-05-18 17:54:59]: 2025-05-18_Jay_Batson_h.m3u8, Parsing complete, found 11 songs
+[SonglistParser]: info [2025-05-18 17:55:00]: 2025-05-18_Jay_Batson_h.m3u8, Starting to parse songlist
+[SonglistParser]: info [2025-05-18 17:55:00]: 2025-05-18_Jay_Batson_h.m3u8, Parsing complete, found 11 songs
+[ParseSonglist]: info [2025-05-18 17:55:02]: c29d8297-23a1-439c-aae7-71a7d9cd343d, Launching worker thread
+[ParseSonglist]: info [2025-05-18 17:55:02]: c29d8297-23a1-439c-aae7-71a7d9cd343d, Worker exited with code 1
+[SonglistParser]: info [2025-05-18 18:20:24]: 2025-05-18_Jay_Batson_h.m3u8, Starting to parse songlist
+[SonglistParser]: info [2025-05-18 18:20:24]: 2025-05-18_Jay_Batson_h.m3u8, Parsing complete, found 11 songs
+[ParseSonglist]: info [2025-05-18 18:20:27]: 9fafa361-53c2-4564-aaea-e12018d08433, Launching worker thread
+[azuracast]: success [2025-05-18 18:20:28]: h, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747592427664.mp3
+[mixcloud]: success [2025-05-18 18:20:28]: h, Uploaded to https://www.mixcloud.com/jay-batson/h/
+[soundcloud]: success [2025-05-18 18:20:29]: h, Uploaded to https://soundcloud.com/mock-user/h
+[ParseSonglist]: info [2025-05-18 18:20:30]: 9fafa361-53c2-4564-aaea-e12018d08433, Worker exited with code 0
+[SonglistParser]: info [2025-05-18 18:21:19]: 2025-05-18_Jay_Batson_j.docx, Starting to parse songlist
+[SonglistParser]: info [2025-05-18 18:21:19]: 2025-05-18_Jay_Batson_j.docx, Parsing complete, found 0 songs
+[SonglistParser]: info [2025-05-18 18:28:41]: 2025-05-18_Jay_Batson_h.m3u8, Starting to parse songlist
+[SonglistParser]: info [2025-05-18 18:28:41]: 2025-05-18_Jay_Batson_h.m3u8, Parsing complete, found 11 songs
+[SonglistParser]: info [2025-05-18 18:37:45]: 2025-05-18_Jay_Batson_j.docx, Starting to parse songlist
+[SonglistParser]: info [2025-05-18 18:37:45]: 2025-05-18_Jay_Batson_j.docx, Parsing complete, found 13 songs
+[SonglistParser]: info [2025-05-18 18:38:15]: 2025-05-18_Jay_Batson_k.docx, Starting to parse songlist
+[SonglistParser]: info [2025-05-18 18:38:15]: 2025-05-18_Jay_Batson_k.docx, Parsing complete, found 14 songs
