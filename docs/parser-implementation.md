@@ -11,6 +11,7 @@ The songlist parsing system is designed with modularity and extensibility in min
 3. **Parser Factory**: Detects file format and routes to the appropriate parser
 4. **Normalization Layer**: Standardizes output across all parsers
 5. **Error Handling**: Consistent error reporting across all parsers
+6. **Logging System**: Standardized logging across all parsers
 
 ## Parser Interface
 
@@ -91,6 +92,37 @@ export enum ParseError {
 
 Each parser reports errors using this enum, ensuring consistent error handling across the system.
 
+## Logging System
+
+The parser system now includes a standardized logging mechanism implemented in `packages/songlist-parser/src/utils/LoggingUtils.ts`:
+
+```typescript
+export enum ParserLogType {
+  INFO = 'info',
+  WARNING = 'warning',
+  ERROR = 'error',
+  DEBUG = 'debug'
+}
+
+export function logParserEvent(
+  parserName: string,
+  eventType: ParserLogType,
+  message: string,
+  details?: any
+): void {
+  // Logging implementation
+}
+```
+
+This logging system:
+- Provides consistent logging across all parsers
+- Supports different log levels (ERROR, WARNING, INFO, DEBUG)
+- Respects environment-based log level configuration
+- Includes timestamps and parser identification
+- Filters logs based on configured log level
+
+All parsers have been updated to use this logging system instead of direct console.log calls, improving debugging capabilities and consistency.
+
 ## Adding a New Parser
 
 To add support for a new file format:
@@ -99,22 +131,28 @@ To add support for a new file format:
 2. Implement the Parser interface
 3. Add the new parser to the exports in `packages/songlist-parser/src/index.ts`
 4. Update the format detection logic to route to the new parser
+5. Use the standardized logging system for all logging needs
 
 Example implementation pattern:
 
 ```typescript
 import { Parser, ParseResult, ParseError } from './parser';
+import { logParserEvent, ParserLogType } from '../utils/LoggingUtils';
 
 export class NewFormatParser implements Parser {
   async parse(filePath: string): Promise<ParseResult> {
     try {
+      logParserEvent('NewFormatParser', ParserLogType.INFO, `Starting to parse file: ${path.basename(filePath)}`);
+      
       // Format-specific parsing logic
       
+      logParserEvent('NewFormatParser', ParserLogType.INFO, `Completed parsing, found ${parsedSongs.length} songs`);
       return {
         songs: parsedSongs,
         error: ParseError.NONE
       };
     } catch (err) {
+      logParserEvent('NewFormatParser', ParserLogType.ERROR, `Error parsing file: ${err}`);
       return {
         songs: [],
         error: ParseError.UNKNOWN_ERROR,
@@ -145,7 +183,7 @@ The parser system is tested through:
 
 Planned enhancements to the parser system:
 
-1. **Unified Logging System**: Implement standardized logging across all parsers as per docs/logging-implementation-plan.md
+1. ✅ **Unified Logging System**: Implemented standardized logging across all parsers
 2. **Editable Table Interface**: Allow users to edit parsed data
 3. **Validation Indicators**: Visual feedback for malformed entries
 4. **Save/Reset Capabilities**: Allow users to save changes or reset to original parsing
