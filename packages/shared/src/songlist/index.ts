@@ -21,6 +21,7 @@ export class SonglistVerifier {
    * Parse a songlist file and return the songs
    */
   static async verifySonglist(filePath: string): Promise<Song[]> {
-    return await parseSonglist(filePath);
+    const result = await parseSonglist(filePath);
+    return result.songs;
   }
 }

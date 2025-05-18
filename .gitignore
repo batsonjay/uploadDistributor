@@ -33,7 +33,9 @@ Thumbs.db
 
 # Big sample files
 apps/tf/*
+packages/daemon/received-files
 packages/daemon/archive/*
+packages/songlists/*
 
 # Optional lockfiles (if you want to ignore them)
 # package-lock.json

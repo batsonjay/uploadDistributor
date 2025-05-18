@@ -40,9 +40,9 @@ router.get('/:fileId', anyAuthenticated, async (req: express.Request, res: expre
     const metadata = JSON.parse(fs.readFileSync(path.join(fileDir, 'metadata.json'), 'utf8'));
     const normalizedBase = `${metadata.broadcastDate}_${metadata.djName.replace(/\s+/g, '_')}_${metadata.title.replace(/\s+/g, '_')}`;
     
-    // Find the songlist file by checking for both .txt and .rtf extensions
+    // Find the songlist file by checking for all supported extensions
     let songlistPath = '';
-    const possibleExtensions = ['.txt', '.rtf'];
+    const possibleExtensions = ['.txt', '.rtf', '.docx', '.nml', '.m3u8'];
     for (const ext of possibleExtensions) {
       const testPath = path.join(fileDir, `${normalizedBase}${ext}`);
       if (fs.existsSync(testPath)) {

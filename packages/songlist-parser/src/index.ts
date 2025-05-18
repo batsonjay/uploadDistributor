@@ -1,6 +1,7 @@
 import { NMLParser } from './parsers/nmlParser.js';
 import { TXTParser } from './parsers/txtParser.js';
 import { TextractParser } from './parsers/textractParser.js';
+import { M3U8Parser } from './parsers/m3u8Parser.js';
 import { Song, ParseResult, ParseError } from './types.js';
 import { readFile } from 'fs/promises';
 
@@ -30,6 +31,9 @@ export async function parseSonglist(filePath: string): Promise<ParseResult> {
         case 'txt':
           parser = new TXTParser();
           break;
+        case 'm3u8':
+          parser = new M3U8Parser();
+          break;
         case 'rtf':
         case 'docx':
           parser = new TextractParser();
@@ -44,15 +48,8 @@ export async function parseSonglist(filePath: string): Promise<ParseResult> {
     
     try {
       const result = await parser.parse(filePath);
-      // If it's a ParseResult (from TXT or Textract parser), return it directly
-      if ('error' in result) {
-        return result;
-      }
-      // If it's a Song[] (from NML parser), wrap it in a ParseResult
-      return {
-        songs: result,
-        error: result.length > 0 ? ParseError.NONE : ParseError.NO_VALID_SONGS
-      };
+      // All parsers now return ParseResult, so we can return it directly
+      return result;
     } catch (error) {
       console.error(`Error in parser.parse: ${error}`);
       return {
@@ -69,4 +66,4 @@ export async function parseSonglist(filePath: string): Promise<ParseResult> {
   }
 }
 
-export { NMLParser, TXTParser, TextractParser };
+export { NMLParser, TXTParser, TextractParser, M3U8Parser };

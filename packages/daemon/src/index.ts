@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
-import { healthRoutes } from './routes/health.js';
+// Removed import for healthRoutes
 import { receiveRoutes } from './routes/receive.js';
 import { statusRoutes } from './routes/status.js';
 import { default as authRoutes } from './routes/auth.js';
@@ -19,11 +19,16 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/health', healthRoutes);
+// Removed healthRoutes
 app.use('/receive', receiveRoutes); // Updated to use the new endpoint name
 app.use('/status', statusRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/parse-songlist', parseSonglistRoutes);
+
+// Add a simple health check route directly
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
 // Start server
 app.listen(PORT, () => {

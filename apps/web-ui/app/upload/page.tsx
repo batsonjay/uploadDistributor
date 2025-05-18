@@ -212,15 +212,15 @@ export default function UploadPage() {
                 <label className={styles.fileInputLabel}>Songlist File</label>
                 <div
                   className={styles.dropzone}
-                  onDrop={(e) => handleDrop(e, setSonglistFile, ["txt", "rtf"])}
+                  onDrop={(e) => handleDrop(e, setSonglistFile, ["txt", "rtf", "docx", "nml", "m3u8"])}
                   onDragOver={(e) => e.preventDefault()}
                   onClick={() => songlistInputRef.current?.click()}
                 >
                   <input
                     ref={songlistInputRef}
                     type="file"
-                    accept=".txt,.rtf"
-                    onChange={(e) => handleFileChange(e, setSonglistFile, ["txt", "rtf"])}
+                    accept=".txt,.rtf,.docx,.nml,.m3u8"
+                    onChange={(e) => handleFileChange(e, setSonglistFile, ["txt", "rtf", "docx", "nml", "m3u8"])}
                     style={{ display: "none" }}
                   />
                   <p className={`${styles.dropzoneText} ${songlistFile.file ? styles.dropzoneFilename : styles.dropzonePlaceholder}`}>
