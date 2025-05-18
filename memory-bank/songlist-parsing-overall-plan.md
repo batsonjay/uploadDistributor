@@ -92,7 +92,13 @@ For non-NML files:
 2. Extract artist/title from EXTINF lines ✓
 3. Handle dash separator detection for proper artist/title splitting ✓
 
-### Phase 7: Future Enhancements
+### Phase 7: Unified Logging Implementation
+1. Extend LoggingUtils with parser-specific functions
+2. Standardize logging across all parsers
+3. Implement environment-based logging control
+4. Prepare logging infrastructure for destination uploads
+
+### Phase 8: Future Enhancements
 1. Develop editable table interface
 2. Add validation indicators
 3. Add save/reset capabilities

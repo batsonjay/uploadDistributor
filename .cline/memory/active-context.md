@@ -13,9 +13,10 @@
 - Prepare for commit of M3U8 parser implementation
 - Document TODOs for future improvements:
   1. Investigate songlist storage location consistency
-  2. Unify execution end for all song file types
+  2. Implement unified logging approach as per docs/logging-implementation-plan.md
 
 ## Next Steps
+- Implement unified logging approach as per docs/logging-implementation-plan.md
 - Enhance the main upload flow (/upload) to use the new parse-songlist endpoint
 - Update the upload process to leverage the daemon's integrated songlist parser
 - Ensure proper handling of parsed results in the validation flow

@@ -145,9 +145,10 @@ The parser system is tested through:
 
 Planned enhancements to the parser system:
 
-1. **Editable Table Interface**: Allow users to edit parsed data
-2. **Validation Indicators**: Visual feedback for malformed entries
-3. **Save/Reset Capabilities**: Allow users to save changes or reset to original parsing
-4. **Additional Format Support**: Add support for more file formats as needed
-5. **Unified Execution Path**: Standardize the handling of all file types
-6. **Consistent Storage Location**: Review and standardize where parsed songlists are stored
+1. **Unified Logging System**: Implement standardized logging across all parsers as per docs/logging-implementation-plan.md
+2. **Editable Table Interface**: Allow users to edit parsed data
+3. **Validation Indicators**: Visual feedback for malformed entries
+4. **Save/Reset Capabilities**: Allow users to save changes or reset to original parsing
+5. **Additional Format Support**: Add support for more file formats as needed
+6. **Unified Execution Path**: Standardize the handling of all file types
+7. **Consistent Storage Location**: Review and standardize where parsed songlists are stored
