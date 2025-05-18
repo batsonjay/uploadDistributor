@@ -31,7 +31,7 @@ Multipart form data with the following fields:
 - `userRole`: User role (optional)
 - `destinations`: Comma-separated list of destinations (optional)
 - `audio`: Audio file (.mp3)
-- `songlist`: Songlist file (.txt)
+- `songlist`: Songlist file (.txt, .rtf, .docx, .nml, .m3u8)
 - `artwork`: Artwork image file (.jpg/.png)
 
 Headers:
@@ -56,6 +56,46 @@ Returns the status of file processing and destination uploads.
   "fileId": "string",
   "status": "queued|processing|completed|error",
   "message": "string (optional)"
+}
+```
+
+### `POST /parse-songlist`
+
+Parses a songlist file and returns the extracted track information.
+
+**Request**:
+Multipart form data with the following field:
+- `songlist`: Songlist file (.txt, .rtf, .docx, .nml, .m3u8)
+
+**Response**:
+```json
+{
+  "songs": [
+    {
+      "title": "string",
+      "artist": "string"
+    }
+  ],
+  "error": "NONE|FILE_READ_ERROR|NO_TRACKS_DETECTED|NO_VALID_SONGS|UNKNOWN_ERROR",
+  "errorMessage": "string (optional)"
+}
+```
+
+### `GET /parse-songlist/:fileId`
+
+Parses a previously uploaded songlist file by its fileId.
+
+**Response**:
+```json
+{
+  "songs": [
+    {
+      "title": "string",
+      "artist": "string"
+    }
+  ],
+  "error": "NONE|FILE_READ_ERROR|NO_TRACKS_DETECTED|NO_VALID_SONGS|UNKNOWN_ERROR",
+  "errorMessage": "string (optional)"
 }
 ```
 
@@ -87,7 +127,7 @@ Health check endpoint.
 - Files are stored in the `received-files` directory.
 - Each upload requires three files:
   - `audio.mp3`: The audio file to be uploaded
-  - `songlist.txt`: The tracklist information
+  - `songlist`: The tracklist information (supported formats: .txt, .rtf, .docx, .nml, .m3u8)
   - `artwork.jpg/png`: Cover image for the broadcast
 - Temporary files are cleaned up after processing.
 

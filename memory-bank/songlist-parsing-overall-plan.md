@@ -33,6 +33,12 @@ Note: Originally planned standalone CLI interface has been deprecated in favor o
 - Extract text content
 - Process similar to RTF/TXT
 
+### M3U8 Files ✓
+- Parse M3U8 playlist format
+- Extract metadata from EXTINF lines
+- Handle artist/title separation based on dash character
+- Map to standardized format
+
 ## 3. Normalization Logic ✓
 - Remove leading/trailing whitespace
 - Standardize track numbering (ignore existing numbers)
@@ -81,7 +87,12 @@ For non-NML files:
 2. Implement order swapping functionality ✓
 3. Update output to reflect correct order ✓
 
-### Phase 6: Future Enhancements
+### Phase 6: M3U8 File Support ✓
+1. Implement M3U8 parser ✓
+2. Extract artist/title from EXTINF lines ✓
+3. Handle dash separator detection for proper artist/title splitting ✓
+
+### Phase 7: Future Enhancements
 1. Develop editable table interface
 2. Add validation indicators
 3. Add save/reset capabilities
