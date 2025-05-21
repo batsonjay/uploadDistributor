@@ -16,58 +16,14 @@ export class AzuraCastApi {
     this.baseUrl = baseUrl;
   }
 
-  /**
-   * Authenticate with AzuraCast using email and password
-   * 
-   * This method verifies the DJ's credentials and returns their user information.
-   * It doesn't get or use individual API keys for DJs.
-   */
-  async authenticateWithCredentials(email: string, password: string): Promise<any> {
-    try {
-      console.log(`Authenticating user: ${email}`);
-      
-      // First, try to find the user by email using the super admin API key
-      const userResult = await this.findUserByEmail(email);
-      
-      if (!userResult.success) {
-        return {
-          success: false,
-          error: userResult.error || 'User not found'
-        };
-      }
-      
-      // For now, we're just verifying that the user exists
-      // In a real implementation, we would verify the password too
-      // But since we don't have a direct password verification endpoint,
-      // we'll just assume the password is correct if the user exists
-      
-      console.log('Authentication successful for user:', userResult.user.name);
-      
-      return {
-        success: true,
-        apiKey: this.superAdminApiKey, // Always return the super admin API key
-        user: userResult.user
-      };
-    } catch (error) {
-      console.error('Authentication error:', error);
-      
-      if (axios.isAxiosError(error) && error.response) {
-        return {
-          success: false,
-          error: error.response.data.message || 'Authentication failed'
-        };
-      }
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
 
   /**
    * Find a user by email using the super admin API key
+   * 
+   * @param email The email address to search for
+   * @returns Promise with success/error information and user data if found
    */
-  private async findUserByEmail(email: string): Promise<any> {
+  public async findUserByEmail(email: string): Promise<any> {
     try {
       // Try to get all users using the super admin API key
       const response = await axios.get(

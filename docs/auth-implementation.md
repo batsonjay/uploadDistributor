@@ -201,6 +201,12 @@ The implementation of the new authentication system will be done in phases to al
 - Add endpoints for requesting login links and verifying tokens
 - Update AuthContext.tsx to support the email-based login flow
 - Implement basic email verification without role-based expiration
+- Set up Google as the outgoing Gmail SMTP service (needs done by the developer outside this coding effort)
+- Update middleware to work with localStorage instead of cookies:
+  1. Update the middleware.ts file to use a client-side approach that's compatible with localStorage
+  2. Since Next.js middleware runs on the server and can't directly access localStorage, implement a solution where:
+     - The token from localStorage is attached to requests as an Authorization header
+     - The middleware checks for this header instead of cookies
 - Test the core authentication flow end-to-end
 
 #### Phase 2: DJ Selector for Super Admins
@@ -224,3 +230,211 @@ The implementation of the new authentication system will be done in phases to al
 For more detailed information about the token expiration implementation, see [Token Expiration Documentation](./auth-token-expiration.md).
 
 For testing instructions, see [Testing Token Expiration](./testing-token-expiration.md).
+
+## Phase 1 Implementation Details
+
+This section provides detailed implementation specifics for Phase 1 of the authentication system.
+
+### Token Generation
+
+Since the application doesn't require high-security cryptographic tokens, we'll use a simpler approach for generating magic link tokens:
+
+```typescript
+private generateToken(): string {
+  // Generate a random string using Math.random and current timestamp
+  const randomPart = Math.random().toString(36).substring(2, 15);
+  const timestampPart = Date.now().toString(36);
+  
+  // Combine with a unique identifier
+  return `${randomPart}${timestampPart}`;
+}
+```
+
+This approach:
+- Uses JavaScript's built-in `Math.random()` combined with the current timestamp
+- Converts to base36 (alphanumeric) for readability
+- Is sufficiently random for our non-critical security needs
+- Requires no additional libraries
+
+### Email Implementation
+
+We'll use nodemailer with Google's SMTP server to send magic link emails:
+
+```typescript
+// In EmailService.ts
+import nodemailer from 'nodemailer';
+
+// Create reusable transporter
+private createTransporter() {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER || 'balearicfm@gmail.com',
+      pass: process.env.EMAIL_PASSWORD // App password after 2FA is enabled
+    }
+  });
+}
+
+// Send the magic link email
+public async sendMagicLinkEmail(email: string): Promise<boolean> {
+  try {
+    const { token, url } = this.createMagicLink(email);
+    
+    const transporter = this.createTransporter();
+    
+    const info = await transporter.sendMail({
+      from: '"Upload Distributor" <balearicfm@gmail.com>',
+      to: email,
+      subject: "Your Login Link for Upload Distributor",
+      text: `Hello,\n\nClick the link below to log in to Upload Distributor:\n\n${url}\n\nThis link will expire in 15 minutes.\n\nIf you didn't request this link, you can safely ignore this email.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Upload Distributor Login</h2>
+          <p>Hello,</p>
+          <p><a href="${url}">Click to proceed with uploading the files & scheduling your set</a></p>
+          <p>Or copy and paste this link in your browser:</p>
+          <p style="background-color: #f5f5f5; padding: 10px; border-radius: 4px; word-break: break-all;">
+            ${url}
+          </p>
+          <p>This link will expire in 15 minutes.</p>
+          <p>If you didn't request this link, you can safely ignore this email.</p>
+        </div>
+      `
+    });
+    
+    console.log("Email sent: %s", info.messageId);
+    return true;
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return false;
+  }
+}
+```
+
+Key points:
+- Uses Gmail SMTP server with the balearicfm@gmail.com account
+- Requires 2FA to be enabled on the Gmail account and an app password to be generated
+- Sends both plain text and HTML versions of the email
+- Uses a simple hyperlink with descriptive text instead of a styled button
+- Includes a fallback with the full URL for copying and pasting
+
+### Error Handling
+
+We'll use clear, descriptive error messages for common issues:
+
+```typescript
+// In AuthService.ts when checking if user exists
+if (!user) {
+  return { 
+    success: false, 
+    message: "No such email address found. Please check your spelling or contact your station administrator." 
+  };
+}
+
+// In EmailService.ts when sending fails
+if (!emailSent) {
+  return {
+    success: false,
+    message: "Failed to send login email. Please try again or contact your administrator."
+  };
+}
+```
+
+These messages:
+- Clearly state what went wrong
+- Provide suggestions for how to resolve the issue
+- Include an escalation path if needed
+
+### Implementation Notes
+
+1. **Environment Variables**:
+   - `EMAIL_USER`: The Gmail address (balearicfm@gmail.com)
+   - `EMAIL_PASSWORD`: App password generated after enabling 2FA
+   - These should be stored in `.env` files and not committed to the repository
+
+2. **Dependencies**:
+   - `nodemailer`: For sending emails (`npm install nodemailer`)
+   - `@types/nodemailer`: TypeScript types (`npm install --save-dev @types/nodemailer`)
+
+3. **Testing Considerations**:
+   - 2FA must be enabled on the Gmail account before testing
+   - An app password must be generated and stored in the environment variables
+   - Initial testing can be done with a developer's email address
+
+### Middleware Update for localStorage
+
+To align the middleware with the localStorage-based authentication approach, we'll need to update how the authentication token is passed to the server:
+
+```typescript
+// In AuthContext.tsx - Add function to attach token to requests
+// This would be used in a custom fetch wrapper or axios interceptor
+const attachTokenToRequest = (config) => {
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    // For fetch API
+    config.headers = {
+      ...config.headers,
+      'Authorization': `Bearer ${token}`
+    };
+  }
+  return config;
+};
+
+// In middleware.ts - Update to check for Authorization header instead of cookies
+export function middleware(request: NextRequest) {
+  // Get the pathname
+  const { pathname } = request.nextUrl;
+
+  // Check if it's a public route
+  if (publicRoutes.includes(pathname)) {
+    return NextResponse.next();
+  }
+
+  // Check for auth token in Authorization header instead of cookies
+  const authHeader = request.headers.get('Authorization');
+  const token = authHeader ? authHeader.replace('Bearer ', '') : null;
+
+  // If no token and not a public route, redirect to login
+  if (!token) {
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
+}
+```
+
+This approach:
+- Uses the Authorization header to pass the token from localStorage to the server
+- Maintains the existing middleware structure and route protection
+- Works with the localStorage-based token expiration mechanism
+- Requires client-side code to attach the token to all requests
+
+For API requests, we'll need to ensure the token is attached to all fetch/axios calls:
+
+```typescript
+// Example of a fetch wrapper that attaches the token
+const authenticatedFetch = async (url, options = {}) => {
+  const token = localStorage.getItem('authToken');
+  
+  const headers = {
+    ...options.headers,
+    'Content-Type': 'application/json',
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return fetch(url, {
+    ...options,
+    headers,
+  });
+};
+```
+
+For page navigation and initial page loads, we'll need to implement a solution that ensures the token is available to the middleware. This could involve:
+
+1. Using a client-side script that runs on each page load to set a cookie based on localStorage
+2. Using Next.js's App Router layout components to handle authentication state
+3. Implementing a custom document or app component that manages the token synchronization

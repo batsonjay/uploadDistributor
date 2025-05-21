@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { encodePassword } from "../utils/PasswordUtils";
+import { useAuth } from "../auth/AuthContext";
 import styles from "./page.module.css";
 
 interface Song {
@@ -15,6 +15,7 @@ interface ParseResult {
 }
 
 export default function TestParsePage() {
+  const { authenticatedFetch } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
   const [error, setError] = useState<string>("");
@@ -52,31 +53,10 @@ export default function TestParsePage() {
       const formData = new FormData();
       formData.append("songlist", file);
 
-      // First get an auth token
-      const authResponse = await fetch("http://localhost:3001/api/auth/login", {
+      // Send the file with authentication
+      const response = await authenticatedFetch("http://localhost:3001/parse-songlist", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: "batsonjay@gmail.com",
-          encodedPassword: encodePassword("test123")
-        }),
-      });
-
-      if (!authResponse.ok) {
-        throw new Error("Authentication failed");
-      }
-
-      const authData = await authResponse.json();
-
-      // Then send the file with the auth token
-      const response = await fetch("http://localhost:3001/parse-songlist", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "Authorization": `Bearer ${authData.token}`
-        }
+        body: formData
       });
 
       if (!response.ok) {

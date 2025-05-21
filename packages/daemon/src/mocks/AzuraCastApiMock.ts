@@ -44,41 +44,43 @@ export class AzuraCastApiMock extends DestinationApiMock {
    * @param password User password (plaintext)
    * @param encodedPassword User password (encoded with XOR)
    */
-  public async authenticateWithCredentials(
-    email: string, 
-    password?: string, 
-    encodedPassword?: string
-  ): Promise<{ success: boolean; token: string; user?: any; error?: string }> {
-    // Handle both encoded and non-encoded passwords
-    let passwordToUse: string;
+  /**
+   * Authenticate with AzuraCast using email
+   * 
+   * @param email User email
+   */
+  public async authenticateWithEmail(
+    email: string
+  ): Promise<{ success: boolean; error?: string }> {
+    const result = await this.authService.authenticateWithEmail(email);
     
-    if (encodedPassword) {
-      // If encodedPassword is provided, use it directly
-      passwordToUse = encodedPassword;
-    } else if (password) {
-      // If only password is provided, encode it
-      passwordToUse = encodePassword(password);
-    } else {
-      // If neither is provided, return an error
-      return {
-        success: false,
-        token: 'invalid-token',
-        error: 'Email and password are required'
-      };
-    }
-    
-    const result = await this.authService.authenticate(email, passwordToUse);
-    
-    this.recordRequest('authenticateWithCredentials', {
-      email,
-      password: '[REDACTED]',
-      encodedPassword: '[REDACTED]'
+    this.recordRequest('authenticateWithEmail', {
+      email
     });
     
-    // Ensure token is always defined in the return value
     return {
       success: result.success,
-      token: result.token || 'invalid-token',
+      error: result.error
+    };
+  }
+  
+  /**
+   * Verify a magic link token
+   * 
+   * @param token Magic link token
+   */
+  public async verifyMagicLinkToken(
+    token: string
+  ): Promise<{ success: boolean; token?: string; user?: any; error?: string }> {
+    const result = await this.authService.verifyMagicLinkToken(token);
+    
+    this.recordRequest('verifyMagicLinkToken', {
+      token: token.substring(0, 10) + '...'
+    });
+    
+    return {
+      success: result.success,
+      token: result.token,
       user: result.user,
       error: result.error
     };

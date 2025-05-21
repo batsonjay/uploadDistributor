@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Define public routes that don't require authentication
-const publicRoutes = ['/login', '/test-parse'];
+const publicRoutes = ['/login', '/test-parse', '/auth/verify'];
 
 export function middleware(request: NextRequest) {
   // Get the pathname
@@ -13,11 +13,15 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for auth token
-  const token = request.cookies.get('authToken');
-
-  // If no token and not a public route, redirect to login
-  if (!token) {
+  // Check for auth token in Authorization header
+  const authHeader = request.headers.get('Authorization');
+  const token = authHeader ? authHeader.replace('Bearer ', '') : null;
+  
+  // Also check cookies as a fallback for compatibility
+  const cookieToken = request.cookies.get('authToken');
+  
+  // If no token in either place and not a public route, redirect to login
+  if (!token && !cookieToken) {
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
   }

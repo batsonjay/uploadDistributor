@@ -97,6 +97,73 @@
   line-height: 20px;
 }
 
+.info {
+  font-family: var(--font-geist-sans);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--gray-alpha-900);
+  text-align: center;
+  margin-top: 8px;
+}
+
+.linkSent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  padding: 32px;
+  border-radius: 12px;
+  border: 1px solid var(--gray-alpha-200);
+  text-align: center;
+}
+
+.linkSent h2 {
+  font-family: var(--font-geist-sans);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 500;
+  margin: 0 0 8px 0;
+}
+
+.linkSent p {
+  font-family: var(--font-geist-sans);
+  font-size: 16px;
+  line-height: 24px;
+  margin: 0;
+}
+
+.note {
+  font-size: 14px;
+  color: var(--gray-alpha-900);
+  margin-top: 16px !important;
+}
+
+.resendButton {
+  appearance: none;
+  border-radius: 128px;
+  height: 48px;
+  padding: 0 20px;
+  border: 1px solid var(--gray-alpha-200);
+  font-family: var(--font-geist-sans);
+  background: transparent;
+  color: var(--foreground);
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 16px;
+}
+
+.resendButton:hover {
+  background: var(--gray-alpha-100);
+}
+
+.resendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media (max-width: 600px) {
   .loginPage {
     padding: 32px;
@@ -107,12 +174,22 @@
     line-height: 28px;
   }
   
-  .form {
+  .form, .linkSent {
     padding: 24px;
   }
   
-  .loginButton {
+  .loginButton, .resendButton {
     height: 40px;
     font-size: 14px;
+  }
+  
+  .linkSent h2 {
+    font-size: 18px;
+    line-height: 24px;
+  }
+  
+  .linkSent p {
+    font-size: 14px;
+    line-height: 20px;
   }
 }

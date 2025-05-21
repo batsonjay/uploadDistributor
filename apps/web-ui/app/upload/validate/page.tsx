@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../auth/AuthContext";
-import { encodePassword } from "../../utils/PasswordUtils";
 import styles from "./page.module.css";
 
 interface Song {
@@ -25,7 +24,7 @@ interface UploadData {
 
 export default function ValidatePage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, authenticatedFetch } = useAuth();
   const [songs, setSongs] = useState<Song[]>([]);
   const [uploadData, setUploadData] = useState<UploadData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -58,30 +57,8 @@ export default function ValidatePage() {
         setError("");
         hasFetchedSongs.current = true;
 
-        // Get auth token
-        const authResponse = await fetch("http://localhost:3001/api/auth/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: "batsonjay@gmail.com",
-            encodedPassword: encodePassword("test123")
-          }),
-        });
-
-        if (!authResponse.ok) {
-          throw new Error("Authentication failed");
-        }
-
-        const authData = await authResponse.json();
-
         // Fetch parsed songs
-        const response = await fetch(`http://localhost:3001/parse-songlist/${data.fileId}/`, {
-          headers: {
-            "Authorization": `Bearer ${authData.token}`
-          }
-        });
+        const response = await authenticatedFetch(`http://localhost:3001/parse-songlist/${data.fileId}/`);
 
         if (!response.ok) {
           throw new Error(await response.text());
@@ -127,31 +104,9 @@ export default function ValidatePage() {
     setError("");
 
     try {
-      // Get auth token
-      const authResponse = await fetch("http://localhost:3001/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: "batsonjay@gmail.com",
-          encodedPassword: encodePassword("test123")
-        }),
-      });
-
-      if (!authResponse.ok) {
-        throw new Error("Authentication failed");
-      }
-
-      const authData = await authResponse.json();
-
       // Confirm the upload
-      const response = await fetch(`http://localhost:3001/parse-songlist/${uploadData.fileId}/confirm/`, {
+      const response = await authenticatedFetch(`http://localhost:3001/parse-songlist/${uploadData.fileId}/confirm/`, {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${authData.token}`,
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify({ songs })
       });
 

@@ -3,7 +3,6 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../auth/AuthContext";
-import { encodePassword } from "../utils/PasswordUtils";
 import styles from "./page.module.css";
 
 interface FileState {
@@ -13,7 +12,7 @@ interface FileState {
 
 export default function UploadPage() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, authenticatedFetch } = useAuth();
   const [audioFile, setAudioFile] = useState<FileState>({ file: null, error: "" });
   const [songlistFile, setSonglistFile] = useState<FileState>({ file: null, error: "" });
   const [artworkFile, setArtworkFile] = useState<FileState>({ file: null, error: "" });
@@ -96,24 +95,6 @@ export default function UploadPage() {
     setIsLoading(true);
 
     try {
-      // First get an auth token
-      const authResponse = await fetch("http://localhost:3001/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: "batsonjay@gmail.com",
-          encodedPassword: encodePassword("test123")
-        }),
-      });
-
-      if (!authResponse.ok) {
-        throw new Error("Authentication failed");
-      }
-
-      const authData = await authResponse.json();
-
       // Create form data with files and metadata
       const formData = new FormData();
       formData.append("audio", audioFile.file);
@@ -131,12 +112,9 @@ export default function UploadPage() {
       formData.append("description", description);
 
       // Send files to daemon
-      const response = await fetch("http://localhost:3001/receive", {
+      const response = await authenticatedFetch("http://localhost:3001/receive", {
         method: "POST",
-        body: formData,
-        headers: {
-          "Authorization": `Bearer ${authData.token}`
-        }
+        body: formData
       });
 
       if (!response.ok) {

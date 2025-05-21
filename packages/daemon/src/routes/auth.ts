@@ -2,44 +2,31 @@
  * Authentication Routes
  * 
  * This file defines the authentication routes for the application.
- * It provides endpoints for login, token validation, and user profile retrieval.
+ * It provides endpoints for email-based authentication, token validation, and user profile retrieval.
  * 
- * Password handling is done using simple XOR obfuscation to avoid plaintext passwords.
+ * The email-based authentication flow:
+ * 1. User requests a login link via /request-login
+ * 2. System sends a magic link to their email
+ * 3. User clicks the link, which contains a token
+ * 4. Frontend sends the token to /verify-login
+ * 5. System verifies the token and returns a JWT token
  */
 
 import express from 'express';
 import { AuthService } from '../services/AuthService.js';
 import { encodePassword } from '../utils/PasswordUtils.js';
+import { logParserEvent, ParserLogType } from '../utils/LoggingUtils.js';
 
 const router = express.Router();
 const authService = AuthService.getInstance();
 
 /**
- * Login route
+ * Request login link route
  * 
- * Authenticates a user with email and password
- * The password should be encoded using the encodePassword function
- * Returns a token and user profile on success
+ * Sends a magic link to the user's email if the email exists in AzuraCast
  */
-router.post('/login', async (req, res) => {
-  const { email, password, encodedPassword } = req.body;
-  
-  // Handle both encoded and non-encoded passwords for backward compatibility
-  let passwordToUse: string;
-  
-  if (encodedPassword) {
-    // If encodedPassword is provided, use it directly
-    passwordToUse = encodedPassword;
-  } else if (password) {
-    // If only password is provided, encode it
-    passwordToUse = encodePassword(password);
-  } else {
-    // If neither is provided, return an error
-    return res.status(400).json({
-      success: false,
-      error: 'Email and password are required'
-    });
-  }
+router.post('/request-login', async (req, res) => {
+  const { email } = req.body;
   
   if (!email) {
     return res.status(400).json({
@@ -49,15 +36,21 @@ router.post('/login', async (req, res) => {
   }
   
   try {
-    const result = await authService.authenticate(email, passwordToUse);
+    logParserEvent('AuthRoutes', ParserLogType.INFO, `Login link requested for email: ${email}`);
+    const result = await authService.authenticateWithEmail(email);
     
     if (!result.success) {
-      return res.status(401).json(result);
+      logParserEvent('AuthRoutes', ParserLogType.WARNING, `Login link request failed: ${result.error}`);
+      return res.status(400).json(result);
     }
     
-    return res.json(result);
+    logParserEvent('AuthRoutes', ParserLogType.INFO, `Login link sent to ${email}`);
+    return res.json({
+      success: true,
+      message: 'Magic link sent'
+    });
   } catch (err) {
-    console.error('Authentication error:', err);
+    logParserEvent('AuthRoutes', ParserLogType.ERROR, `Error in /request-login:`, err);
     return res.status(500).json({
       success: false,
       error: 'Internal server error'
@@ -66,9 +59,45 @@ router.post('/login', async (req, res) => {
 });
 
 /**
+ * Verify login token route
+ * 
+ * Verifies a magic link token and returns a JWT token and user profile on success
+ */
+router.post('/verify-login', async (req, res) => {
+  const { token } = req.body;
+  
+  if (!token) {
+    return res.status(400).json({
+      success: false,
+      error: 'Token is required'
+    });
+  }
+  
+  try {
+    logParserEvent('AuthRoutes', ParserLogType.INFO, `Verifying login token`);
+    const result = await authService.verifyMagicLinkToken(token);
+    
+    if (!result.success) {
+      logParserEvent('AuthRoutes', ParserLogType.WARNING, `Token verification failed: ${result.error}`);
+      return res.status(400).json(result);
+    }
+    
+    logParserEvent('AuthRoutes', ParserLogType.INFO, `Token verified successfully for user: ${result.user?.displayName}`);
+    return res.json(result);
+  } catch (err) {
+    logParserEvent('AuthRoutes', ParserLogType.ERROR, `Error in /verify-login:`, err);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+
+/**
  * Validate token route
  * 
- * Validates a token and returns the associated user profile
+ * Validates a JWT token and returns the associated user profile
  */
 router.post('/validate', async (req, res) => {
   const { token } = req.body;
@@ -81,15 +110,18 @@ router.post('/validate', async (req, res) => {
   }
   
   try {
+    logParserEvent('AuthRoutes', ParserLogType.INFO, `Token validation requested`);
     const result = await authService.validateToken(token);
     
     if (!result.success) {
+      logParserEvent('AuthRoutes', ParserLogType.WARNING, `Token validation failed: ${result.error}`);
       return res.status(401).json(result);
     }
     
+    logParserEvent('AuthRoutes', ParserLogType.INFO, `Token validated successfully for user: ${result.user?.displayName}`);
     return res.json(result);
   } catch (err) {
-    console.error('Token validation error:', err);
+    logParserEvent('AuthRoutes', ParserLogType.ERROR, `Error in /validate:`, err);
     return res.status(500).json({
       success: false,
       error: 'Internal server error'
@@ -114,18 +146,21 @@ router.get('/profile', async (req, res) => {
   }
   
   try {
+    logParserEvent('AuthRoutes', ParserLogType.INFO, `Profile retrieval requested`);
     const result = await authService.validateToken(token);
     
     if (!result.success) {
+      logParserEvent('AuthRoutes', ParserLogType.WARNING, `Profile retrieval failed: ${result.error}`);
       return res.status(401).json(result);
     }
     
+    logParserEvent('AuthRoutes', ParserLogType.INFO, `Profile retrieved successfully for user: ${result.user?.displayName}`);
     return res.json({
       success: true,
       user: result.user
     });
   } catch (err) {
-    console.error('Profile retrieval error:', err);
+    logParserEvent('AuthRoutes', ParserLogType.ERROR, `Error in /profile:`, err);
     return res.status(500).json({
       success: false,
       error: 'Internal server error'

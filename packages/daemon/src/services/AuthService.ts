@@ -2,9 +2,13 @@
  * Authentication Service
  * 
  * This service provides authentication functionality for the application.
- * It uses both mock data and the real AzuraCast API.
+ * It supports both email-based authentication and token validation.
  * 
- * Password handling is done using simple XOR obfuscation to avoid plaintext passwords.
+ * The email-based authentication flow:
+ * 1. User enters their email address
+ * 2. System sends a magic link to their email
+ * 3. User clicks the link to authenticate
+ * 4. System verifies the email and retrieves user information from AzuraCast
  * 
  * After successful authentication, it verifies that the DJ has a valid directory
  * in AzuraCast before allowing uploads.
@@ -12,7 +16,9 @@
 
 import { decodePassword } from '../utils/PasswordUtils.js';
 import { AzuraCastApi } from '../apis/AzuraCastApi.js';
-import { ErrorType, logDetailedError } from '../utils/LoggingUtils.js';
+import { ErrorType, logDetailedError, logParserEvent, ParserLogType } from '../utils/LoggingUtils.js';
+import EmailService from './EmailService.js';
+import jwt from 'jsonwebtoken';
 
 // Define user roles as constants for easy modification
 export const USER_ROLES = {
@@ -39,6 +45,7 @@ export interface AuthResponse {
 
 export class AuthService {
   private static instance: AuthService;
+  private jwtSecret: string;
   private mockUsers: UserProfile[] = [
     {
       id: '1',
@@ -60,7 +67,15 @@ export class AuthService {
     }
   ];
   
-  private constructor() {}
+  private constructor() {
+    // Use environment variable for JWT secret or a default for development
+    this.jwtSecret = process.env.JWT_SECRET || 'upload-distributor-dev-secret-key';
+    
+    // Set up a periodic cleanup of expired tokens
+    setInterval(() => {
+      EmailService.getInstance().cleanupExpiredTokens();
+    }, 15 * 60 * 1000); // Run every 15 minutes
+  }
   
   public static getInstance(): AuthService {
     if (!AuthService.instance) {
@@ -69,108 +84,46 @@ export class AuthService {
     return AuthService.instance;
   }
   
-  // Mock authentication - will be replaced with real API call later
-  public async authenticate(email: string, encodedPassword: string): Promise<AuthResponse> {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Decode the password
-    const password = decodePassword(encodedPassword);
-    
-    const user = this.mockUsers.find(u => u.email === email);
-    
-    if (!user) {
-      return {
-        success: false,
-        error: 'Invalid credentials'
-      };
-    }
-    
-    return {
-      success: true,
-      user,
-      token: `mock-token-${user.id}-${Date.now()}`
-    };
-  }
-  
-  // Mock token validation - will be replaced with real API call later
-  public async validateToken(token: string): Promise<AuthResponse> {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    // Simple validation for mock tokens
-    if (!token.startsWith('mock-token-')) {
-      return {
-        success: false,
-        error: 'Invalid token'
-      };
-    }
-    
-    // Extract user ID from token
-    const parts = token.split('-');
-    const userId = parts[2];
-    
-    const user = this.mockUsers.find(u => u.id === userId);
-    
-    if (!user) {
-      return {
-        success: false,
-        error: 'User not found'
-      };
-    }
-    
-    return {
-      success: true,
-      user,
-      token
-    };
-  }
-  
-  // Authenticate with the real AzuraCast API
-  public async authenticateWithAzuraCast(email: string, encodedPassword: string): Promise<AuthResponse> {
-    // Decode the password
-    const password = decodePassword(encodedPassword);
-    
-    // Create AzuraCast API client
-    const api = new AzuraCastApi();
+  /**
+   * Request email-based authentication
+   * Sends a magic link to the user's email if the email exists in AzuraCast
+   */
+  public async authenticateWithEmail(email: string): Promise<AuthResponse> {
+    logParserEvent('AuthService', ParserLogType.INFO, `Authentication requested for email: ${email}`);
     
     try {
-      // Authenticate with AzuraCast
-      const authResult = await api.authenticateWithCredentials(email, password);
+      // Create AzuraCast API client
+      const api = new AzuraCastApi();
       
-      if (!authResult.success) {
+      // Find user by email in AzuraCast
+      const user = await api.findUserByEmail(email);
+      
+      if (!user) {
+        logParserEvent('AuthService', ParserLogType.WARNING, `No such email address found: ${email}`);
         return {
           success: false,
-          error: authResult.error || 'Authentication failed'
+          error: 'No such email address found. Please check your spelling or contact your station administrator.'
         };
       }
       
-      // Map AzuraCast user to our UserProfile format
-      const user: UserProfile = {
-        id: authResult.user.id.toString(),
-        email: authResult.user.email,
-        displayName: authResult.user.name,
-        role: this.mapAzuraCastRoleToUserRole(authResult.user.roles)
-      };
+      // Send magic link email
+      const emailService = EmailService.getInstance();
+      const sent = await emailService.sendMagicLinkEmail(email);
       
-      // For DJ users, verify that their directory exists in AzuraCast
-      if (user.role === USER_ROLES.DJ) {
-        console.log(`Verifying directory for DJ user: ${user.displayName}`);
-        const directoryResult = await this.verifyDjDirectory(user.displayName);
-        if (!directoryResult.success) {
-          return directoryResult;
-        }
-      } else {
-        console.log(`Skipping directory verification for Admin user: ${user.displayName}`);
-        // Admin users don't need directory verification
+      if (!sent) {
+        logParserEvent('AuthService', ParserLogType.ERROR, `Failed to send login email to ${email}`);
+        return {
+          success: false,
+          error: 'Failed to send login email. Please try again or contact your administrator.'
+        };
       }
       
+      logParserEvent('AuthService', ParserLogType.INFO, `Magic link email sent to ${email}`);
       return {
-        success: true,
-        user,
-        token: authResult.apiKey
+        success: true
       };
     } catch (error) {
+      logParserEvent('AuthService', ParserLogType.ERROR, `Error in authenticateWithEmail:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -178,68 +131,173 @@ export class AuthService {
     }
   }
   
-  // Helper method to map AzuraCast roles to our UserRole type
-  private mapAzuraCastRoleToUserRole(azuraCastRoles: any[]): UserRole {
-    console.log('User roles from AzuraCast:', azuraCastRoles);
-    
-    // Check if the user is a Super Administrator
-    if (Array.isArray(azuraCastRoles) && azuraCastRoles.some(role => role.name === 'Super Administrator')) {
-      console.log('User has Super Administrator role');
-      return USER_ROLES.ADMIN;
-    }
-    
-    console.log('User has DJ role');
-    return USER_ROLES.DJ;
-  }
-  
-  // Validate token with the real AzuraCast API
-  public async validateTokenWithAzuraCast(token: string): Promise<AuthResponse> {
-    // Create AzuraCast API client
-    const api = new AzuraCastApi();
+  /**
+   * Verify a magic link token and authenticate the user
+   */
+  public async verifyMagicLinkToken(token: string): Promise<AuthResponse> {
+    logParserEvent('AuthService', ParserLogType.INFO, `Verifying magic link token`);
     
     try {
-      // Get user profile with the API key
-      const profileResult = await api.getUserProfile(token);
+      // Verify the token
+      const emailService = EmailService.getInstance();
+      const { valid, email } = emailService.verifyToken(token);
       
-      if (!profileResult.success) {
+      if (!valid || !email) {
+        logParserEvent('AuthService', ParserLogType.WARNING, `Invalid or expired token`);
         return {
           success: false,
-          error: profileResult.error || 'Invalid token'
+          error: 'Invalid or expired token. Please request a new login link.'
         };
       }
       
+      // Create AzuraCast API client
+      const api = new AzuraCastApi();
+      
+      // Find user by email in AzuraCast
+      const userResult = await api.findUserByEmail(email);
+      
+      if (!userResult || !userResult.success || !userResult.user) {
+        logParserEvent('AuthService', ParserLogType.WARNING, `User not found for email: ${email}`);
+        return {
+          success: false,
+          error: 'User not found. Please contact your administrator.'
+        };
+      }
+      
+      const apiUser = userResult.user;
+      
       // Map AzuraCast user to our UserProfile format
+      const userProfile: UserProfile = {
+        id: apiUser.id.toString(),
+        email: apiUser.email,
+        displayName: apiUser.name,
+        role: this.mapAzuraCastRoleToUserRole(apiUser.roles)
+      };
+      
+      // For DJ users, verify that their directory exists in AzuraCast
+      if (userProfile.role === USER_ROLES.DJ) {
+        logParserEvent('AuthService', ParserLogType.INFO, `Verifying directory for DJ user: ${userProfile.displayName}`);
+        const directoryResult = await this.verifyDjDirectory(userProfile.displayName);
+        if (!directoryResult.success) {
+          return directoryResult;
+        }
+      } else {
+        logParserEvent('AuthService', ParserLogType.INFO, `Skipping directory verification for Admin user: ${userProfile.displayName}`);
+        // Admin users don't need directory verification
+      }
+      
+      // Generate a JWT token
+      const jwtToken = this.generateToken(userProfile);
+      
+      logParserEvent('AuthService', ParserLogType.INFO, `Magic link token verified successfully for ${email}`);
+      return {
+        success: true,
+        user: userProfile,
+        token: jwtToken
+      };
+    } catch (error) {
+      logParserEvent('AuthService', ParserLogType.ERROR, `Error in verifyMagicLinkToken:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+  
+  /**
+   * Generate a JWT token for the user
+   */
+  private generateToken(user: UserProfile): string {
+    // Create a JWT token with user information
+    return jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        role: user.role
+      },
+      this.jwtSecret,
+      { expiresIn: '30d' } // Server-side expiration (client will handle role-based expiration)
+    );
+  }
+  
+  /**
+   * Validate a JWT token
+   */
+  public async validateToken(token: string): Promise<AuthResponse> {
+    logParserEvent('AuthService', ParserLogType.INFO, `Validating token`);
+    
+    try {
+      // Verify the JWT token
+      const decoded = jwt.verify(token, this.jwtSecret) as any;
+      
+      // Create user profile from decoded token
       const user: UserProfile = {
-        id: profileResult.user.id.toString(),
-        email: profileResult.user.email,
-        displayName: profileResult.user.name,
-        role: this.mapAzuraCastRoleToUserRole(profileResult.user.roles)
+        id: decoded.id,
+        email: decoded.email,
+        displayName: decoded.displayName,
+        role: decoded.role
       };
       
       // For DJ users, verify that their directory exists in AzuraCast
       if (user.role === USER_ROLES.DJ) {
-        console.log(`Verifying directory for DJ user: ${user.displayName}`);
+        logParserEvent('AuthService', ParserLogType.INFO, `Verifying directory for DJ user: ${user.displayName}`);
         const directoryResult = await this.verifyDjDirectory(user.displayName);
         if (!directoryResult.success) {
           return directoryResult;
         }
       } else {
-        console.log(`Skipping directory verification for Admin user: ${user.displayName}`);
+        logParserEvent('AuthService', ParserLogType.INFO, `Skipping directory verification for Admin user: ${user.displayName}`);
         // Admin users don't need directory verification
       }
       
+      logParserEvent('AuthService', ParserLogType.INFO, `Token validated successfully for ${user.email}`);
       return {
         success: true,
         user,
         token
       };
     } catch (error) {
+      logParserEvent('AuthService', ParserLogType.ERROR, `Error validating token:`, error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Invalid or expired token'
       };
     }
   }
+  
+  
+  // Helper method to map AzuraCast roles to our UserRole type
+  private mapAzuraCastRoleToUserRole(azuraCastRoles: any[]): UserRole {
+    console.log('User roles from AzuraCast:', azuraCastRoles);
+    
+    if (!azuraCastRoles) {
+      console.log('No roles provided, defaulting to DJ role');
+      return USER_ROLES.DJ;
+    }
+    
+    // Check if the user is a Super Administrator
+    if (Array.isArray(azuraCastRoles)) {
+      // Handle both formats: array of objects with name property or array of strings
+      const isAdmin = azuraCastRoles.some(role => {
+        if (typeof role === 'string') {
+          return role === 'Super Administrator';
+        } else if (role && typeof role === 'object' && 'name' in role) {
+          return role.name === 'Super Administrator';
+        }
+        return false;
+      });
+      
+      if (isAdmin) {
+        console.log('User has Super Administrator role');
+        return USER_ROLES.ADMIN;
+      }
+    }
+    
+    console.log('User has DJ role');
+    return USER_ROLES.DJ;
+  }
+  
   
   /**
    * Verify that a directory exists for the DJ in AzuraCast

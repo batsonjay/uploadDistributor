@@ -91,3 +91,10 @@
 [SonglistParser]: info [2025-05-18 18:37:45]: 2025-05-18_Jay_Batson_j.docx, Parsing complete, found 13 songs
 [SonglistParser]: info [2025-05-18 18:38:15]: 2025-05-18_Jay_Batson_k.docx, Starting to parse songlist
 [SonglistParser]: info [2025-05-18 18:38:15]: 2025-05-18_Jay_Batson_k.docx, Parsing complete, found 14 songs
+[SonglistParser]: info [2025-05-21 12:54:35]: 2025-05-21_Jay_Batson_h.m3u8, Starting to parse songlist
+[SonglistParser]: info [2025-05-21 12:54:35]: 2025-05-21_Jay_Batson_h.m3u8, Parsing complete, found 10 songs
+[ParseSonglist]: info [2025-05-21 12:54:38]: 8e61d316-d667-4b36-bf16-f5d2cba6c32c, Launching worker thread
+[azuracast]: success [2025-05-21 12:54:39]: h, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747832079413.mp3
+[mixcloud]: success [2025-05-21 12:54:40]: h, Uploaded to https://www.mixcloud.com/jay-batson/h/
+[soundcloud]: success [2025-05-21 12:54:41]: h, Uploaded to https://soundcloud.com/mock-user/h
+[ParseSonglist]: info [2025-05-21 12:54:41]: 8e61d316-d667-4b36-bf16-f5d2cba6c32c, Worker exited with code 0

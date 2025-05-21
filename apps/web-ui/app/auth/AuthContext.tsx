@@ -13,9 +13,11 @@ interface UserProfile {
 interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  requestLoginLink: (email: string) => Promise<{ success: boolean; error?: string }>;
+  login: (token: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   isLoading: boolean;
+  authenticatedFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -46,19 +48,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check for stored token on mount
     const storedToken = localStorage.getItem('authToken');
-    const tokenCreatedAt = localStorage.getItem('tokenCreatedAt');
+    const tokenExpires = localStorage.getItem('tokenExpires');
     
     if (storedToken) {
-      // Check token expiration if we have a creation timestamp
-      if (tokenCreatedAt) {
-        const creationTime = parseInt(tokenCreatedAt, 10);
+      // Check token expiration if we have an expiration timestamp
+      if (tokenExpires) {
+        const expirationTime = parseInt(tokenExpires, 10);
         const currentTime = Date.now();
-        const tokenAge = currentTime - creationTime;
-        const oneDayInMs = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
         
-        // If token is older than 24 hours, log out
-        if (tokenAge > oneDayInMs) {
-          console.log('Token has expired (older than 24 hours), logging out');
+        // If token has expired, log out
+        if (currentTime > expirationTime) {
+          console.log('Token has expired, logging out');
           logout();
           return;
         }
@@ -75,17 +75,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Only set up the interval if we have a token
     if (!token) return;
     
-    const tokenCreatedAt = localStorage.getItem('tokenCreatedAt');
-    if (!tokenCreatedAt) return;
+    const tokenExpires = localStorage.getItem('tokenExpires');
+    if (!tokenExpires) return;
     
     const checkInterval = setInterval(() => {
-      const creationTime = parseInt(tokenCreatedAt, 10);
+      const expirationTime = parseInt(tokenExpires, 10);
       const currentTime = Date.now();
-      const tokenAge = currentTime - creationTime;
-      const oneDayInMs = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
       
-      // If token is older than 24 hours, log out
-      if (tokenAge > oneDayInMs) {
+      // If token has expired, log out
+      if (currentTime > expirationTime) {
         console.log('Token has expired during session, logging out');
         logout();
       }
@@ -95,13 +93,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(checkInterval);
   }, [token]);
 
+  // Utility function for making authenticated API requests
+  const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
+    const token = localStorage.getItem('authToken');
+    
+    // Create a proper Headers object
+    const headersObj = new Headers(options.headers);
+    
+    // Only set Content-Type for JSON requests, not for FormData
+    if (!(options.body instanceof FormData)) {
+      headersObj.set('Content-Type', 'application/json');
+    }
+    
+    if (token) {
+      headersObj.set('Authorization', `Bearer ${token}`);
+    }
+    
+    return fetch(url, {
+      ...options,
+      headers: headersObj,
+    });
+  };
+
   const validateToken = async (token: string) => {
     try {
-      const response = await fetch('http://localhost:3001/api/auth/validate', {
+      const response = await authenticatedFetch('http://localhost:3001/api/auth/validate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ token }),
       });
 
@@ -112,9 +129,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(token);
         localStorage.setItem('authToken', token);
         
-        // If there's no creation timestamp, set it now
-        if (!localStorage.getItem('tokenCreatedAt')) {
-          localStorage.setItem('tokenCreatedAt', Date.now().toString());
+        // If there's no expiration timestamp, set it based on the user's role
+        if (!localStorage.getItem('tokenExpires')) {
+          setTokenExpiration(data.user.role);
         }
       } else {
         // Token is invalid, clear auth state
@@ -127,58 +144,140 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   };
+  
+  // Set token expiration based on user role
+  const setTokenExpiration = (role: string) => {
+    const currentTime = Date.now();
+    let expirationTime: number;
+    
+    if (role === 'Super Administrator') {
+      // 10 years for admins (effectively permanent)
+      expirationTime = currentTime + (10 * 365 * 24 * 60 * 60 * 1000);
+    } else {
+      // 24 hours for DJs
+      expirationTime = currentTime + (24 * 60 * 60 * 1000);
+    }
+    
+    localStorage.setItem('tokenExpires', expirationTime.toString());
+  };
 
-  const login = async (email: string, password: string) => {
+  // Request a login link to be sent to the user's email
+  const requestLoginLink = async (email: string) => {
     try {
       setIsLoading(true);
-      const encodedPassword = encodePassword(password);
-
-      console.log('Attempting login with:', JSON.stringify({ email, encodedPassword }, null, 2));
-      const response = await fetch('http://localhost:3001/api/auth/login', {
+      
+      console.log('Requesting login link for:', email);
+      const response = await authenticatedFetch('http://localhost:3001/api/auth/request-login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          encodedPassword: encodedPassword,
-        }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
-      console.log('Login response:', JSON.stringify(data, null, 2));
+      console.log('Request login link response:', data);
 
       if (data.success) {
-        setUser(data.user);
-        setToken(data.token);
-        
-        // Store token and current timestamp
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('tokenCreatedAt', Date.now().toString());
-        
-        router.push('/upload');
         return { success: true };
       } else {
-        return { success: false, error: data.error || 'Authentication failed' };
+        return { success: false, error: data.error || 'Failed to send login link' };
       }
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('Request login link failed:', error);
       return { success: false, error: 'Network error' };
     } finally {
       setIsLoading(false);
     }
   };
+  
+  // Verify a magic link token and log in the user
+  const login = async (token: string) => {
+    try {
+      setIsLoading(true);
+      
+      console.log('Verifying login token:', token.substring(0, 10) + '...');
+      
+      // Log the full request details
+      console.log('Making request to:', 'http://localhost:3001/api/auth/verify-login');
+      console.log('Request body:', { token });
+      
+      const response = await authenticatedFetch('http://localhost:3001/api/auth/verify-login', {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries([...response.headers.entries()]));
+      
+      const data = await response.json();
+      console.log('Verify login token response data:', data);
+
+      if (data.success) {
+        console.log('Login successful, user:', data.user);
+        setUser(data.user);
+        setToken(data.token);
+        
+        // Store token and set expiration based on role
+        localStorage.setItem('authToken', data.token);
+        setTokenExpiration(data.user.role);
+        
+        // Immediately set the cookie for navigation
+        document.cookie = `authToken=${data.token}; path=/; max-age=31536000; SameSite=Strict`;
+        console.log('Set auth cookie for navigation:', data.token.substring(0, 10) + '...');
+        
+        return { success: true };
+      } else {
+        console.error('Login failed:', data.error);
+        return { success: false, error: data.error || 'Invalid or expired token' };
+      }
+    } catch (error) {
+      console.error('Token verification failed with exception:', error);
+      return { success: false, error: 'Network error' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
 
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('authToken');
-    localStorage.removeItem('tokenCreatedAt'); // Remove creation timestamp
+    localStorage.removeItem('tokenExpires'); // Remove expiration timestamp
     router.push('/login');
   };
 
+  // Add a script to the document head to sync localStorage to cookies
+  useEffect(() => {
+    // This script runs on the client side to sync localStorage token to a cookie
+    // for middleware compatibility during page navigation
+    const syncTokenToCookie = () => {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        document.cookie = `authToken=${token}; path=/; max-age=31536000; SameSite=Strict`;
+      } else {
+        document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      }
+    };
+    
+    // Run once on mount
+    syncTokenToCookie();
+    
+    // Set up an interval to keep the cookie in sync
+    const intervalId = setInterval(syncTokenToCookie, 60000);
+    
+    // Clean up on unmount
+    return () => clearInterval(intervalId);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      token, 
+      requestLoginLink,
+      login,
+      logout, 
+      isLoading,
+      authenticatedFetch
+    }}>
       {children}
     </AuthContext.Provider>
   );
