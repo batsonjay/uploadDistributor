@@ -1,6 +1,6 @@
 # Architecture
 
-This document outlines the overall system design and operational flow of the Upload Distributor project.
+This document outlines the overall system design and operational flow of the Upload Distributor project. For detailed flow diagrams, see [Architecture Flow Diagrams](./architecture-flow.md).
 
 ## System Overview
 
@@ -10,14 +10,14 @@ The system is composed of three main components:
 
 - **Daemon**: Core processing unit that handles uploads and distribution.
 - **Web Client**: Browser-based interface for users to upload and manage content.
-- **macOS Client**: Desktop application for macOS with a FileZilla-like UX.
+- **macOS Client**: Desktop application for macOS
 
 ## Upload Flow
 
 1. User uploads an `.mp3` file and a songlist file via a client.
 2. The client sends the files and metadata to the daemon via its API.
-3. The daemon forks a process to handle the upload.
-4. The forked process:
+3. The daemon creates a worker thread to handle the upload.
+4. The worker thread:
    - Stores the media file transiently.
    - Normalizes and stores the songlist persistently.
    - Uploads the media to AzuraCast, Mixcloud, and SoundCloud.
@@ -25,14 +25,14 @@ The system is composed of three main components:
 
 ## Concurrency Model
 
-- The daemon forks a new process for each upload.
-- Each process is isolated and exits upon completion.
-- This model ensures scalability and fault isolation.
+- The daemon creates a new worker thread for each upload.
+- Each worker thread is isolated and exits upon completion.
+- This model ensures scalability and fault isolation while being more efficient than process forking.
 
 ## File Storage
 
 - **Media Files**: Stored transiently by the daemon during processing.
-- **Songlist Files**: Persistently stored in a structured format (e.g., JSON or database).
+- **Songlist Files**: Persistently stored in the daemon's file system using structured directory & file names.
 
 ## Metadata Handling
 
@@ -44,15 +44,36 @@ The system is composed of three main components:
 
 ## Authentication
 
-- Clients authenticate users via the AzuraCast API.
-- Web client provides a login page.
-- macOS client prompts on first launch and stores credentials securely.
+- Clients authenticate users via email-based magic links.
+- Authentication flow:
+  - Users enter their email address on the login screen
+  - System sends a magic link to their email
+  - User clicks the link to authenticate
+  - System verifies the email and retrieves user information from AzuraCast
+- Role-based token expiration:
+  - DJ tokens expire after 24 hours
+  - Super Admin tokens expire after 10 years
+- Web client provides a login page with email input.
+- macOS client prompts on first launch and stores authentication tokens securely.
 
 ## Logging and Monitoring
 
-- Each upload process logs its actions and errors.
-- Centralized logging for daemon and clients.
-- Monitoring hooks for health checks and alerts.
+- The daemon implements a comprehensive logging system with multiple levels:
+  - ERROR: Always logged
+  - WARNING: Logged if level is warning, info, or debug
+  - INFO: Logged if level is info or debug
+  - DEBUG: Logged only if level is debug
+- Log messages include bracketed labels indicating the source (e.g., `[M3U8Parser]`, `[AzuraCast]`)
+- Timestamps are included in all log entries
+- Configurable logging via environment variables:
+  - LOG_LEVEL: Controls verbosity (error, warning, info, debug)
+  - LOG_TO_FILE: Enables file-based logging in addition to console output
+- Specialized logging for different components:
+  - Destination status logs (success/error for uploads)
+  - Detailed error logs with request information
+  - Parser event logs with appropriate filtering
+  - Upload progress tracking
+- A simple health check endpoint (`GET /health`) provides basic system status
 
 ## Testing and CI/CD
 

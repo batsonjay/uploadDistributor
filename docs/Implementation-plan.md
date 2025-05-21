@@ -358,9 +358,43 @@ This distinction helps avoid confusion in the codebase and documentation. The ch
 - Renamed the "uploads" directory to "received-files" to match the new terminology
 - Renamed the processor from `upload-processor.ts` to `file-processor.ts`
 
-## Current Progress (as of May 11, 2025)
+## Current Progress (as of May 21, 2025)
 
 ### Completed Tasks
+- ✅ Implemented email-based authentication with magic links:
+  - Replaced password-based authentication with secure magic link system
+  - Added JWT token generation and validation for improved security
+  - Created EmailService for handling magic link emails and token verification
+  - Updated middleware to check for tokens in both Authorization headers and cookies
+  - Implemented role-based token expiration (24h for DJs, 10y for admins)
+  - Added new auth routes for requesting login links and verifying tokens
+  - Created verification page for handling magic link authentication flow
+  - Fixed Content-Type header issue for FormData requests to resolve upload errors
+- ✅ Implemented M3U8 parser for Rekordbox playlist format:
+  - Added support for M3U8 playlist files commonly used by DJ software
+  - Updated songlist-parser index.ts to export the new parser
+  - Modified parse-songlist.ts to include .m3u8 in possibleExtensions
+  - Updated receive.ts to properly handle m3u8 file uploads
+- ✅ Integrated songlist parser into daemon:
+  - Added parse-songlist route to daemon for handling songlist file uploads
+  - Created SonglistParserService wrapper for daemon integration
+  - Implemented worker thread for background processing
+  - Updated file-processor to use normalized filenames from metadata
+  - Simplified archive directory structure for better organization
+- ✅ Implemented standardized logging system:
+  - Created comprehensive logging system across all parsers
+  - Added different log levels (ERROR, WARNING, INFO, DEBUG)
+  - Implemented environment-based log level configuration
+  - Added timestamps and parser identification
+- ✅ Resolved ESM module issues and improved file handling:
+  - Fixed file extension handling to properly detect all supported file types
+  - Added React StrictMode protection to prevent duplicate form submissions
+  - Created comprehensive debugging notes for ESM module issues with ts-node
+- ✅ Improved upload page layout and UI:
+  - Reorganized file upload controls into a horizontal row
+  - Reordered Mix Details section for better usability
+  - Reduced vertical white space for a more compact layout
+  - Added clear indication that all fields are required
 - ✅ Implemented RetryUtils module for standardized retry logic:
   - Created a flexible retry utility with configurable options
   - Added support for custom retry conditions and backoff strategies
@@ -384,7 +418,7 @@ This distinction helps avoid confusion in the codebase and documentation. The ch
 #### Phase 2: Core Components Development
 - ✅ Implemented Express server with API endpoints
 - ✅ Created file upload handling with Busboy
-- ✅ Developed process forking for concurrent uploads
+- ✅ Implemented worker threads for concurrent uploads
 - ✅ Fixed TypeScript configuration issues:
   - Updated package path references to relative paths in tsconfig.json files
   - Resolved "File '@uploadDistributor/typescript-config/daemon.json' not found" error
@@ -489,27 +523,33 @@ For detailed information about the authentication implementation, see [Authentic
 - Songlist data is standardized, parsed, and stored persistently
 - Status tracking is working with detailed information for all destinations
 - Mock implementations for all destination APIs are in place
-- Authentication service with role-based access is implemented
+- Authentication service with email-based magic links and role-based access is implemented
 - Upload processor has been refactored into service-based architecture
 - Two-tier logging system is implemented
 - SoundCloud two-step upload process is working correctly
-- Password obfuscation is implemented to avoid plaintext passwords
 - Role-based access control is implemented with middleware for route protection
 - Directory verification for DJs is implemented to ensure valid upload paths
 - Terminology has been standardized throughout the codebase
 - Directory structure has been updated to reflect the new terminology
 - Artwork handling has been implemented for all uploads
 - A deployment plan has been created for production deployment
+- M3U8 parser is fully integrated for Rekordbox playlist support
+- Standardized logging system is implemented across all parsers
 - The project has a solid foundation for further development
 
 ### Next Steps
+- Complete Phase 2 of the authentication system: DJ Selector for Super Admins
+  - Create API endpoint to fetch the list of DJs from AzuraCast
+  - Implement the DJ selector component on the upload page
+  - Update the receive route to handle DJ selection
+  - Add method to get user by ID in AuthService
+  - Test the DJ impersonation functionality
 - Improve precision of metadata associated with files sent to daemon
 - Implement client-side validation for artwork files
 - Continue replacing mocks with actual API integrations:
   - Complete AzuraCast API integration for file uploads
   - Implement proper error handling for network issues
   - Integrate with Mixcloud and SoundCloud APIs
-- Start work on Web Client Development with role-based UI
 - Continue refining terminology throughout the codebase for clarity
 
 ## Critical Path and Risk Mitigation (Revised)

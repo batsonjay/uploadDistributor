@@ -231,210 +231,426 @@ For more detailed information about the token expiration implementation, see [To
 
 For testing instructions, see [Testing Token Expiration](./testing-token-expiration.md).
 
-## Phase 1 Implementation Details
+## Phase 1 Implementation Summary
 
-This section provides detailed implementation specifics for Phase 1 of the authentication system.
+Phase 1 of the authentication system has been implemented with the following key components:
 
-### Token Generation
+- **Token Generation**: Using crypto.randomBytes for secure token generation
+- **Email Service**: Created EmailService with nodemailer integration (currently outputs magic links to console instead of sending emails)
+- **JWT Authentication**: Implemented JWT token generation and validation
+- **Role-Based Expiration**: Added different token expiration times based on user roles
+- **Middleware Updates**: Updated to check for tokens in both Authorization headers and cookies
+- **Client-Side Auth**: Created authenticatedFetch utility to properly handle API requests with authentication
+- **Magic Link Flow**: Implemented request-login and verify-login endpoints with appropriate error handling
 
-Since the application doesn't require high-security cryptographic tokens, we'll use a simpler approach for generating magic link tokens:
+Note: Current implementation doesn't actually use SMTP email sending because the developer has not yet obtained an app password for this application. It works around this by printing the magic URL to the daemon command line, which the developer then visits independently (instead of receiving it in an email). Full email implementation has yet to be completed.
 
-```typescript
-private generateToken(): string {
-  // Generate a random string using Math.random and current timestamp
-  const randomPart = Math.random().toString(36).substring(2, 15);
-  const timestampPart = Date.now().toString(36);
-  
-  // Combine with a unique identifier
-  return `${randomPart}${timestampPart}`;
-}
-```
+## Phase 2 Implementation Details: DJ Selector for Super Admins
 
-This approach:
-- Uses JavaScript's built-in `Math.random()` combined with the current timestamp
-- Converts to base36 (alphanumeric) for readability
-- Is sufficiently random for our non-critical security needs
-- Requires no additional libraries
+This section provides detailed implementation specifics for Phase 2 of the authentication system, which focuses on allowing Super Admins to submit uploads on behalf of DJs.
 
-### Email Implementation
+### Backend Changes
 
-We'll use nodemailer with Google's SMTP server to send magic link emails:
+#### 1. API Endpoint to Fetch DJ List
 
 ```typescript
-// In EmailService.ts
-import nodemailer from 'nodemailer';
-
-// Create reusable transporter
-private createTransporter() {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER || 'balearicfm@gmail.com',
-      pass: process.env.EMAIL_PASSWORD // App password after 2FA is enabled
-    }
-  });
-}
-
-// Send the magic link email
-public async sendMagicLinkEmail(email: string): Promise<boolean> {
+// In packages/daemon/src/routes/auth.ts
+/**
+ * Get all DJs endpoint
+ * 
+ * Returns a list of all users with DJ role from AzuraCast
+ * Only accessible to Super Admin users
+ */
+router.get('/djs', adminOnly, async (req, res) => {
   try {
-    const { token, url } = this.createMagicLink(email);
+    logParserEvent('AuthRoutes', ParserLogType.INFO, 'DJ list requested');
     
-    const transporter = this.createTransporter();
+    // Create AzuraCast API client
+    const api = new AzuraCastApi();
     
-    const info = await transporter.sendMail({
-      from: '"Upload Distributor" <balearicfm@gmail.com>',
-      to: email,
-      subject: "Your Login Link for Upload Distributor",
-      text: `Hello,\n\nClick the link below to log in to Upload Distributor:\n\n${url}\n\nThis link will expire in 15 minutes.\n\nIf you didn't request this link, you can safely ignore this email.`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Upload Distributor Login</h2>
-          <p>Hello,</p>
-          <p><a href="${url}">Click to proceed with uploading the files & scheduling your set</a></p>
-          <p>Or copy and paste this link in your browser:</p>
-          <p style="background-color: #f5f5f5; padding: 10px; border-radius: 4px; word-break: break-all;">
-            ${url}
-          </p>
-          <p>This link will expire in 15 minutes.</p>
-          <p>If you didn't request this link, you can safely ignore this email.</p>
-        </div>
-      `
+    // Get all users from AzuraCast
+    const users = await api.getAllUsers();
+    
+    if (!users.success) {
+      logParserEvent('AuthRoutes', ParserLogType.WARNING, `Failed to fetch users: ${users.error}`);
+      return res.status(400).json(users);
+    }
+    
+    // Filter to only include DJs (non-admin users)
+    const djs = users.users.filter(user => {
+      const role = authService.mapAzuraCastRoleToUserRole(user.roles);
+      return role === USER_ROLES.DJ;
+    }).map(user => ({
+      id: user.id.toString(),
+      email: user.email,
+      displayName: user.name
+    }));
+    
+    logParserEvent('AuthRoutes', ParserLogType.INFO, `Returning ${djs.length} DJs`);
+    return res.json({
+      success: true,
+      djs
     });
-    
-    console.log("Email sent: %s", info.messageId);
-    return true;
-  } catch (error) {
-    console.error("Error sending email:", error);
-    return false;
+  } catch (err) {
+    logParserEvent('AuthRoutes', ParserLogType.ERROR, `Error in /djs:`, err);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
   }
-}
+});
 ```
 
-Key points:
-- Uses Gmail SMTP server with the balearicfm@gmail.com account
-- Requires 2FA to be enabled on the Gmail account and an app password to be generated
-- Sends both plain text and HTML versions of the email
-- Uses a simple hyperlink with descriptive text instead of a styled button
-- Includes a fallback with the full URL for copying and pasting
-
-### Error Handling
-
-We'll use clear, descriptive error messages for common issues:
+#### 2. Update AzuraCastApi to Get All Users
 
 ```typescript
-// In AuthService.ts when checking if user exists
-if (!user) {
-  return { 
-    success: false, 
-    message: "No such email address found. Please check your spelling or contact your station administrator." 
-  };
-}
+// In packages/daemon/src/apis/AzuraCastApi.ts
+/**
+ * Get all users from AzuraCast
+ * 
+ * @returns Promise with all users or error
+ */
+public async getAllUsers(): Promise<{ success: boolean; users?: any[]; error?: string }> {
+  try {
+    const response = await fetch(`${this.baseUrl}/api/admin/users`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`
+      }
+    });
 
-// In EmailService.ts when sending fails
-if (!emailSent) {
-  return {
-    success: false,
-    message: "Failed to send login email. Please try again or contact your administrator."
-  };
-}
-```
+    if (!response.ok) {
+      const errorText = await response.text();
+      return {
+        success: false,
+        error: `Failed to fetch users: ${response.status} ${errorText}`
+      };
+    }
 
-These messages:
-- Clearly state what went wrong
-- Provide suggestions for how to resolve the issue
-- Include an escalation path if needed
-
-### Implementation Notes
-
-1. **Environment Variables**:
-   - `EMAIL_USER`: The Gmail address (balearicfm@gmail.com)
-   - `EMAIL_PASSWORD`: App password generated after enabling 2FA
-   - These should be stored in `.env` files and not committed to the repository
-
-2. **Dependencies**:
-   - `nodemailer`: For sending emails (`npm install nodemailer`)
-   - `@types/nodemailer`: TypeScript types (`npm install --save-dev @types/nodemailer`)
-
-3. **Testing Considerations**:
-   - 2FA must be enabled on the Gmail account before testing
-   - An app password must be generated and stored in the environment variables
-   - Initial testing can be done with a developer's email address
-
-### Middleware Update for localStorage
-
-To align the middleware with the localStorage-based authentication approach, we'll need to update how the authentication token is passed to the server:
-
-```typescript
-// In AuthContext.tsx - Add function to attach token to requests
-// This would be used in a custom fetch wrapper or axios interceptor
-const attachTokenToRequest = (config) => {
-  const token = localStorage.getItem('authToken');
-  if (token) {
-    // For fetch API
-    config.headers = {
-      ...config.headers,
-      'Authorization': `Bearer ${token}`
+    const users = await response.json();
+    return {
+      success: true,
+      users
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
-  return config;
-};
-
-// In middleware.ts - Update to check for Authorization header instead of cookies
-export function middleware(request: NextRequest) {
-  // Get the pathname
-  const { pathname } = request.nextUrl;
-
-  // Check if it's a public route
-  if (publicRoutes.includes(pathname)) {
-    return NextResponse.next();
-  }
-
-  // Check for auth token in Authorization header instead of cookies
-  const authHeader = request.headers.get('Authorization');
-  const token = authHeader ? authHeader.replace('Bearer ', '') : null;
-
-  // If no token and not a public route, redirect to login
-  if (!token) {
-    const loginUrl = new URL('/login', request.url);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  return NextResponse.next();
 }
 ```
 
-This approach:
-- Uses the Authorization header to pass the token from localStorage to the server
-- Maintains the existing middleware structure and route protection
-- Works with the localStorage-based token expiration mechanism
-- Requires client-side code to attach the token to all requests
-
-For API requests, we'll need to ensure the token is attached to all fetch/axios calls:
+#### 3. Update Receive Route to Handle DJ Selection
 
 ```typescript
-// Example of a fetch wrapper that attaches the token
-const authenticatedFetch = async (url, options = {}) => {
-  const token = localStorage.getItem('authToken');
-  
-  const headers = {
-    ...options.headers,
-    'Content-Type': 'application/json',
-  };
-  
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+// In packages/daemon/src/routes/receive.ts
+// Update the upload endpoint to accept a djId parameter
+router.post('/upload', upload.fields([
+  { name: 'audio', maxCount: 1 },
+  { name: 'artwork', maxCount: 1 },
+  { name: 'songlist', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    // Get the authenticated user from the request
+    const authUser = req.user;
+    
+    // Check if a DJ was selected (only for admin users)
+    let effectiveUser = authUser;
+    if (authUser.role === USER_ROLES.ADMIN && req.body.selectedDjId) {
+      // Get the selected DJ's information
+      const selectedDj = await authService.getUserById(req.body.selectedDjId);
+      if (selectedDj.success && selectedDj.user) {
+        // Use the selected DJ as the effective user for this upload
+        effectiveUser = selectedDj.user;
+        logParserEvent('ReceiveRoutes', ParserLogType.INFO, 
+          `Admin ${authUser.displayName} uploading on behalf of DJ ${effectiveUser.displayName}`);
+      } else {
+        logParserEvent('ReceiveRoutes', ParserLogType.WARNING, 
+          `Admin ${authUser.displayName} attempted to upload as invalid DJ ID: ${req.body.selectedDjId}`);
+      }
+    }
+    
+    // Process the upload using the effective user (either the auth user or the selected DJ)
+    // ... rest of the upload processing code ...
+    
+    // Use the effective user's display name for file naming
+    const userDisplayName = effectiveUser.displayName;
+    
+    // ... continue with existing upload logic ...
+  } catch (error) {
+    // ... error handling ...
   }
-  
-  return fetch(url, {
-    ...options,
-    headers,
-  });
-};
+});
 ```
 
-For page navigation and initial page loads, we'll need to implement a solution that ensures the token is available to the middleware. This could involve:
+#### 4. Add Method to Get User by ID in AuthService
 
-1. Using a client-side script that runs on each page load to set a cookie based on localStorage
-2. Using Next.js's App Router layout components to handle authentication state
-3. Implementing a custom document or app component that manages the token synchronization
+```typescript
+// In packages/daemon/src/services/AuthService.ts
+/**
+ * Get a user by ID from AzuraCast
+ * 
+ * @param userId The ID of the user to retrieve
+ * @returns Promise with user information or error
+ */
+public async getUserById(userId: string): Promise<AuthResponse> {
+  try {
+    logParserEvent('AuthService', ParserLogType.INFO, `Getting user with ID: ${userId}`);
+    
+    // Create AzuraCast API client
+    const api = new AzuraCastApi();
+    
+    // Get user from AzuraCast
+    const userResult = await api.getUserById(userId);
+    
+    if (!userResult.success || !userResult.user) {
+      logParserEvent('AuthService', ParserLogType.WARNING, `User not found with ID: ${userId}`);
+      return {
+        success: false,
+        error: 'User not found'
+      };
+    }
+    
+    const apiUser = userResult.user;
+    
+    // Map AzuraCast user to our UserProfile format
+    const userProfile: UserProfile = {
+      id: apiUser.id.toString(),
+      email: apiUser.email,
+      displayName: apiUser.name,
+      role: this.mapAzuraCastRoleToUserRole(apiUser.roles)
+    };
+    
+    logParserEvent('AuthService', ParserLogType.INFO, `Found user: ${userProfile.displayName} (ID: ${userProfile.id})`);
+    return {
+      success: true,
+      user: userProfile
+    };
+  } catch (error) {
+    logParserEvent('AuthService', ParserLogType.ERROR, `Error in getUserById:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+```
+
+### Frontend Changes
+
+#### 1. DJ Selector Component
+
+```tsx
+// In apps/web-ui/app/components/DjSelector.tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '../auth/AuthContext';
+import styles from './DjSelector.module.css';
+
+interface DJ {
+  id: string;
+  displayName: string;
+  email: string;
+}
+
+interface DjSelectorProps {
+  onSelectDj: (dj: DJ | null) => void;
+}
+
+export default function DjSelector({ onSelectDj }: DjSelectorProps) {
+  const [djs, setDjs] = useState<DJ[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedDj, setSelectedDj] = useState<DJ | null>(null);
+  const { user, authenticatedFetch } = useAuth();
+
+  // Only show for admin users
+  if (user?.role !== 'ADMIN') {
+    return null;
+  }
+
+  useEffect(() => {
+    const fetchDjs = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await authenticatedFetch('http://localhost:3001/api/auth/djs');
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch DJs');
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.djs) {
+          setDjs(data.djs);
+        } else {
+          throw new Error('Invalid response format');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+        console.error('Error fetching DJs:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDjs();
+  }, [authenticatedFetch]);
+
+  const handleSelectDj = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const djId = event.target.value;
+    
+    if (djId === '') {
+      setSelectedDj(null);
+      onSelectDj(null);
+      return;
+    }
+    
+    const selected = djs.find(dj => dj.id === djId) || null;
+    setSelectedDj(selected);
+    onSelectDj(selected);
+  };
+
+  if (loading) {
+    return <div className={styles.loading}>Loading DJs...</div>;
+  }
+
+  if (error) {
+    return <div className={styles.error}>Error: {error}</div>;
+  }
+
+  return (
+    <div className={styles.container}>
+      <label htmlFor="dj-selector" className={styles.label}>
+        Upload as DJ:
+      </label>
+      <select
+        id="dj-selector"
+        className={styles.select}
+        value={selectedDj?.id || ''}
+        onChange={handleSelectDj}
+      >
+        <option value="">-- Select a DJ --</option>
+        {djs.map(dj => (
+          <option key={dj.id} value={dj.id}>
+            {dj.displayName} ({dj.email})
+          </option>
+        ))}
+      </select>
+      {selectedDj && (
+        <p className={styles.info}>
+          You are uploading on behalf of <strong>{selectedDj.displayName}</strong>
+        </p>
+      )}
+    </div>
+  );
+}
+```
+
+#### 2. Update Upload Page to Include DJ Selector
+
+```tsx
+// In apps/web-ui/app/upload/page.tsx
+'use client';
+
+import { useState } from 'react';
+import { useAuth } from '../auth/AuthContext';
+import DjSelector from '../components/DjSelector';
+import styles from './page.module.css';
+
+interface DJ {
+  id: string;
+  displayName: string;
+  email: string;
+}
+
+export default function UploadPage() {
+  const { user, authenticatedFetch } = useAuth();
+  const [selectedDj, setSelectedDj] = useState<DJ | null>(null);
+  
+  // ... existing state and handlers ...
+  
+  const handleDjSelection = (dj: DJ | null) => {
+    setSelectedDj(dj);
+    console.log('Selected DJ:', dj);
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // ... existing form validation ...
+    
+    const formData = new FormData();
+    // ... add existing form fields ...
+    
+    // Add the selected DJ ID if an admin has selected one
+    if (user?.role === 'ADMIN' && selectedDj) {
+      formData.append('selectedDjId', selectedDj.id);
+    }
+    
+    try {
+      // ... existing upload logic ...
+    } catch (error) {
+      // ... existing error handling ...
+    }
+  };
+  
+  return (
+    <div className={styles.container}>
+      <h1>Upload New Mix</h1>
+      <p>All fields are required</p>
+      
+      {/* Show DJ selector only for admin users */}
+      {user?.role === 'ADMIN' && (
+        <DjSelector onSelectDj={handleDjSelection} />
+      )}
+      
+      {/* ... existing form elements ... */}
+    </div>
+  );
+}
+```
+
+### CSS for DJ Selector
+
+```css
+/* In apps/web-ui/app/components/DjSelector.module.css */
+.container {
+  /* Container styling with highlight border */
+}
+
+.select {
+  /* Dropdown styling */
+}
+
+.info, .loading, .error {
+  /* Status message styling */
+}
+```
+
+### Security Considerations
+
+1. **Access Control**: The `/djs` endpoint is protected with the `adminOnly` middleware to ensure only Super Admins can access the list of DJs.
+
+2. **Validation**: The server validates that:
+   - The authenticated user is a Super Admin before allowing DJ impersonation
+   - The selected DJ ID corresponds to a valid user in AzuraCast
+   - The selected user actually has the DJ role
+
+3. **Audit Logging**: All actions are logged, including:
+   - When an admin requests the DJ list
+   - When an admin uploads on behalf of a DJ (recording both the admin and DJ names)
+   - Any errors or validation failures
+
+4. **UI Clarity**: The UI clearly indicates:
+   - That the admin is uploading on behalf of another user
+   - Which DJ is currently selected
+   - That this feature is only available to admin users
+
+5. **State Management**: The selected DJ is only used for the current upload and doesn't persist between sessions or affect the admin's authentication state.

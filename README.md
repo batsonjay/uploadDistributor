@@ -4,6 +4,9 @@ Upload Distributor is a system for uploading and distributing audio content to m
 
 ## Recent Updates
 
+- **Email-Based Authentication**: Implemented secure magic link authentication with role-based token expiration, replacing password-based authentication.
+- **M3U8 Parser Support**: Added support for Rekordbox M3U8 playlist files, expanding the range of supported file formats.
+- **Standardized Logging System**: Created a comprehensive logging system across all parsers with configurable log levels.
 - **Standardized Retry Logic**: Implemented a flexible RetryUtils module for consistent error handling and recovery across all destination services.
 - **DRY Refactoring**: Moved platform-specific metadata creation from file-processor.ts to respective service classes, eliminating code duplication.
 - **Enhanced Error Handling**: Improved error recovery with specialized retry strategies for each destination platform.

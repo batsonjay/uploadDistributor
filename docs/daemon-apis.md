@@ -8,15 +8,89 @@ The daemon exposes a RESTful API for use by the web and macOS clients. It handle
 
 ## Authentication
 
-- Clients authenticate using AzuraCast credentials.
-- Auth tokens are passed with each request.
-- The daemon validates tokens with AzuraCast before proceeding.
+- Clients authenticate using email-based magic links.
+- Authentication flow:
+  1. Client requests a magic link for a user's email
+  2. Daemon generates a secure token and sends a magic link to the user's email
+  3. User clicks the link, which directs them to a verification page
+  4. Verification page validates the token and completes the authentication
+  5. JWT tokens are issued with role-based expiration (24h for DJs, 10y for Super Admins)
+- Auth tokens are passed with each request via Authorization header or cookies.
+- The daemon validates tokens before proceeding with any protected operation.
 - After successful authentication, the daemon verifies that the DJ has a valid directory in AzuraCast.
 - If the directory doesn't exist, the daemon returns an error to the client.
 
 ## Endpoints
 
-### `POST /receive`
+### Authentication Endpoints
+
+#### `POST /auth/request-login`
+
+Requests a magic link for email-based authentication.
+
+**Request**:
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Magic link sent to email"
+}
+```
+
+#### `POST /auth/verify-login`
+
+Verifies a magic link token and completes authentication.
+
+**Request**:
+```json
+{
+  "token": "secure-token-from-magic-link"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "token": "jwt-auth-token",
+  "user": {
+    "id": "user-id",
+    "email": "user@example.com",
+    "displayName": "User Name",
+    "role": "DJ" // or "ADMIN"
+  }
+}
+```
+
+#### `GET /auth/validate-token`
+
+Validates an existing authentication token.
+
+**Request Headers**:
+- `Authorization`: Bearer token
+
+**Response**:
+```json
+{
+  "success": true,
+  "user": {
+    "id": "user-id",
+    "email": "user@example.com",
+    "displayName": "User Name",
+    "role": "DJ" // or "ADMIN"
+  }
+}
+```
+
+### File Handling Endpoints
+
+#### `POST /receive`
 
 Receives files from clients.
 
@@ -30,6 +104,7 @@ Multipart form data with the following fields:
 - `azcPlaylist`: AzuraCast playlist name
 - `userRole`: User role (optional)
 - `destinations`: Comma-separated list of destinations (optional)
+- `selectedDjId`: ID of DJ to upload as (optional, Super Admin only)
 - `audio`: Audio file (.mp3)
 - `songlist`: Songlist file (.txt, .rtf, .docx, .nml, .m3u8)
 - `artwork`: Artwork image file (.jpg/.png)

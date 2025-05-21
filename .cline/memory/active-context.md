@@ -1,20 +1,20 @@
 # Active Context: Upload Distributor Project
 
 ## Most Recently Completed Step
-- Updated auth-implementation.md to document the middleware changes needed to align with localStorage-based authentication
-- Added detailed pseudo-code examples for:
-  - Attaching tokens from localStorage to requests using Authorization headers
-  - Updating middleware.ts to check for Authorization headers instead of cookies
-  - Creating a fetch wrapper that automatically attaches tokens to API requests
-  - Options for handling page navigation and initial page loads
+- Implemented Phase 1 of the authentication system with email-based magic links
+- Created EmailService for handling magic link emails (currently outputs links to console)
+- Implemented JWT token generation and validation with role-based expiration
+- Updated middleware to check for tokens in both Authorization headers and cookies
+- Created authenticatedFetch utility to properly handle API requests with authentication
+- Fixed Content-Type header issue for FormData requests to resolve upload errors
 
 ## Current Task
-- Fix the authentication flow issue where the middleware is checking for cookies but the AuthContext is using localStorage
-- Implement the middleware changes as documented in auth-implementation.md
+- Implement Phase 2 of the authentication system: DJ Selector for Super Admins
+- Allow Super Admins to submit uploads on behalf of DJs while remaining logged in as themselves
 
 ## Next Steps
-- Update middleware.ts to check for Authorization headers instead of cookies
-- Modify AuthContext.tsx to attach the token to all requests
-- Implement a solution for ensuring the token is available during page navigation
-- Test the authentication flow end-to-end to ensure it works correctly
-- Verify that the role-based token expiration still functions as expected
+- Create API endpoint to fetch the list of DJs from AzuraCast
+- Implement the DJ selector component on the upload page
+- Update the receive route to handle DJ selection
+- Add method to get user by ID in AuthService
+- Test the DJ impersonation functionality
