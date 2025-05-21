@@ -473,6 +473,15 @@ For detailed information about the authentication implementation, see [Authentic
   - Updated documentation to include directory verification step
   - Fixed role detection in mapAzuraCastRoleToUserRole to properly handle complex role objects
   - Updated test-directory-verification.ts to correctly test DJ directory verification
+- ✅ Implemented Token Expiration:
+  - Added client-side token expiration after 24 hours
+  - Implemented token creation timestamp storage in localStorage
+  - Added expiration check on application load
+  - Created periodic expiration check during active sessions
+  - Implemented automatic logout when token expires
+  - Created comprehensive documentation in auth-token-expiration.md
+  - Updated auth-implementation.md with token expiration details
+  - Added detailed testing instructions in testing-token-expiration.md
 
 ### Current Status
 - The daemon is now functioning correctly in development mode

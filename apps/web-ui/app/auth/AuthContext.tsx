@@ -46,12 +46,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check for stored token on mount
     const storedToken = localStorage.getItem('authToken');
+    const tokenCreatedAt = localStorage.getItem('tokenCreatedAt');
+    
     if (storedToken) {
+      // Check token expiration if we have a creation timestamp
+      if (tokenCreatedAt) {
+        const creationTime = parseInt(tokenCreatedAt, 10);
+        const currentTime = Date.now();
+        const tokenAge = currentTime - creationTime;
+        const oneDayInMs = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+        
+        // If token is older than 24 hours, log out
+        if (tokenAge > oneDayInMs) {
+          console.log('Token has expired (older than 24 hours), logging out');
+          logout();
+          return;
+        }
+      }
+      
       validateToken(storedToken);
     } else {
       setIsLoading(false);
     }
   }, []);
+  
+  // Add a periodic check for token expiration
+  useEffect(() => {
+    // Only set up the interval if we have a token
+    if (!token) return;
+    
+    const tokenCreatedAt = localStorage.getItem('tokenCreatedAt');
+    if (!tokenCreatedAt) return;
+    
+    const checkInterval = setInterval(() => {
+      const creationTime = parseInt(tokenCreatedAt, 10);
+      const currentTime = Date.now();
+      const tokenAge = currentTime - creationTime;
+      const oneDayInMs = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+      
+      // If token is older than 24 hours, log out
+      if (tokenAge > oneDayInMs) {
+        console.log('Token has expired during session, logging out');
+        logout();
+      }
+    }, 60000); // Check every minute
+    
+    // Clean up the interval when the component unmounts or token changes
+    return () => clearInterval(checkInterval);
+  }, [token]);
 
   const validateToken = async (token: string) => {
     try {
@@ -69,6 +111,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.user);
         setToken(token);
         localStorage.setItem('authToken', token);
+        
+        // If there's no creation timestamp, set it now
+        if (!localStorage.getItem('tokenCreatedAt')) {
+          localStorage.setItem('tokenCreatedAt', Date.now().toString());
+        }
       } else {
         // Token is invalid, clear auth state
         logout();
@@ -104,7 +151,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.success) {
         setUser(data.user);
         setToken(data.token);
+        
+        // Store token and current timestamp
         localStorage.setItem('authToken', data.token);
+        localStorage.setItem('tokenCreatedAt', Date.now().toString());
+        
         router.push('/upload');
         return { success: true };
       } else {
@@ -122,6 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setToken(null);
     localStorage.removeItem('authToken');
+    localStorage.removeItem('tokenCreatedAt'); // Remove creation timestamp
     router.push('/login');
   };
 
