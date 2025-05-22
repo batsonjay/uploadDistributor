@@ -7,29 +7,42 @@
 
 import axios from 'axios';
 import { AuthService, USER_ROLES } from '../services/AuthService.js';
-import { encodePassword } from '../utils/PasswordUtils.js';
 
 // Base URL for API requests
 const API_BASE_URL = 'http://localhost:3001';
 
 // Test users
 const ADMIN_USER = {
-  email: 'batsonjay@mac.com',
-  password: 'admin123'
+  email: 'batsonjay@mac.com'
 };
 
 const DJ_USER = {
-  email: 'miker@mrobs.co.uk',
-  password: 'dj123'
+  email: 'miker@mrobs.co.uk'
 };
 
 // Test function to authenticate and get token
-async function authenticate(email: string, password: string): Promise<string> {
+async function authenticate(email: string): Promise<string> {
   try {
-    const encodedPassword = encodePassword(password);
-    const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
-      email,
-      encodedPassword
+    // Request a login link
+    const requestResponse = await axios.post(`${API_BASE_URL}/api/auth/request-login`, {
+      email
+    });
+    
+    if (!requestResponse.data.success) {
+      console.error(`❌ Login link request failed for ${email}:`, requestResponse.data.error);
+      throw new Error(`Login link request failed: ${requestResponse.data.error}`);
+    }
+    
+    console.log(`✅ Login link requested for ${email}`);
+    
+    // In a real scenario, the user would receive an email with a token
+    // For testing, we would need to extract the token from the console output
+    // Here we're just simulating with a mock token
+    const mockToken = "test-token-for-" + email;
+    
+    // Verify the token
+    const response = await axios.post(`${API_BASE_URL}/api/auth/verify-login`, {
+      token: mockToken
     });
     
     if (response.data.success && response.data.token) {
@@ -164,7 +177,7 @@ async function runTests() {
   console.log('---------------------------');
   let adminToken;
   try {
-    adminToken = await authenticate(ADMIN_USER.email, ADMIN_USER.password);
+    adminToken = await authenticate(ADMIN_USER.email);
     const adminUser = await verifyToken(adminToken);
     await getUserProfile(adminToken);
     
@@ -185,7 +198,7 @@ async function runTests() {
   console.log('------------------------');
   let djToken;
   try {
-    djToken = await authenticate(DJ_USER.email, DJ_USER.password);
+    djToken = await authenticate(DJ_USER.email);
     const djUser = await verifyToken(djToken);
     await getUserProfile(djToken);
     

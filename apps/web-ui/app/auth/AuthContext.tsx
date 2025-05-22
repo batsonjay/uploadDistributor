@@ -22,22 +22,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Fixed key for XOR operation (must match daemon)
-const FIXED_KEY = 'uploadDistributor2025';
-
-function encodePassword(password: string): string {
-  // Apply XOR with the fixed key
-  let result = '';
-  for (let i = 0; i < password.length; i++) {
-    const keyIndex = i % FIXED_KEY.length;
-    const keyChar = FIXED_KEY.charAt(keyIndex);
-    const charCode = password.charCodeAt(i) ^ keyChar.charCodeAt(0);
-    result += String.fromCharCode(charCode);
-  }
-  
-  // Convert to base64 for safe transmission
-  return Buffer.from(result).toString('base64');
-}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);

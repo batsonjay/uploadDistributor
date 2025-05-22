@@ -142,3 +142,17 @@
 [mixcloud]: success [2025-05-21 22:13:25]: h, Uploaded to https://www.mixcloud.com/andre-rehage/h/
 [soundcloud]: success [2025-05-21 22:13:26]: h, Uploaded to https://soundcloud.com/mock-user/h
 [ParseSonglist]: info [2025-05-21 22:13:26]: b599d6b2-816f-484c-8310-5ceb9cdf678a, Worker exited with code 0
+[SonglistParser]: info [2025-05-22 02:25:46]: 2025-05-21_catalyst_h.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-22 02:25:46]: 2025-05-21_catalyst_h.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-22 02:25:48]: 823c2dec-836b-42ca-bbce-389df90b155e, Launching worker thread
+[azuracast]: success [2025-05-22 02:25:50]: h, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747880749617.mp3
+[mixcloud]: success [2025-05-22 02:25:50]: h, Uploaded to https://www.mixcloud.com/catalyst/h/
+[soundcloud]: success [2025-05-22 02:25:51]: h, Uploaded to https://soundcloud.com/mock-user/h
+[ParseSonglist]: info [2025-05-22 02:25:52]: 823c2dec-836b-42ca-bbce-389df90b155e, Worker exited with code 0
+[SonglistParser]: info [2025-05-22 02:27:18]: 2025-05-21_catalyst_h.rtf, Starting to parse songlist
+[SonglistParser]: info [2025-05-22 02:27:18]: 2025-05-21_catalyst_h.rtf, Parsing complete, found 10 songs
+[ParseSonglist]: info [2025-05-22 02:27:20]: cf117ce1-1da2-4c0f-bf4c-e63fbec73e18, Launching worker thread
+[azuracast]: success [2025-05-22 02:27:22]: h, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747880841900.mp3
+[mixcloud]: success [2025-05-22 02:27:23]: h, Uploaded to https://www.mixcloud.com/catalyst/h/
+[soundcloud]: success [2025-05-22 02:27:24]: h, Uploaded to https://soundcloud.com/mock-user/h
+[ParseSonglist]: info [2025-05-22 02:27:24]: cf117ce1-1da2-4c0f-bf4c-e63fbec73e18, Worker exited with code 0

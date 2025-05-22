@@ -14,7 +14,6 @@
 
 import express from 'express';
 import { AuthService, USER_ROLES } from '../services/AuthService.js';
-import { encodePassword } from '../utils/PasswordUtils.js';
 import { logParserEvent, ParserLogType } from '../utils/LoggingUtils.js';
 import { adminOnly } from '../middleware/roleVerification.js';
 import { AzuraCastApi } from '../apis/AzuraCastApi.js';

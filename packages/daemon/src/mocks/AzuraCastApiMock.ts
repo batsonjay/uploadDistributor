@@ -9,7 +9,6 @@
 import { DestinationApiMock } from './DestinationApiMock.js';
 import * as fs from 'fs';
 import { AuthService } from '../services/AuthService.js';
-import { encodePassword } from '../utils/PasswordUtils.js';
 
 export interface AzuraCastUploadResponse {
   success: boolean;

@@ -14,7 +14,6 @@
  * in AzuraCast before allowing uploads.
  */
 
-import { decodePassword } from '../utils/PasswordUtils.js';
 import { AzuraCastApi } from '../apis/AzuraCastApi.js';
 import { ErrorType, logDetailedError, logParserEvent, ParserLogType } from '../utils/LoggingUtils.js';
 import EmailService from './EmailService.js';
