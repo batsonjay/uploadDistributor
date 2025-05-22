@@ -3,7 +3,14 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../auth/AuthContext";
+import DjSelector from "../components/DjSelector";
 import styles from "./page.module.css";
+
+interface DJ {
+  id: string;
+  displayName: string;
+  email: string;
+}
 
 interface FileState {
   file: File | null;
@@ -23,6 +30,7 @@ export default function UploadPage() {
   const [broadcastTime, setBroadcastTime] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedDj, setSelectedDj] = useState<DJ | null>(null);
 
   // Hidden file input refs
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +84,12 @@ export default function UploadPage() {
     setFile({ file, error: "" });
   };
 
+  // Handle DJ selection
+  const handleDjSelection = (dj: DJ | null) => {
+    setSelectedDj(dj);
+    console.log("DJ selected in parent component:", dj);
+  };
+
   // Ref to prevent duplicate form submissions in StrictMode
   const isSubmitting = useRef(false);
 
@@ -105,14 +119,20 @@ export default function UploadPage() {
 
       // Add metadata fields
       formData.append("title", setTitle);
-      formData.append("djName", user?.displayName || "");
       formData.append("broadcastDate", broadcastDate);
       formData.append("broadcastTime", broadcastTime);
       formData.append("genre", genre);
       formData.append("description", description);
+      
+      // Add selected DJ ID if an admin has selected one
+      if (user?.role === 'Super Administrator' && selectedDj) {
+        console.log("Adding selectedDjId to form data:", selectedDj.id);
+        formData.append("selectedDjId", selectedDj.id);
+      }
 
-      // Send files to daemon
-      const response = await authenticatedFetch("http://localhost:3001/receive", {
+      // Send files to daemon using the new upload endpoint
+      console.log("Sending files to /upload endpoint");
+      const response = await authenticatedFetch("http://localhost:3001/upload", {
         method: "POST",
         body: formData
       });
@@ -161,6 +181,11 @@ export default function UploadPage() {
             </div>
           </div>
         </div>
+        
+        {/* DJ Selector - only shown for admin users */}
+        {user?.role === 'Super Administrator' && (
+          <DjSelector onSelectDj={handleDjSelection} />
+        )}
 
         <form className={styles.form} onSubmit={handleSubmit}>
           {/* File Upload Row */}

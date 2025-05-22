@@ -468,7 +468,7 @@ export default function DjSelector({ onSelectDj }: DjSelectorProps) {
   const { user, authenticatedFetch } = useAuth();
 
   // Only show for admin users
-  if (user?.role !== 'ADMIN') {
+  if (user?.role !== 'Super Administrator') {
     return null;
   }
 
@@ -590,7 +590,7 @@ export default function UploadPage() {
     // ... add existing form fields ...
     
     // Add the selected DJ ID if an admin has selected one
-    if (user?.role === 'ADMIN' && selectedDj) {
+    if (user?.role === 'Super Administrator' && selectedDj) {
       formData.append('selectedDjId', selectedDj.id);
     }
     

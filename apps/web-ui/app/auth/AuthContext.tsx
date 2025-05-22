@@ -107,7 +107,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     if (token) {
       headersObj.set('Authorization', `Bearer ${token}`);
+      console.log(`Adding Authorization header: Bearer ${token.substring(0, 10)}...`);
+    } else {
+      console.warn('No auth token found in localStorage');
     }
+    
+    console.log(`Making authenticated request to: ${url}`);
+    console.log(`Request method: ${options.method || 'GET'}`);
+    console.log(`Request headers:`, Object.fromEntries([...headersObj.entries()]));
     
     return fetch(url, {
       ...options,

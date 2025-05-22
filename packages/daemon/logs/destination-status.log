@@ -98,3 +98,47 @@
 [mixcloud]: success [2025-05-21 12:54:40]: h, Uploaded to https://www.mixcloud.com/jay-batson/h/
 [soundcloud]: success [2025-05-21 12:54:41]: h, Uploaded to https://soundcloud.com/mock-user/h
 [ParseSonglist]: info [2025-05-21 12:54:41]: 8e61d316-d667-4b36-bf16-f5d2cba6c32c, Worker exited with code 0
+[SonglistParser]: info [2025-05-21 21:46:04]: 2025-05-21_catalyst_h.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-21 21:46:04]: 2025-05-21_catalyst_h.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-21 21:46:10]: 94c2a238-da8b-4744-a3a9-6f6325c71c2a, Launching worker thread
+[azuracast]: success [2025-05-21 21:46:12]: h, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747863971622.mp3
+[mixcloud]: success [2025-05-21 21:46:12]: h, Uploaded to https://www.mixcloud.com/catalyst/h/
+[soundcloud]: success [2025-05-21 21:46:13]: h, Uploaded to https://soundcloud.com/mock-user/h
+[ParseSonglist]: info [2025-05-21 21:46:14]: 94c2a238-da8b-4744-a3a9-6f6325c71c2a, Worker exited with code 0
+[SonglistParser]: info [2025-05-21 21:57:44]: 2025-05-21_catalyst_h.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-21 21:57:44]: 2025-05-21_catalyst_h.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-21 21:57:46]: 702f844f-a0b7-462e-a59c-ddeaa4a9c946, Launching worker thread
+[azuracast]: success [2025-05-21 21:57:47]: h, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747864667343.mp3
+[mixcloud]: success [2025-05-21 21:57:48]: h, Uploaded to https://www.mixcloud.com/catalyst/h/
+[soundcloud]: success [2025-05-21 21:57:49]: h, Uploaded to https://soundcloud.com/mock-user/h
+[ParseSonglist]: info [2025-05-21 21:57:49]: 702f844f-a0b7-462e-a59c-ddeaa4a9c946, Worker exited with code 0
+[SonglistParser]: info [2025-05-21 22:05:16]: 2025-05-21_Chewee_h.docx, Starting to parse songlist
+[SonglistParser]: info [2025-05-21 22:05:17]: 2025-05-21_Chewee_h.docx, Parsing complete, found 10 songs
+[ParseSonglist]: info [2025-05-21 22:05:19]: 1960a10f-da86-49d4-af04-495ec6304888, Launching worker thread
+[azuracast]: success [2025-05-21 22:05:20]: h, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747865120374.mp3
+[mixcloud]: success [2025-05-21 22:05:21]: h, Uploaded to https://www.mixcloud.com/chewee/h/
+[soundcloud]: success [2025-05-21 22:05:22]: h, Uploaded to https://soundcloud.com/mock-user/h
+[ParseSonglist]: info [2025-05-21 22:05:22]: 1960a10f-da86-49d4-af04-495ec6304888, Worker exited with code 0
+[SonglistParser]: info [2025-05-21 22:07:34]: 2025-05-21_catalyst_h.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-21 22:07:34]: 2025-05-21_catalyst_h.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-21 22:07:37]: 8df14116-35aa-4543-9bd1-70dbb23ac943, Launching worker thread
+[azuracast]: success [2025-05-21 22:07:38]: h, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747865257925.mp3
+[mixcloud]: success [2025-05-21 22:07:39]: h, Uploaded to https://www.mixcloud.com/catalyst/h/
+[soundcloud]: success [2025-05-21 22:07:40]: h, Uploaded to https://soundcloud.com/mock-user/h
+[ParseSonglist]: info [2025-05-21 22:07:40]: 8df14116-35aa-4543-9bd1-70dbb23ac943, Worker exited with code 0
+[SonglistParser]: info [2025-05-21 22:09:57]: 2025-05-21_catalyst_h.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-21 22:09:57]: 2025-05-21_catalyst_h.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-21 22:09:58]: bbeb44b2-2b02-4a1e-9943-bd4784a098bc, Launching worker thread
+[azuracast]: success [2025-05-21 22:10:00]: h, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747865399627.mp3
+[mixcloud]: success [2025-05-21 22:10:00]: h, Uploaded to https://www.mixcloud.com/catalyst/h/
+[soundcloud]: success [2025-05-21 22:10:01]: h, Uploaded to https://soundcloud.com/mock-user/h
+[ParseSonglist]: info [2025-05-21 22:10:02]: bbeb44b2-2b02-4a1e-9943-bd4784a098bc, Worker exited with code 0
+[SonglistParser]: info [2025-05-21 22:12:46]: 2025-05-21_Andre_Rehage_h.docx, Starting to parse songlist
+[SonglistParser]: info [2025-05-21 22:12:46]: 2025-05-21_Andre_Rehage_h.docx, Parsing complete, found 0 songs
+[SonglistParser]: info [2025-05-21 22:13:21]: 2025-05-21_Andre_Rehage_h.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-21 22:13:21]: 2025-05-21_Andre_Rehage_h.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-21 22:13:23]: b599d6b2-816f-484c-8310-5ceb9cdf678a, Launching worker thread
+[azuracast]: success [2025-05-21 22:13:24]: h, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747865604141.mp3
+[mixcloud]: success [2025-05-21 22:13:25]: h, Uploaded to https://www.mixcloud.com/andre-rehage/h/
+[soundcloud]: success [2025-05-21 22:13:26]: h, Uploaded to https://soundcloud.com/mock-user/h
+[ParseSonglist]: info [2025-05-21 22:13:26]: b599d6b2-816f-484c-8310-5ceb9cdf678a, Worker exited with code 0

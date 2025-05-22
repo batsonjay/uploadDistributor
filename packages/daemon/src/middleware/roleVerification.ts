@@ -39,7 +39,9 @@ export const verifyRole = (requiredRoles: UserRole[]) => {
       }
       
       // Check if user has required role
-      if (!requiredRoles.includes(result.user.role)) {
+      const hasRequiredRole = requiredRoles.includes(result.user.role);
+      
+      if (!hasRequiredRole) {
         return res.status(403).json({
           success: false,
           error: 'Insufficient permissions',
@@ -65,3 +67,8 @@ export const verifyRole = (requiredRoles: UserRole[]) => {
 // Convenience middleware for common role combinations
 export const adminOnly = verifyRole([USER_ROLES.ADMIN]);
 export const anyAuthenticated = verifyRole([USER_ROLES.ADMIN, USER_ROLES.DJ]);
+
+// Add debug logging to help diagnose issues
+console.log('Role verification middleware loaded');
+console.log('Admin role:', USER_ROLES.ADMIN);
+console.log('DJ role:', USER_ROLES.DJ);

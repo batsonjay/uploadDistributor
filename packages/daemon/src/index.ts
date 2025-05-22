@@ -6,6 +6,7 @@ import { receiveRoutes } from './routes/receive.js';
 import { statusRoutes } from './routes/status.js';
 import { default as authRoutes } from './routes/auth.js';
 import { parseSonglistRoutes } from './routes/parse-songlist.js';
+import { default as uploadRoutes } from './routes/upload.js';
 
 // Load environment variables
 dotenv.config();
@@ -24,6 +25,7 @@ app.use('/receive', receiveRoutes); // Updated to use the new endpoint name
 app.use('/status', statusRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/parse-songlist', parseSonglistRoutes);
+app.use('/upload', uploadRoutes); // New upload endpoint with DJ selection support
 
 // Add a simple health check route directly
 app.get('/health', (req, res) => {

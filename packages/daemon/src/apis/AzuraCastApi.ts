@@ -36,14 +36,11 @@ export class AzuraCastApi {
         }
       );
       
-      console.log(`Searching for user with email: ${email}`);
-      
       // Find the user with the matching email
       if (Array.isArray(response.data)) {
         const user = response.data.find(u => u.email === email);
         
         if (user) {
-          console.log(`Found user: ${user.name} (ID: ${user.id})`);
           return {
             success: true,
             user: {
@@ -55,14 +52,12 @@ export class AzuraCastApi {
           };
         }
       }
-      
-      console.log(`No user found with email: ${email}`);
       return {
         success: false,
         error: `User with email ${email} not found`
       };
     } catch (error) {
-      console.error('Find user error:', error);
+      console.error('Find user error:', error instanceof Error ? error.message : 'Unknown error');
       
       if (axios.isAxiosError(error) && error.response) {
         return {
@@ -105,7 +100,7 @@ export class AzuraCastApi {
         }
       };
     } catch (error) {
-      console.error('Get user profile error:', error);
+      console.error('Get user profile error:', error instanceof Error ? error.message : 'Unknown error');
       
       if (axios.isAxiosError(error) && error.response) {
         return {
@@ -132,8 +127,6 @@ export class AzuraCastApi {
    */
   async checkDjDirectoryExists(stationId: string, djName: string): Promise<any> {
     try {
-      console.log(`Checking if directory exists for DJ "${djName}" in station ${stationId}`);
-      
       // Get all directories for the station
       const response = await axios.get(
         `${this.baseUrl}/api/station/${stationId}/files/directories`,
@@ -152,15 +145,10 @@ export class AzuraCastApi {
         
         // Check if the DJ's directory exists in the list
         const directoryExists = directories.some((dir: { name: string, path: string }) => {
-          const match = dir.name === djName || dir.path === djName;
-          if (match) {
-            console.log(`Match found: Directory "${dir.name}" matches DJ name "${djName}"`);
-          }
-          return match;
+          return dir.name === djName || dir.path === djName;
         });
         
         if (directoryExists) {
-          console.log(`Directory found for DJ "${djName}" in station ${stationId}`);
           return {
             success: true,
             exists: true,
@@ -169,10 +157,8 @@ export class AzuraCastApi {
         }
       } else {
         // Only log if there's an unexpected response format
-        console.log('Response format unexpected - unable to check directories');
+        console.error('Response format unexpected - unable to check directories');
       }
-      
-      console.log(`No directory found for DJ "${djName}"`);
       return {
         success: true,
         exists: false,
@@ -201,6 +187,96 @@ export class AzuraCastApi {
       return {
         success: false,
         exists: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Get all users from AzuraCast
+   * 
+   * @returns Promise with all users or error
+   */
+  public async getAllUsers(): Promise<{ success: boolean; users?: any[]; error?: string }> {
+    try {
+      // Get all users using the super admin API key
+      const response = await axios.get(
+        `${this.baseUrl}/api/admin/users`,
+        {
+          headers: {
+            'X-API-Key': this.superAdminApiKey,
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      return {
+        success: true,
+        users: response.data
+      };
+    } catch (error) {
+      console.error('Get all users error:', error instanceof Error ? error.message : 'Unknown error');
+      
+      if (axios.isAxiosError(error) && error.response) {
+        return {
+          success: false,
+          error: error.response.data.message || 'Failed to get users'
+        };
+      }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Get a user by ID from AzuraCast
+   * 
+   * @param userId The ID of the user to retrieve
+   * @returns Promise with user information or error
+   */
+  public async getUserById(userId: string): Promise<{ success: boolean; user?: any; error?: string }> {
+    try {
+      // Get all users and find the one with the matching ID
+      // Note: AzuraCast API doesn't have a direct endpoint to get a user by ID
+      const allUsers = await this.getAllUsers();
+      
+      if (!allUsers.success || !allUsers.users) {
+        return {
+          success: false,
+          error: allUsers.error || 'Failed to get users'
+        };
+      }
+      
+      const user = allUsers.users.find(u => u.id.toString() === userId);
+      
+      if (user) {
+        return {
+          success: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            roles: user.roles || ['DJ']
+          }
+        };
+      }
+      return {
+        success: false,
+        error: `User with ID ${userId} not found`
+      };
+    } catch (error) {
+      console.error('Get user by ID error:', error instanceof Error ? error.message : 'Unknown error');
+      
+      if (axios.isAxiosError(error) && error.response) {
+        return {
+          success: false,
+          error: error.response.data.message || 'Failed to get user'
+        };
+      }
+      return {
+        success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }

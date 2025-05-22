@@ -176,14 +176,10 @@ export class AuthService {
       
       // For DJ users, verify that their directory exists in AzuraCast
       if (userProfile.role === USER_ROLES.DJ) {
-        logParserEvent('AuthService', ParserLogType.INFO, `Verifying directory for DJ user: ${userProfile.displayName}`);
         const directoryResult = await this.verifyDjDirectory(userProfile.displayName);
         if (!directoryResult.success) {
           return directoryResult;
         }
-      } else {
-        logParserEvent('AuthService', ParserLogType.INFO, `Skipping directory verification for Admin user: ${userProfile.displayName}`);
-        // Admin users don't need directory verification
       }
       
       // Generate a JWT token
@@ -225,8 +221,6 @@ export class AuthService {
    * Validate a JWT token
    */
   public async validateToken(token: string): Promise<AuthResponse> {
-    logParserEvent('AuthService', ParserLogType.INFO, `Validating token`);
-    
     try {
       // Verify the JWT token
       const decoded = jwt.verify(token, this.jwtSecret) as any;
@@ -241,17 +235,11 @@ export class AuthService {
       
       // For DJ users, verify that their directory exists in AzuraCast
       if (user.role === USER_ROLES.DJ) {
-        logParserEvent('AuthService', ParserLogType.INFO, `Verifying directory for DJ user: ${user.displayName}`);
         const directoryResult = await this.verifyDjDirectory(user.displayName);
         if (!directoryResult.success) {
           return directoryResult;
         }
-      } else {
-        logParserEvent('AuthService', ParserLogType.INFO, `Skipping directory verification for Admin user: ${user.displayName}`);
-        // Admin users don't need directory verification
       }
-      
-      logParserEvent('AuthService', ParserLogType.INFO, `Token validated successfully for ${user.email}`);
       return {
         success: true,
         user,
@@ -268,11 +256,8 @@ export class AuthService {
   
   
   // Helper method to map AzuraCast roles to our UserRole type
-  private mapAzuraCastRoleToUserRole(azuraCastRoles: any[]): UserRole {
-    console.log('User roles from AzuraCast:', azuraCastRoles);
-    
+  public mapAzuraCastRoleToUserRole(azuraCastRoles: any[]): UserRole {
     if (!azuraCastRoles) {
-      console.log('No roles provided, defaulting to DJ role');
       return USER_ROLES.DJ;
     }
     
@@ -289,12 +274,10 @@ export class AuthService {
       });
       
       if (isAdmin) {
-        console.log('User has Super Administrator role');
         return USER_ROLES.ADMIN;
       }
     }
     
-    console.log('User has DJ role');
     return USER_ROLES.DJ;
   }
   
@@ -305,6 +288,50 @@ export class AuthService {
    * @param djName The DJ's display name
    * @returns AuthResponse with success/error information
    */
+  /**
+   * Get a user by ID from AzuraCast
+   * 
+   * @param userId The ID of the user to retrieve
+   * @returns Promise with user information or error
+   */
+  public async getUserById(userId: string): Promise<AuthResponse> {
+    try {
+      // Create AzuraCast API client
+      const api = new AzuraCastApi();
+      
+      // Get user from AzuraCast
+      const userResult = await api.getUserById(userId);
+      
+      if (!userResult.success || !userResult.user) {
+        logParserEvent('AuthService', ParserLogType.WARNING, `User not found with ID: ${userId}`);
+        return {
+          success: false,
+          error: 'User not found'
+        };
+      }
+      
+      const apiUser = userResult.user;
+      
+      // Map AzuraCast user to our UserProfile format
+      const userProfile: UserProfile = {
+        id: apiUser.id.toString(),
+        email: apiUser.email,
+        displayName: apiUser.name,
+        role: this.mapAzuraCastRoleToUserRole(apiUser.roles)
+      };
+      return {
+        success: true,
+        user: userProfile
+      };
+    } catch (error) {
+      logParserEvent('AuthService', ParserLogType.ERROR, `Error in getUserById:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
   private async verifyDjDirectory(djName: string): Promise<AuthResponse> {
     // Create AzuraCast API client
     const api = new AzuraCastApi();

@@ -13,12 +13,22 @@
  */
 
 import express from 'express';
-import { AuthService } from '../services/AuthService.js';
+import { AuthService, USER_ROLES } from '../services/AuthService.js';
 import { encodePassword } from '../utils/PasswordUtils.js';
 import { logParserEvent, ParserLogType } from '../utils/LoggingUtils.js';
+import { adminOnly } from '../middleware/roleVerification.js';
+import { AzuraCastApi } from '../apis/AzuraCastApi.js';
+import cors from 'cors';
 
 const router = express.Router();
 const authService = AuthService.getInstance();
+
+// Add CORS middleware specifically for this router
+router.use(cors({
+  origin: '*', // Allow all origins for now
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+}));
 
 /**
  * Request login link route
@@ -161,6 +171,58 @@ router.get('/profile', async (req, res) => {
     });
   } catch (err) {
     logParserEvent('AuthRoutes', ParserLogType.ERROR, `Error in /profile:`, err);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+/**
+ * Get all DJs endpoint
+ * 
+ * Returns a list of all users with DJ role from AzuraCast
+ * Only accessible to Super Admin users
+ */
+router.get('/djs', adminOnly, async (req, res) => {
+  try {
+    // Add a simple log to track if this endpoint is being called multiple times
+    logParserEvent('AuthRoutes', ParserLogType.INFO, 'DJ list requested');
+    
+    // Create AzuraCast API client
+    const api = new AzuraCastApi();
+    
+    // Get all users from AzuraCast
+    const users = await api.getAllUsers();
+    
+    if (!users.success) {
+      logParserEvent('AuthRoutes', ParserLogType.WARNING, `Failed to fetch users: ${users.error}`);
+      return res.status(400).json(users);
+    }
+    
+    // Filter to only include DJs (non-admin users)
+    if (!users.users || !Array.isArray(users.users)) {
+      logParserEvent('AuthRoutes', ParserLogType.WARNING, 'No users found or invalid response format');
+      return res.status(400).json({
+        success: false,
+        error: 'No users found or invalid response format'
+      });
+    }
+    
+    const djs = users.users.filter(user => {
+      const role = authService.mapAzuraCastRoleToUserRole(user.roles);
+      return role === USER_ROLES.DJ;
+    }).map(user => ({
+      id: user.id.toString(),
+      email: user.email,
+      displayName: user.name
+    }));
+    return res.json({
+      success: true,
+      djs
+    });
+  } catch (err) {
+    logParserEvent('AuthRoutes', ParserLogType.ERROR, `Error in /djs:`, err);
     return res.status(500).json({
       success: false,
       error: 'Internal server error'

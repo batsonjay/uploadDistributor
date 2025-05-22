@@ -1,0 +1,45 @@
+.container {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.info {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: #e6f7ff;
+  border-left: 3px solid #1890ff;
+  font-size: 0.9rem;
+}
+
+.loading {
+  padding: 1rem;
+  color: #666;
+  font-style: italic;
+}
+
+.error {
+  padding: 1rem;
+  color: #f5222d;
+  background-color: #fff1f0;
+  border: 1px solid #ffa39e;
+  border-radius: 4px;
+}
