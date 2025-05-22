@@ -177,8 +177,6 @@ This document outlines the implementation plan for the web client interface and 
    - Ensure proper handling of parsed results in the validation flow
    - Maintain title/artist order confirmation functionality
 
-TODO: Add support for Rekordbox .m3u8 playlist parsing (improving reliability of parsing from that DJ information source)
-
 2. Mark the test-parse page as obsolete:
    - This was only an interim step to bootstrap upload functionality
    - The main upload flow in /upload now handles the complete process

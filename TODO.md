@@ -24,9 +24,26 @@
 
 ## Feature Enhancements
 
+- **Implement Multi-Stage Upload with Progress for Large MP3 Files**: The current upload process sends all files (MP3, songlist, artwork) in a single request, which is problematic for large MP3 files (60-120MB). Implement a multi-stage upload process:
+  - Stage 1: Upload metadata, songlist file, and artwork only
+  - Stage 2: Parse and validate the songlist (allowing title/artist swapping)
+  - Stage 3: Upload the large MP3 file with progress tracking
+  - Implementation considerations:
+    - Add a new endpoint for MP3-only uploads that accepts a fileId parameter to associate with existing metadata
+    - Implement chunked uploads or use a library like tus.io for resumable uploads
+    - Add progress event listeners in the web UI to show real-time upload progress
+    - Update the file-processor to handle files that arrive in multiple stages
+    - Ensure the UI prevents users from leaving the page during uploads
+    - Add support for pausing/resuming large file uploads
+
 - **Improve Error Handling**: Add more detailed error messages and logging to help diagnose issues like the "Songlist file not found" error.
 
 - **Add File Extension Validation**: Ensure the daemon correctly handles all supported file extensions and doesn't try to look for files with extensions that weren't uploaded (e.g., looking for .rtf when .m3u8 was uploaded).
+
+- **Enhance Client-Side File Validation**: While basic file extension validation exists, implement more comprehensive client-side validation:
+  - Validate MP3 file content type using the File API (not just extension)
+  - Implement image dimension validation for artwork (ensure it's 1440x1440px only)
+  - Add real-time feedback during validation
 
 ## Documentation
 

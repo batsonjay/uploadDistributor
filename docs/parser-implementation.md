@@ -176,8 +176,8 @@ The parser system is integrated with the daemon through:
 The parser system is tested through:
 
 1. **Manual Testing**: Using real-world files from DJs
-2. **Test Script**: `test-parser.sh` for quick testing of parser functionality
-3. **Test Files**: Sample files in `apps/tf/` directory
+2. **Test Files**: Sample files in `apps/tf/` directory
+3. **Integration Testing**: Testing through the main upload flow
 
 ## Future Enhancements
 
