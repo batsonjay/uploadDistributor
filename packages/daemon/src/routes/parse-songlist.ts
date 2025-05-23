@@ -1,6 +1,8 @@
 import express from 'express';
 import * as path from 'path';
 import * as fs from 'fs';
+import busboy from 'busboy';
+import { v4 as uuidv4 } from 'uuid';
 import { anyAuthenticated } from '../middleware/roleVerification.js';
 import { SonglistParserService } from '../services/SonglistParserService.js';
 import { logDestinationStatus, LogType } from '../utils/LoggingUtils.js';
@@ -12,6 +14,133 @@ const receivedFilesDir = process.env.RECEIVED_FILES_DIR || path.join(
   path.dirname(new URL(import.meta.url).pathname),
   '../../received-files'
 ).replace(/^\/([A-Za-z]):/, "$1:"); // Fix Windows paths
+
+/**
+ * Validate a songlist file without saving other files
+ * @route POST /parse-songlist/validate
+ * @param {file} req.files.songlist - Songlist file
+ * @param {object} req.body.metadata - Metadata for the songlist
+ * @returns {object} 200 - Parsed songs array
+ */
+router.post('/validate', anyAuthenticated, async (req: express.Request, res: express.Response) => {
+  try {
+    // Get the authenticated user from the request
+    const authUser = (req as any).user;
+    
+    // Generate a temporary file ID
+    const tempFileId = uuidv4();
+    
+    // Create temporary directory for this file
+    const tempDir = path.join(receivedFilesDir, tempFileId);
+    fs.mkdirSync(tempDir, { recursive: true });
+    
+    // Initialize metadata object
+    let metadata: Record<string, any> = {};
+    
+    // Set up busboy to handle file receiving
+    const bb = busboy({ headers: req.headers });
+    
+    // Track if we've received a songlist file
+    let songlistReceived = false;
+    let songlistPath = '';
+    
+    // Handle file receiving
+    bb.on('file', (name: string, file: NodeJS.ReadableStream, info: { filename: string; encoding: string; mimeType: string }) => {
+      if (name === 'songlist') {
+        songlistReceived = true;
+        const ext = path.extname(info.filename);
+        songlistPath = path.join(tempDir, `songlist${ext}`);
+        
+        // Write the file directly to disk
+        const writeStream = fs.createWriteStream(songlistPath);
+        file.pipe(writeStream);
+      } else {
+        // Ignore other files
+        file.resume();
+      }
+    });
+    
+    // Handle metadata fields
+    bb.on('field', (name: string, val: string) => {
+      try {
+        if (name === 'metadata') {
+          metadata = JSON.parse(val);
+        }
+      } catch (err) {
+        logDestinationStatus('ParseSonglist', LogType.ERROR, tempFileId, `Error parsing metadata: ${err}`);
+      }
+    });
+    
+    // Handle completion
+    bb.on('finish', async () => {
+      // Check if we received a songlist file
+      if (!songlistReceived || !songlistPath) {
+        // Clean up temporary directory
+        if (fs.existsSync(tempDir)) {
+          fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+        
+        return res.status(400).json({
+          success: false,
+          error: 'Missing songlist file',
+          message: 'Songlist file is required'
+        });
+      }
+      
+      try {
+        // Parse the songlist using the service
+        const result = await SonglistParserService.parse(songlistPath);
+        const songs = result.songs;
+        
+        // Clean up temporary directory
+        fs.rmSync(tempDir, { recursive: true, force: true });
+        
+        // Return the parsed songs
+        res.json({
+          success: true,
+          songs: songs
+        });
+      } catch (err) {
+        // Clean up temporary directory
+        if (fs.existsSync(tempDir)) {
+          fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+        
+        logDestinationStatus('ParseSonglist', LogType.ERROR, tempFileId, `Error parsing songlist: ${err}`);
+        res.status(500).json({
+          success: false,
+          error: 'Parse failed',
+          message: err instanceof Error ? err.message : 'Failed to parse songlist'
+        });
+      }
+    });
+    
+    // Handle errors
+    bb.on('error', (err: Error) => {
+      // Clean up temporary directory
+      if (fs.existsSync(tempDir)) {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+      
+      logDestinationStatus('ParseSonglist', LogType.ERROR, tempFileId, `File receiving error: ${err}`);
+      res.status(500).json({
+        success: false,
+        error: 'File receiving failed',
+        message: err.message
+      });
+    });
+    
+    // Pipe request to busboy
+    req.pipe(bb);
+  } catch (err) {
+    logDestinationStatus('ParseSonglist', LogType.ERROR, 'validate', `Error in validate endpoint: ${err}`);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: err instanceof Error ? err.message : 'Unknown error'
+    });
+  }
+});
 
 /**
  * Get parsed songs for a specific file ID

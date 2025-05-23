@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { AuthProvider } from "./auth/AuthContext";
+import { FilePathsProvider } from "./components/FileContext";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -31,7 +32,9 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
         <AuthProvider>
-          {children}
+          <FilePathsProvider>
+            {children}
+          </FilePathsProvider>
         </AuthProvider>
       </body>
     </html>

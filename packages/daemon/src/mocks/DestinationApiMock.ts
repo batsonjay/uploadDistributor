@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Base class for destination API mocks
  * 

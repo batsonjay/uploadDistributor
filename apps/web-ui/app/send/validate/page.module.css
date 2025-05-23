@@ -1,0 +1,310 @@
+.validatePage {
+  display: grid;
+  grid-template-rows: 20px 1fr 20px;
+  align-items: start;
+  min-height: 100svh;
+  padding: 80px;
+  gap: 64px;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  grid-row-start: 2;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.title {
+  font-family: var(--font-geist-sans);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid var(--gray-alpha-200);
+}
+
+.sectionTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sectionTitle h2 {
+  font-family: var(--font-geist-sans);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.songTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-geist-sans);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.songTable th {
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid var(--gray-alpha-200);
+  font-weight: 500;
+}
+
+.songTable td {
+  padding: 12px;
+  border-bottom: 1px solid var(--gray-alpha-200);
+}
+
+.songTable tr:last-child td {
+  border-bottom: none;
+}
+
+/* Metadata section styles */
+.metadataSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-alpha-200);
+}
+
+.metadataGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px 16px;
+}
+
+.metadataItem {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.descriptionItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  line-height: 20px;
+  margin-top: 8px;
+}
+
+.metadataLabel {
+  font-family: var(--font-geist-sans);
+  font-weight: 500;
+  color: var(--gray-alpha-700);
+  white-space: nowrap;
+}
+
+.metadataValue {
+  font-family: var(--font-geist-sans);
+  color: var(--gray-alpha-900);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.backButton {
+  appearance: none;
+  border-radius: 128px;
+  height: 48px;
+  padding: 0 20px;
+  border: 1px solid var(--gray-alpha-200);
+  font-family: var(--font-geist-sans);
+  background: transparent;
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.backButton:hover {
+  background: var(--button-secondary-hover);
+}
+
+.sendButton {
+  appearance: none;
+  border-radius: 128px;
+  height: 48px;
+  padding: 0 20px;
+  border: none;
+  font-family: var(--font-geist-sans);
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sendButton:hover {
+  background: var(--button-primary-hover);
+}
+
+.sendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.swapButton {
+  appearance: none;
+  border-radius: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--gray-alpha-200);
+  font-family: var(--font-geist-sans);
+  background: transparent;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  align-self: flex-start;
+}
+
+.swapButton:hover {
+  background: var(--button-secondary-hover);
+}
+
+.error {
+  color: #e11d48;
+  font-family: var(--font-geist-sans);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+/* Progress bar styles */
+.progressContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.progressInfo {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-geist-sans);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.progressBar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--gray-alpha-200);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: var(--foreground);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Success message styles */
+.successMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  border-radius: 12px;
+  border: 1px solid var(--gray-alpha-200);
+  background-color: var(--gray-alpha-50);
+  text-align: center;
+}
+
+.successMessage h2 {
+  font-family: var(--font-geist-sans);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 500;
+  margin: 0 0 16px 0;
+  color: #10b981; /* Success green color */
+}
+
+.successMessage p {
+  font-family: var(--font-geist-sans);
+  font-size: 16px;
+  line-height: 24px;
+  margin: 0 0 8px 0;
+}
+
+@media (max-width: 600px) {
+  .validatePage {
+    padding: 32px;
+  }
+  
+  .title {
+    font-size: 20px;
+    line-height: 28px;
+  }
+  
+  .section {
+    padding: 16px;
+  }
+  
+  .sectionTitle {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .buttonGroup {
+    flex-direction: column;
+  }
+  
+  .backButton,
+  .sendButton {
+    width: 100%;
+    height: 40px;
+    font-size: 14px;
+  }
+  
+  .songTable {
+    font-size: 12px;
+  }
+  
+  .songTable th,
+  .songTable td {
+    padding: 8px;
+  }
+  
+  .metadataGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .metadataItem {
+    font-size: 12px;
+    line-height: 16px;
+  }
+}

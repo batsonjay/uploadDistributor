@@ -7,6 +7,7 @@ import { statusRoutes } from './routes/status.js';
 import { default as authRoutes } from './routes/auth.js';
 import { parseSonglistRoutes } from './routes/parse-songlist.js';
 import { default as uploadRoutes } from './routes/upload.js';
+import { sendRoutes } from './routes/send.js';
 
 // Load environment variables
 dotenv.config();
@@ -40,6 +41,7 @@ app.use('/status', statusRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/parse-songlist', parseSonglistRoutes);
 app.use('/upload', uploadRoutes); // New upload endpoint with DJ selection support
+app.use('/send', sendRoutes); // New send endpoint for the updated file sending flow
 
 // Add a simple health check route directly
 app.get('/health', (req, res) => {

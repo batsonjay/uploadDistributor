@@ -57,10 +57,10 @@ export default function VerifyLogin() {
         
         console.log('Token verification successful, user:', result);
         setStatus('success');
-        // Redirect to upload page after a short delay
+        // Redirect to send page after a short delay
         setTimeout(() => {
-          console.log('Redirecting to upload page...');
-          router.push('/upload');
+          console.log('Redirecting to send page...');
+          router.push('/send');
         }, 1500);
       } catch (error) {
         console.error('Error verifying token:', error);
@@ -86,7 +86,7 @@ export default function VerifyLogin() {
       {status === 'success' && (
         <div className={styles.success}>
           <h2>Login Successful!</h2>
-          <p>Redirecting to the upload page...</p>
+          <p>Redirecting to the send page...</p>
         </div>
       )}
       

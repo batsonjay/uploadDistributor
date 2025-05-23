@@ -225,3 +225,46 @@
 [ParseSonglist]: info [2025-05-23 13:59:05]: e1b36589-f6ba-47ec-a7d8-3aad49191497, Launching worker thread
 [ParseSonglist]: error [2025-05-23 13:59:05]: e1b36589-f6ba-47ec-a7d8-3aad49191497, Worker error: Error: Cannot find module '/Users/balearicfm/Projects/uploadDistributor/packages/daemon/dist/mocks/AzuraCastApiMock.js' imported from /Users/balearicfm/Projects/uploadDistributor/packages/daemon/dist/services/AzuraCastService.js
 [ParseSonglist]: info [2025-05-23 13:59:05]: e1b36589-f6ba-47ec-a7d8-3aad49191497, Worker exited with code 1
+[SonglistParser]: info [2025-05-23 18:11:53]: 2025-05-23_catalyst_Title_1_pm.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 18:11:53]: 2025-05-23_catalyst_Title_1_pm.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-23 18:11:57]: c8bd96b3-0eb1-4b3e-b926-215f714c1775, Launching worker thread
+[ParseSonglist]: error [2025-05-23 18:11:57]: c8bd96b3-0eb1-4b3e-b926-215f714c1775, Worker error: Error: Cannot find module '/Users/balearicfm/Projects/uploadDistributor/packages/daemon/dist/mocks/AzuraCastApiMock.js' imported from /Users/balearicfm/Projects/uploadDistributor/packages/daemon/dist/services/AzuraCastService.js
+[ParseSonglist]: info [2025-05-23 18:11:57]: c8bd96b3-0eb1-4b3e-b926-215f714c1775, Worker exited with code 1
+[SonglistParser]: info [2025-05-23 18:24:36]: 2025-05-23_catalyst_Title_PM_2.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 18:24:36]: 2025-05-23_catalyst_Title_PM_2.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-23 18:24:38]: aa016e0a-c782-4293-9eb9-1ee74cdf18bc, Launching worker thread
+[ParseSonglist]: error [2025-05-23 18:24:38]: aa016e0a-c782-4293-9eb9-1ee74cdf18bc, Worker error: Error: Cannot find module '/Users/balearicfm/Projects/uploadDistributor/packages/daemon/dist/mocks/MixcloudApiMock.js' imported from /Users/balearicfm/Projects/uploadDistributor/packages/daemon/dist/services/MixcloudService.js
+[ParseSonglist]: info [2025-05-23 18:24:38]: aa016e0a-c782-4293-9eb9-1ee74cdf18bc, Worker exited with code 1
+[SonglistParser]: info [2025-05-23 18:26:39]: 2025-05-23_catalyst_TItle_PM_3.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 18:26:40]: 2025-05-23_catalyst_TItle_PM_3.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-23 18:26:41]: d7a5d2c3-d1ca-43a9-8fda-59d21f5f391c, Launching worker thread
+[ParseSonglist]: error [2025-05-23 18:26:41]: d7a5d2c3-d1ca-43a9-8fda-59d21f5f391c, Worker error: SyntaxError: The requested module './DestinationApiMock.js' does not provide an export named 'DestinationApiMock'
+[ParseSonglist]: info [2025-05-23 18:26:41]: d7a5d2c3-d1ca-43a9-8fda-59d21f5f391c, Worker exited with code 1
+[SonglistParser]: info [2025-05-23 18:30:32]: 2025-05-23_catalyst_Title_PM_4.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 18:30:32]: 2025-05-23_catalyst_Title_PM_4.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-23 18:30:33]: f917f9dc-b0ed-47dc-bdcf-b6964489fe43, Launching worker thread
+[azuracast]: success [2025-05-23 18:30:34]: Title PM 4, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748025034183.mp3
+[mixcloud]: success [2025-05-23 18:30:35]: Title PM 4, Uploaded to https://www.mixcloud.com/catalyst/title-pm-4/
+[SonglistParser]: info [2025-05-23 18:55:05]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 18:55:05]: songlist.nml, Parsing complete, found 13 songs
+[SonglistParser]: info [2025-05-23 18:56:45]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 18:56:45]: songlist.nml, Parsing complete, found 13 songs
+[SonglistParser]: info [2025-05-23 19:13:22]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 19:13:22]: songlist.nml, Parsing complete, found 13 songs
+[SonglistParser]: info [2025-05-23 19:20:17]: 2025-05-23_catalyst_Title_PM_8.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 19:20:17]: 2025-05-23_catalyst_Title_PM_8.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-23 19:20:22]: 0f8d35bf-4a77-451b-adae-27d9172509fd, Launching worker thread
+[azuracast]: success [2025-05-23 19:20:23]: Title PM 8, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748028022736.mp3
+[ParseSonglist]: info [2025-05-23 19:20:23]: 0f8d35bf-4a77-451b-adae-27d9172509fd, Worker exited with code 0
+[SonglistParser]: info [2025-05-23 19:30:24]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 19:30:24]: songlist.nml, Parsing complete, found 13 songs
+[SonglistParser]: info [2025-05-23 19:37:49]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 19:37:49]: songlist.nml, Parsing complete, found 13 songs
+[SonglistParser]: info [2025-05-23 19:40:17]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 19:40:17]: songlist.nml, Parsing complete, found 13 songs
+[SonglistParser]: info [2025-05-23 19:42:47]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 19:42:47]: songlist.nml, Parsing complete, found 13 songs
+[azuracast]: success [2025-05-23 19:42:51]: Tit6, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748029371110.mp3
+[SonglistParser]: info [2025-05-23 19:43:56]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 19:43:56]: songlist.nml, Parsing complete, found 12 songs
+[azuracast]: success [2025-05-23 19:44:09]: TIt9, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748029449556.mp3

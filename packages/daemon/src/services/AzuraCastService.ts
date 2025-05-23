@@ -9,7 +9,7 @@
  */
 
 import path from 'path';
-import { AzuraCastApiMock, AzuraCastMetadata, AzuraCastUploadResponse } from '../mocks/AzuraCastApiMock.js';
+import { AzuraCastApiMock, AzuraCastMetadata, AzuraCastUploadResponse } from '../mocks/AzuraCastApiMock.simple.js';
 import { StatusManager } from './StatusManager.js';
 import { ErrorType, ParserLogType, logParserEvent } from '../utils/LoggingUtils.js';
 import { retry, RetryOptions } from '../utils/RetryUtils.js';
@@ -57,9 +57,7 @@ export class AzuraCastService {
     metadata: AzuraCastMetadata
   ): Promise<{ success: boolean; id?: string; path?: string; error?: string }> {
     logParserEvent('AzuraCastService', ParserLogType.DEBUG, 'Uploading to AzuraCast...');
-    logParserEvent('AzuraCastService', ParserLogType.DEBUG, `File being uploaded to AzuraCast: ${audioFilePath}`);
-    logParserEvent('AzuraCastService', ParserLogType.DEBUG, `Original filename: ${path.basename(audioFilePath)}`);
-    logParserEvent('AzuraCastService', ParserLogType.DEBUG, 'Metadata:', metadata);
+    logParserEvent('AzuraCastService', ParserLogType.DEBUG, `File: ${path.basename(audioFilePath)}`);
     
     // Define retry options
     const retryOptions: RetryOptions = {
@@ -128,15 +126,9 @@ export class AzuraCastService {
         `Uploaded to ${result.path}`
       );
       
-      // Log the final result with path information
-      logParserEvent('AzuraCastService', ParserLogType.DEBUG, 'AzuraCast upload completed successfully:');
-      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `  - Original file: ${path.basename(audioFilePath)}`);
-      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `  - File ID: ${result.id}`);
-      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `  - Destination path: ${result.path}`);
-      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `  - Destination filename: ${path.basename(result.path || '')}`);
-      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `  - Title: ${metadata.title}`);
-      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `  - Artist: ${metadata.artist}`);
-      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `  - Genre: ${metadata.genre || 'Not specified'}`);
+      // Reduce logging - just log the essential information
+      logParserEvent('AzuraCastService', ParserLogType.DEBUG, 'AzuraCast upload completed successfully');
+      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `File ID: ${result.id}`);
       
       return {
         success: true,

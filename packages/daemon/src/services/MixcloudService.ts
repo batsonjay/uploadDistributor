@@ -7,7 +7,7 @@
  * - Error handling and recovery
  */
 
-import { MixcloudApiMock, MixcloudMetadata, MixcloudUploadResponse } from '../mocks/MixcloudApiMock.js';
+import { MixcloudApiMock, MixcloudMetadata, MixcloudUploadResponse } from '../mocks/MixcloudApiMock.simple.js';
 import { StatusManager } from './StatusManager.js';
 import { ErrorType } from '../utils/LoggingUtils.js';
 import { retry, RetryOptions } from '../utils/RetryUtils.js';

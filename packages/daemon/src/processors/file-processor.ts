@@ -199,16 +199,21 @@ export async function processFile(fileId: string) {
     // Step 2: Upload to destinations
     process.stdout.write('Uploading to destinations...\n');
     
-    // Get selected destinations from metadata or use all by default
-    const defaultDestinations = ['azuracast', 'mixcloud', 'soundcloud'];
+    // For now, only use AzuraCast as the destination
+    const defaultDestinations = ['azuracast'];
     let selectedDestinations = defaultDestinations;
     
-    // For admin users, respect the destinations specified in metadata
+    // For admin users, respect the destinations specified in metadata, but still only use AzuraCast for now
     if (userRole === USER_ROLES.ADMIN && metadata.destinations) {
-      selectedDestinations = metadata.destinations.split(',').map((d: string) => d.trim().toLowerCase());
+      const requestedDestinations = metadata.destinations.split(',').map((d: string) => d.trim().toLowerCase());
+      // Filter to only include AzuraCast
+      selectedDestinations = requestedDestinations.filter((d: string) => d === 'azuracast');
+      if (selectedDestinations.length === 0) {
+        selectedDestinations = defaultDestinations; // Default back to AzuraCast if not specified
+      }
     }
     
-    process.stdout.write(`Uploading to selected destinations: ${selectedDestinations.join(', ')}\n`);
+    process.stdout.write(`Uploading to destination: ${selectedDestinations[0]}\n`);
     
     // Convert UTC timestamps to CET for each destination
     const broadcastDate = songlist.broadcast_data.broadcast_date;
@@ -257,53 +262,9 @@ export async function processFile(fileId: string) {
       destinations.azuracast = { success: true, skipped: true, message: 'Destination not selected' };
     }
     
-    // Step 2b: Upload to Mixcloud (if selected)
-    if (selectedDestinations.includes('mixcloud')) {
-      process.stdout.write('Starting upload to Mixcloud...\n');
-      statusManager.updateStatus('processing', 'Uploading to Mixcloud', { 
-        ...destinations,
-        current_platform: 'mixcloud' 
-      });
-      
-      try {
-        const mixcloudResult = await mixcloudService.uploadFile(audioFile, mixcloudMetadata);
-        destinations.mixcloud = mixcloudResult;
-        process.stdout.write(`Mixcloud upload ${mixcloudResult.success ? 'completed successfully' : 'failed'}\n`);
-      } catch (err) {
-        process.stderr.write(`Mixcloud upload failed: ${err}\n`);
-        destinations.mixcloud = {
-          success: false,
-          error: (err as Error).message,
-          recoverable: true
-        };
-      }
-    } else {
-      destinations.mixcloud = { success: true, skipped: true, message: 'Destination not selected' };
-    }
-    
-    // Step 2c: Upload to SoundCloud (if selected)
-    if (selectedDestinations.includes('soundcloud')) {
-      process.stdout.write('Starting upload to SoundCloud...\n');
-      statusManager.updateStatus('processing', 'Uploading to SoundCloud', { 
-        ...destinations,
-        current_platform: 'soundcloud' 
-      });
-      
-      try {
-        const soundCloudResult = await soundCloudService.uploadFile(audioFile, soundCloudMetadata);
-        destinations.soundcloud = soundCloudResult;
-        process.stdout.write(`SoundCloud upload ${soundCloudResult.success ? 'completed successfully' : 'failed'}\n`);
-      } catch (err) {
-        process.stderr.write(`SoundCloud upload failed: ${err}\n`);
-        destinations.soundcloud = {
-          success: false,
-          error: (err as Error).message,
-          recoverable: true
-        };
-      }
-    } else {
-      destinations.soundcloud = { success: true, skipped: true, message: 'Destination not selected' };
-    }
+    // Skip Mixcloud and SoundCloud uploads for now
+    destinations.mixcloud = { success: true, skipped: true, message: 'Destination not implemented yet' };
+    destinations.soundcloud = { success: true, skipped: true, message: 'Destination not implemented yet' };
     
     // Update final status based on user role
     if (isDjUser) {
@@ -339,7 +300,8 @@ export async function processFile(fileId: string) {
       };
     }
     process.stdout.write(`Files for ${fileId} processed successfully\n`);
-    process.stdout.write(`Destination upload results: ${JSON.stringify(destinations, null, 2)}\n`);
+    // Simplified logging - just show AzuraCast result
+    process.stdout.write(`AzuraCast upload result: ${destinations.azuracast.success ? 'Success' : 'Failed'}\n`);
     
     // Add a small delay before exiting to ensure the status file is written
     await new Promise(resolve => setTimeout(resolve, 100));
