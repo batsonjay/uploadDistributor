@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../auth/AuthContext";
 import { useFilePathsContext } from "../components/FileContext";
 import DjSelector from "../components/DjSelector";
+import GenreSelector from "../components/GenreSelector";
 import styles from "./page.module.css";
 
 interface DJ {
@@ -377,19 +378,11 @@ export default function SendPage() {
               <label htmlFor="genre" className={styles.label}>
                 Genre
               </label>
-              <input
-                id="genre"
-                type="text"
-                className={styles.input}
+              <GenreSelector
                 value={genre}
-                onChange={(e) => setGenre(e.target.value)}
-                required
-                placeholder="Enter genres (comma-separated)"
+                onChange={setGenre}
                 disabled={isLoading}
               />
-              <small className={styles.inputHelp}>
-                Enter multiple genres separated by commas (e.g., "Deep House, Electronic, Melodic")
-              </small>
             </div>
             
             <div className={styles.inputGroup}>

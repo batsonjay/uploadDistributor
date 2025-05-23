@@ -1,0 +1,62 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.instruction {
+  font-family: var(--font-geist-sans);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--gray-alpha-800);
+  margin: 0;
+}
+
+.genreGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.genreChip {
+  appearance: none;
+  border: 1px solid var(--gray-alpha-200);
+  background: transparent;
+  border-radius: 16px;
+  padding: 8px 12px;
+  font-family: var(--font-geist-sans);
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.genreChip:hover:not(.disabled) {
+  border-color: var(--foreground);
+  background-color: var(--gray-alpha-100);
+}
+
+.genreChip.selected {
+  background-color: var(--foreground);
+  color: var(--background);
+  border-color: var(--foreground);
+}
+
+.genreChip.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .genreGrid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+  
+  .genreChip {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
