@@ -41,12 +41,20 @@ export class SoundCloudService {
     // Get sharing setting from platform-specific data or default to public
     const sharing = songlist.platform_specific?.soundcloud?.sharing || 'public';
     
+    // Create tag_list from genre array for SoundCloud
+    const tagList = Array.isArray(songlist.broadcast_data.genre) ? 
+      songlist.broadcast_data.genre.join(' ') : 
+      songlist.broadcast_data.genre || '';
+    
     return {
       title: songlist.broadcast_data.setTitle || 'Untitled Set',
       artist: songlist.broadcast_data.DJ || 'Unknown DJ',
       description: songlist.broadcast_data.description || 
                   `Broadcast on ${cetDate || new Date().toISOString().split('T')[0]} at ${cetTime || '00:00:00'}`,
-      genre: songlist.broadcast_data.genre || 'Radio Show',
+      genre: Array.isArray(songlist.broadcast_data.genre) ? 
+             songlist.broadcast_data.genre[0] || 'Radio Show' : 
+             songlist.broadcast_data.genre || 'Radio Show',
+      tag_list: tagList,
       sharing: sharing as 'public' | 'private',
       artwork: artworkFile
     };

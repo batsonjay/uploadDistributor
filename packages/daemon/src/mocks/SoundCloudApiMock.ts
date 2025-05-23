@@ -19,6 +19,7 @@ export interface SoundCloudMetadata {
   artist: string;
   description?: string;
   genre?: string;
+  tag_list?: string;
   sharing: 'public' | 'private';
   artwork?: string;
 }

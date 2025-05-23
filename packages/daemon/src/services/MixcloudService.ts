@@ -39,7 +39,7 @@ export class MixcloudService {
     
     // Get tags from songlist if available
     const tags = songlist.platform_specific?.mixcloud?.tags || 
-                 songlist.broadcast_data.tags || 
+                 songlist.broadcast_data.genre || 
                  [];
     
     return {

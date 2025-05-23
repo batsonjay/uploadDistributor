@@ -22,6 +22,8 @@
 
 - **Fix ts-node ESM Module Issues**: When running the daemon with `npm run dev` (using ts-node), there are issues with ESM module imports. The current workaround is to build the packages first and run the compiled JavaScript files with `npm run start`.
 
+ - **Make sure to remove Genre from AzuraCast upload**: Currently the structure sending info to AzuraCast includes it. The entire process may be wrong; at a minimum, AzuraCast doesn't accept genre. Fix all of it.
+
 ## Feature Enhancements
 
 - **Implement explicit choice of Genre fields**: The Genre choices need to be limiited to an explicit list, selected during upload:

@@ -17,7 +17,21 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf, encoding) => {
+    console.log('JSON body parser called');
+    console.log('Content-Type:', req.headers['content-type']);
+    console.log('Body length:', buf.length);
+    if (buf.length > 0) {
+      try {
+        const body = JSON.parse(buf.toString());
+        console.log('Parsed JSON body:', body);
+      } catch (e) {
+        console.error('Failed to parse JSON body for logging:', e);
+      }
+    }
+  }
+}));
 
 // Routes
 // Removed healthRoutes

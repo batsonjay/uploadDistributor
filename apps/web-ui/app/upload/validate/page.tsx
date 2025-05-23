@@ -91,7 +91,10 @@ export default function ValidatePage() {
   const isConfirming = useRef(false);
 
   const handleUpload = async () => {
-    if (!uploadData) return;
+    if (!uploadData) {
+      console.error("Upload data is missing");
+      return;
+    }
 
     // Prevent duplicate confirm requests in StrictMode
     if (isConfirming.current) {
@@ -99,30 +102,48 @@ export default function ValidatePage() {
       return;
     }
 
+    console.log("Starting upload confirmation process");
+    console.log("Upload data:", uploadData);
+    console.log("Songs to confirm:", songs);
+
     isConfirming.current = true;
     setIsLoading(true);
     setError("");
 
     try {
+      const confirmUrl = `http://localhost:3001/parse-songlist/${uploadData.fileId}/confirm/`;
+      console.log("Sending confirmation request to:", confirmUrl);
+      
       // Confirm the upload
-      const response = await authenticatedFetch(`http://localhost:3001/parse-songlist/${uploadData.fileId}/confirm/`, {
+      const response = await authenticatedFetch(confirmUrl, {
         method: "POST",
         body: JSON.stringify({ songs })
       });
 
+      console.log("Confirmation response status:", response.status);
+      
       if (!response.ok) {
-        throw new Error(await response.text());
+        const errorText = await response.text();
+        console.error("Confirmation request failed:", errorText);
+        throw new Error(errorText);
       }
+
+      const responseData = await response.json();
+      console.log("Confirmation response data:", responseData);
 
       // Clear the upload data from session storage
       sessionStorage.removeItem("uploadData");
+      console.log("Upload data cleared from session storage");
 
       // TODO: Redirect to status page once implemented
+      console.log("Redirecting to home page");
       router.push("/");
     } catch (err) {
+      console.error("Error during confirmation:", err);
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setIsLoading(false);
+      isConfirming.current = false;
     }
   };
 

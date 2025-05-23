@@ -205,3 +205,23 @@
 [mixcloud]: success [2025-05-22 13:24:51]: m, Uploaded to https://www.mixcloud.com/catalyst/m/
 [soundcloud]: success [2025-05-22 13:24:52]: m, Uploaded to https://soundcloud.com/mock-user/m
 [ParseSonglist]: info [2025-05-22 13:24:52]: 74ce0458-b51b-4783-b721-fdbb23f012fc, Worker exited with code 0
+[SonglistParser]: info [2025-05-23 13:44:59]: 2025-05-23_catalyst_Title_text.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 13:44:59]: 2025-05-23_catalyst_Title_text.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-23 13:45:01]: 9c85329a-0293-4073-9859-864e6f4aa2ee, Launching worker thread
+[ParseSonglist]: error [2025-05-23 13:45:01]: 9c85329a-0293-4073-9859-864e6f4aa2ee, Worker error: Error: Cannot find module '/Users/balearicfm/Projects/uploadDistributor/packages/daemon/dist/mocks/AzuraCastApiMock.js' imported from /Users/balearicfm/Projects/uploadDistributor/packages/daemon/dist/services/AzuraCastService.js
+[ParseSonglist]: info [2025-05-23 13:45:01]: 9c85329a-0293-4073-9859-864e6f4aa2ee, Worker exited with code 1
+[SonglistParser]: info [2025-05-23 13:46:49]: 2025-05-23_catalyst_Title_Text_2.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 13:46:49]: 2025-05-23_catalyst_Title_Text_2.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-23 13:46:50]: ec02190a-9cdd-4430-aaf5-618b41b7a723, Launching worker thread
+[ParseSonglist]: error [2025-05-23 13:46:50]: ec02190a-9cdd-4430-aaf5-618b41b7a723, Worker error: Error: Cannot find module '/Users/balearicfm/Projects/uploadDistributor/packages/daemon/dist/mocks/AzuraCastApiMock.js' imported from /Users/balearicfm/Projects/uploadDistributor/packages/daemon/dist/services/AzuraCastService.js
+[ParseSonglist]: info [2025-05-23 13:46:50]: ec02190a-9cdd-4430-aaf5-618b41b7a723, Worker exited with code 1
+[SonglistParser]: info [2025-05-23 13:51:20]: 2025-05-23_catalyst_Title_text_3.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 13:51:20]: 2025-05-23_catalyst_Title_text_3.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-23 13:56:42]: 914f0113-0e5c-42b5-9fc7-1f71ccc69c4a, Launching worker thread
+[ParseSonglist]: error [2025-05-23 13:56:42]: 914f0113-0e5c-42b5-9fc7-1f71ccc69c4a, Worker error: Error: Cannot find module '/Users/balearicfm/Projects/uploadDistributor/packages/daemon/dist/mocks/AzuraCastApiMock.js' imported from /Users/balearicfm/Projects/uploadDistributor/packages/daemon/dist/services/AzuraCastService.js
+[ParseSonglist]: info [2025-05-23 13:56:42]: 914f0113-0e5c-42b5-9fc7-1f71ccc69c4a, Worker exited with code 1
+[SonglistParser]: info [2025-05-23 13:58:15]: 2025-05-23_catalyst_Title_text_4.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 13:58:15]: 2025-05-23_catalyst_Title_text_4.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-23 13:59:05]: e1b36589-f6ba-47ec-a7d8-3aad49191497, Launching worker thread
+[ParseSonglist]: error [2025-05-23 13:59:05]: e1b36589-f6ba-47ec-a7d8-3aad49191497, Worker error: Error: Cannot find module '/Users/balearicfm/Projects/uploadDistributor/packages/daemon/dist/mocks/AzuraCastApiMock.js' imported from /Users/balearicfm/Projects/uploadDistributor/packages/daemon/dist/services/AzuraCastService.js
+[ParseSonglist]: info [2025-05-23 13:59:05]: e1b36589-f6ba-47ec-a7d8-3aad49191497, Worker exited with code 1

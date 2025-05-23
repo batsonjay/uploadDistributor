@@ -87,24 +87,35 @@ router.get('/:fileId', anyAuthenticated, async (req: express.Request, res: expre
  * @returns {object} 200 - Success status
  */
 router.post('/:fileId/confirm', anyAuthenticated, async (req: express.Request, res: express.Response) => {
+  console.log('=== CONFIRM ENDPOINT CALLED ===');
+  console.log('Request headers:', req.headers);
+  console.log('Request params:', req.params);
+  console.log('Request body:', req.body);
+  
   const fileId = req.params.fileId;
   if (!fileId) {
+    console.log('ERROR: File ID is required but not provided');
     return res.status(400).json({
       error: 'Bad request',
       message: 'File ID is required'
     });
   }
   const { songs } = req.body;
+  console.log(`Songs received: ${songs ? songs.length : 0}`);
+  
   const fileDir = path.join(receivedFilesDir, fileId);
+  console.log(`Looking for file directory: ${fileDir}`);
 
   try {
     // Check if directory exists
     if (!fs.existsSync(fileDir)) {
+      console.log(`ERROR: File directory not found: ${fileDir}`);
       return res.status(404).json({
         error: 'Not found',
         message: 'File ID not found'
       });
     }
+    console.log(`File directory found: ${fileDir}`);
 
     // Read metadata to get the normalized filename
     const metadata = JSON.parse(fs.readFileSync(path.join(fileDir, 'metadata.json'), 'utf8'));
@@ -129,29 +140,47 @@ router.post('/:fileId/confirm', anyAuthenticated, async (req: express.Request, r
     // Start worker thread to process the file
     const { Worker } = await import('node:worker_threads');
     const workerPath = new URL('../processors/file-processor-worker.js', import.meta.url).pathname;
+    console.log(`Worker path: ${workerPath}`);
 
     logDestinationStatus('ParseSonglist', LogType.INFO, fileId, `Launching worker thread`);
-    const worker = new Worker(workerPath, {
-      workerData: fileId
-    });
+    console.log(`Launching worker thread for file ID: ${fileId}`);
+    
+    try {
+      const worker = new Worker(workerPath, {
+        workerData: fileId
+      });
 
-    worker.on('message', (msg) => {
-      logDestinationStatus('ParseSonglist', LogType.INFO, fileId, `Worker completed: ${JSON.stringify(msg)}`);
-    });
+      worker.on('message', (msg) => {
+        console.log(`Worker message received: ${JSON.stringify(msg)}`);
+        logDestinationStatus('ParseSonglist', LogType.INFO, fileId, `Worker completed: ${JSON.stringify(msg)}`);
+      });
 
-    worker.on('error', (err) => {
-      logDestinationStatus('ParseSonglist', LogType.ERROR, fileId, `Worker error: ${err}`);
-    });
+      worker.on('error', (err) => {
+        console.error(`Worker error: ${err}`);
+        logDestinationStatus('ParseSonglist', LogType.ERROR, fileId, `Worker error: ${err}`);
+      });
 
-    worker.on('exit', (code) => {
-      logDestinationStatus('ParseSonglist', LogType.INFO, fileId, `Worker exited with code ${code}`);
-    });
+      worker.on('exit', (code) => {
+        console.log(`Worker exited with code ${code}`);
+        logDestinationStatus('ParseSonglist', LogType.INFO, fileId, `Worker exited with code ${code}`);
+      });
+      
+      console.log('Worker thread started successfully');
+    } catch (workerErr) {
+      console.error(`Failed to start worker thread: ${workerErr}`);
+      logDestinationStatus('ParseSonglist', LogType.ERROR, fileId, `Failed to start worker thread: ${workerErr}`);
+      return res.status(500).json({
+        error: 'Worker thread error',
+        message: `Failed to start worker thread: ${workerErr instanceof Error ? workerErr.message : String(workerErr)}`
+      });
+    }
 
     res.json({
       status: 'success',
       message: 'Songs confirmed successfully'
     });
   } catch (err) {
+    console.error(`Error in confirm endpoint: ${err}`);
     logDestinationStatus('ParseSonglist', LogType.ERROR, fileId, `Error confirming songs: ${err}`);
     res.status(500).json({
       error: 'Confirmation failed',

@@ -43,7 +43,9 @@ export class AzuraCastService {
       title: songlist.broadcast_data.setTitle || 'Untitled Set',
       artist: songlist.broadcast_data.DJ || 'Unknown DJ',
       album: `${cetDate || new Date().toISOString().split('T')[0]} Broadcast`,
-      genre: songlist.broadcast_data.genre || 'Radio Show'
+      genre: Array.isArray(songlist.broadcast_data.genre) ? 
+             songlist.broadcast_data.genre.join(', ') || 'Radio Show' : 
+             songlist.broadcast_data.genre || 'Radio Show'
     };
   }
   

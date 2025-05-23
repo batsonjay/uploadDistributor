@@ -100,10 +100,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log(`Request method: ${options.method || 'GET'}`);
     console.log(`Request headers:`, Object.fromEntries([...headersObj.entries()]));
     
-    return fetch(url, {
-      ...options,
-      headers: headersObj,
-    });
+    // Log request body if it exists
+    if (options.body) {
+      if (options.body instanceof FormData) {
+        console.log('Request body is FormData');
+      } else if (typeof options.body === 'string') {
+        try {
+          console.log('Request body (parsed):', JSON.parse(options.body));
+        } catch (e) {
+          console.log('Request body (raw):', options.body);
+        }
+      } else {
+        console.log('Request body:', options.body);
+      }
+    }
+    
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: headersObj,
+      });
+      
+      console.log(`Response status: ${response.status}`);
+      console.log(`Response headers:`, Object.fromEntries([...response.headers.entries()]));
+      
+      // Clone the response to log its body without consuming it
+      const clonedResponse = response.clone();
+      try {
+        const responseBody = await clonedResponse.text();
+        if (responseBody) {
+          try {
+            console.log('Response body (parsed):', JSON.parse(responseBody));
+          } catch (e) {
+            console.log('Response body (raw):', responseBody);
+          }
+        } else {
+          console.log('Response body is empty');
+        }
+      } catch (e) {
+        console.error('Failed to read response body for logging:', e);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Fetch error:', error);
+      throw error;
+    }
   };
 
   const validateToken = async (token: string) => {

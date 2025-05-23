@@ -1,7 +1,7 @@
 /**
  * File Processor
  * 
- * This module is forked by the daemon to process files in isolation.
+ * This module is started by the daemon to process files in isolation.
  * It handles the entire flow:
  * 1. Reading files that were received from clients
  * 2. Normalizing the songlist
@@ -147,20 +147,25 @@ export async function processFile(fileId: string) {
         process.stdout.write('No valid songs found in songlist, creating minimal songlist from metadata\n');
         songlist = createMinimalSonglist(metadata);
       } else {
-        // Convert parsed songs to SonglistData format
-        songlist = {
-          broadcast_data: {
-            broadcast_date: metadata.broadcastDate || new Date().toISOString().split('T')[0],
-            broadcast_time: metadata.broadcastTime || '00:00:00',
-            DJ: metadata.djName || 'Unknown DJ',
-            setTitle: metadata.title || 'Untitled Set',
-            genre: metadata.genre || '',
-            description: metadata.description || '',
-            artwork: metadata.artworkFilename || 'artwork.jpg'
-          },
-          track_list: parseResult.songs,
-          version: '1.0'
-        };
+      // Convert parsed songs to SonglistData format
+      // Convert genre string to array by splitting on commas and trimming whitespace
+      const genreArray = metadata.genre ? 
+        metadata.genre.split(',').map((g: string) => g.trim()).filter((g: string) => g.length > 0) : 
+        [];
+        
+      songlist = {
+        broadcast_data: {
+          broadcast_date: metadata.broadcastDate || new Date().toISOString().split('T')[0],
+          broadcast_time: metadata.broadcastTime || '00:00:00',
+          DJ: metadata.djName || 'Unknown DJ',
+          setTitle: metadata.title || 'Untitled Set',
+          genre: genreArray,
+          description: metadata.description || '',
+          artwork: metadata.artworkFilename || 'artwork.jpg'
+        },
+        track_list: parseResult.songs,
+        version: '1.0'
+      };
       }
       
       // Store the songlist
@@ -355,13 +360,18 @@ function createMinimalSonglist(metadata: any): SonglistData {
   // Get artwork filename from metadata
   const artworkFilename = metadata.artworkFilename || 'artwork.jpg';
   
+  // Convert genre string to array by splitting on commas and trimming whitespace
+  const genreArray = metadata.genre ? 
+    metadata.genre.split(',').map((g: string) => g.trim()).filter((g: string) => g.length > 0) : 
+    [];
+  
   return {
     broadcast_data: {
       broadcast_date: metadata.broadcastDate || new Date().toISOString().split('T')[0],
       broadcast_time: metadata.broadcastTime || '00:00:00',
       DJ: metadata.djName || 'Unknown DJ',
       setTitle: metadata.title || 'Untitled Set',
-      genre: metadata.genre || '',
+      genre: genreArray,
       description: metadata.description || '',
       artwork: artworkFilename
     },
