@@ -13,6 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { anyAuthenticated } from '../middleware/roleVerification.js';
 import { AuthService, USER_ROLES } from '../services/AuthService.js';
 import { logParserEvent, ParserLogType } from '../utils/LoggingUtils.js';
+import { log, logError } from '@uploadDistributor/logging';
 
 const router = express.Router();
 const authService = AuthService.getInstance();
@@ -118,9 +119,9 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
               metadata[key] = parsedMetadata[key];
             }
           }
-          console.log(`Parsed metadata: ${JSON.stringify(metadata, null, 2)}`);
+          log('D:ROUTE', 'RO:001', `Parsed metadata: ${JSON.stringify(metadata, null, 2)}`);
         } catch (err) {
-          console.error(`Error parsing metadata: ${err}`);
+          logError('D:ROUTE', 'RO:002', `Error parsing metadata: ${err}`);
         }
       } else if (name in metadata) {
         metadata[name] = val;

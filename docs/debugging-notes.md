@@ -61,6 +61,8 @@ There are several approaches to addressing this issue:
 
 4. **Use Consistent Import Styles**: Ensure that all packages in your monorepo use the same import style (either all CommonJS or all ESM).
 
+5. **Start commands with full path**: Because the AI agents often "cd" into directories when executing commands, and do not always return to the project root, any commands to build or run (from above) should always be preceded with a "cd" using full paths.
+
 ## Specific Issues Fixed
 
 In addition to the ESM module issues, we also fixed two other issues:

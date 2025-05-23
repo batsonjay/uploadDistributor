@@ -271,3 +271,6 @@
 [SonglistParser]: info [2025-05-23 20:01:43]: songlist.nml, Starting to parse songlist
 [SonglistParser]: info [2025-05-23 20:01:43]: songlist.nml, Parsing complete, found 13 songs
 [azuracast]: success [2025-05-23 20:01:48]: Tit1, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748030508241.mp3
+[SonglistParser]: info [2025-05-23 20:39:12]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-23 20:39:12]: songlist.nml, Parsing complete, found 13 songs
+[azuracast]: success [2025-05-23 20:39:16]: Tit11, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748032756188.mp3
