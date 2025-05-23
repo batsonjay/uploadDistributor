@@ -35,6 +35,7 @@ Thumbs.db
 apps/tf/*
 packages/daemon/received-files
 packages/daemon/archive/*
+packages/daemon/songlists/*
 packages/songlists/*
 
 # Optional lockfiles (if you want to ignore them)
