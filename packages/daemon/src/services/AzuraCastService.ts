@@ -8,9 +8,10 @@
  * - Error handling and retries
  */
 
+import path from 'path';
 import { AzuraCastApiMock, AzuraCastMetadata, AzuraCastUploadResponse } from '../mocks/AzuraCastApiMock.js';
 import { StatusManager } from './StatusManager.js';
-import { ErrorType } from '../utils/LoggingUtils.js';
+import { ErrorType, ParserLogType, logParserEvent } from '../utils/LoggingUtils.js';
 import { retry, RetryOptions } from '../utils/RetryUtils.js';
 import { SonglistData } from '../storage/SonglistStorage.js';
 import { utcToCet } from '../utils/TimezoneUtils.js';
@@ -53,7 +54,10 @@ export class AzuraCastService {
     audioFilePath: string, 
     metadata: AzuraCastMetadata
   ): Promise<{ success: boolean; id?: string; path?: string; error?: string }> {
-    process.stdout.write('Uploading to AzuraCast...\n');
+    logParserEvent('AzuraCastService', ParserLogType.DEBUG, 'Uploading to AzuraCast...');
+    logParserEvent('AzuraCastService', ParserLogType.DEBUG, `File being uploaded to AzuraCast: ${audioFilePath}`);
+    logParserEvent('AzuraCastService', ParserLogType.DEBUG, `Original filename: ${path.basename(audioFilePath)}`);
+    logParserEvent('AzuraCastService', ParserLogType.DEBUG, 'Metadata:', metadata);
     
     // Define retry options
     const retryOptions: RetryOptions = {
@@ -61,7 +65,8 @@ export class AzuraCastService {
       initialDelay: 1000,
       backoffFactor: 2,
       onRetry: (attempt, error, delay) => {
-        process.stdout.write(`AzuraCast operation failed, retrying in ${delay/1000}s... (${attempt}/${retryOptions.maxRetries})\n`);
+        logParserEvent('AzuraCastService', ParserLogType.DEBUG, 
+          `AzuraCast operation failed, retrying in ${delay/1000}s... (${attempt}/${retryOptions.maxRetries})`);
       }
     };
     
@@ -120,6 +125,16 @@ export class AzuraCastService {
         metadata.title,
         `Uploaded to ${result.path}`
       );
+      
+      // Log the final result with path information
+      logParserEvent('AzuraCastService', ParserLogType.DEBUG, 'AzuraCast upload completed successfully:');
+      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `  - Original file: ${path.basename(audioFilePath)}`);
+      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `  - File ID: ${result.id}`);
+      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `  - Destination path: ${result.path}`);
+      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `  - Destination filename: ${path.basename(result.path || '')}`);
+      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `  - Title: ${metadata.title}`);
+      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `  - Artist: ${metadata.artist}`);
+      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `  - Genre: ${metadata.genre || 'Not specified'}`);
       
       return {
         success: true,

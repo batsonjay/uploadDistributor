@@ -27,8 +27,7 @@ const testSonglist: SonglistData = {
     broadcast_date: '2025-05-11',
     broadcast_time: '18:00:00',
     DJ: 'Test DJ',
-    setTitle: 'Test Episode Title',
-    duration: '01:00:00'
+    setTitle: 'Test Episode Title'
   },
   track_list: [
     {

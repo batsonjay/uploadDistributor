@@ -24,6 +24,10 @@
 
 ## Feature Enhancements
 
+- **Implement explicit choice of Genre fields**: The Genre choices need to be limiited to an explicit list, selected during upload:
+  - Add list with multiple choices to web-ui
+  - Other as needed
+
 - **Implement Multi-Stage Upload with Progress for Large MP3 Files**: The current upload process sends all files (MP3, songlist, artwork) in a single request, which is problematic for large MP3 files (60-120MB). Implement a multi-stage upload process:
   - Stage 1: Upload metadata, songlist file, and artwork only
   - Stage 2: Parse and validate the songlist (allowing title/artist swapping)

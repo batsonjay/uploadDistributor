@@ -26,7 +26,6 @@ Code will eventually need written to normalize all these into the JSON format to
   - `broadcast_time` (in `HH:MM:SS` format)
   - `DJ`
   - `setTitle`
-  - `duration`
   - `genre` (from the approved list of genres, see below)
   - `tags` (array of keywords related to the content)
   - `artwork` (path or URL to the cover image)
@@ -76,7 +75,6 @@ This restricted list ensures compatibility with Mixcloud's genre categorization 
     "broadcast_time": "20:00:00",
     "DJ": "Test DJ",
     "setTitle": "Deep House Sessions Vol. 42",
-    "duration": "02:00:00",
     "genre": "Deep House",
     "tags": ["electronic", "house", "deep", "melodic"],
     "artwork": "artwork.jpg",

@@ -53,8 +53,7 @@ export class FileManager {
         broadcast_date: currentDate,
         broadcast_time: currentTime || '00:00:00',
         DJ: 'Unknown_DJ',
-        setTitle: 'Untitled_Set',
-        duration: '01:00:00'
+        setTitle: 'Untitled_Set'
       };
     }
     

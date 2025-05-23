@@ -21,7 +21,6 @@ export interface BroadcastData {
   broadcast_time: string;
   DJ: string;
   setTitle: string;
-  duration: string;
   genre?: string;
   tags?: string[];
   artwork?: string;

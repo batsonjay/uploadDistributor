@@ -33,7 +33,6 @@ This document outlines the proposed implementation steps for the Upload Distribu
       "broadcast_time": "20:00:00",
       "DJ": "DJ Example",
       "setTitle": "Saturday Night Mix",
-      "duration": "02:00:00",
       "genre": "Deep House",
       "tags": ["electronic", "house", "deep", "melodic"],
       "artwork": "/path/to/cover-image.jpg",

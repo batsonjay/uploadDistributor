@@ -156,3 +156,52 @@
 [mixcloud]: success [2025-05-22 02:27:23]: h, Uploaded to https://www.mixcloud.com/catalyst/h/
 [soundcloud]: success [2025-05-22 02:27:24]: h, Uploaded to https://soundcloud.com/mock-user/h
 [ParseSonglist]: info [2025-05-22 02:27:24]: cf117ce1-1da2-4c0f-bf4c-e63fbec73e18, Worker exited with code 0
+[SonglistParser]: info [2025-05-22 12:29:02]: 2025-05-22_catalyst_h.docx, Starting to parse songlist
+[SonglistParser]: info [2025-05-22 12:29:02]: 2025-05-22_catalyst_h.docx, Parsing complete, found 7 songs
+[ParseSonglist]: info [2025-05-22 12:29:07]: 296bdf7d-afbb-4f2c-9163-1dde16120abc, Launching worker thread
+[azuracast]: success [2025-05-22 12:29:09]: h, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747916948598.mp3
+[mixcloud]: success [2025-05-22 12:29:09]: h, Uploaded to https://www.mixcloud.com/catalyst/h/
+[soundcloud]: success [2025-05-22 12:29:10]: h, Uploaded to https://soundcloud.com/mock-user/h
+[ParseSonglist]: info [2025-05-22 12:29:11]: 296bdf7d-afbb-4f2c-9163-1dde16120abc, Worker exited with code 0
+[SonglistParser]: info [2025-05-22 12:30:48]: 2025-05-22_catalyst_i.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-22 12:30:48]: 2025-05-22_catalyst_i.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-22 12:30:53]: 8dc46155-8fa4-4280-ac9b-14ed62d7b158, Launching worker thread
+[azuracast]: success [2025-05-22 12:30:54]: i, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747917053675.mp3
+[mixcloud]: success [2025-05-22 12:30:54]: i, Uploaded to https://www.mixcloud.com/catalyst/i/
+[soundcloud]: success [2025-05-22 12:30:55]: i, Uploaded to https://soundcloud.com/mock-user/i
+[ParseSonglist]: info [2025-05-22 12:30:56]: 8dc46155-8fa4-4280-ac9b-14ed62d7b158, Worker exited with code 0
+[SonglistParser]: info [2025-05-22 13:02:50]: 2025-05-22_catalyst_j.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-22 13:02:50]: 2025-05-22_catalyst_j.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-22 13:02:52]: d8ea378a-ce3d-46a2-ae4f-746df6308237, Launching worker thread
+[azuracast]: success [2025-05-22 13:02:53]: j, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747918973371.mp3
+[mixcloud]: success [2025-05-22 13:02:54]: j, Uploaded to https://www.mixcloud.com/catalyst/j/
+[soundcloud]: success [2025-05-22 13:02:55]: j, Uploaded to https://soundcloud.com/mock-user/j
+[ParseSonglist]: info [2025-05-22 13:02:55]: d8ea378a-ce3d-46a2-ae4f-746df6308237, Worker exited with code 0
+[SonglistParser]: info [2025-05-22 13:08:45]: 2025-05-22_catalyst_j.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-22 13:08:45]: 2025-05-22_catalyst_j.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-22 13:08:47]: 83fcee52-17bc-427a-a70b-bff1770dc346, Launching worker thread
+[azuracast]: success [2025-05-22 13:08:48]: j, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747919327934.mp3
+[mixcloud]: success [2025-05-22 13:08:49]: j, Uploaded to https://www.mixcloud.com/catalyst/j/
+[soundcloud]: success [2025-05-22 13:08:50]: j, Uploaded to https://soundcloud.com/mock-user/j
+[ParseSonglist]: info [2025-05-22 13:08:50]: 83fcee52-17bc-427a-a70b-bff1770dc346, Worker exited with code 0
+[SonglistParser]: info [2025-05-22 13:13:09]: 2025-05-21_catalyst_k.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-22 13:13:09]: 2025-05-21_catalyst_k.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-22 13:13:10]: fbec96f6-a51a-4891-967f-8314c58b5936, Launching worker thread
+[azuracast]: success [2025-05-22 13:13:11]: k, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747919591458.mp3
+[mixcloud]: success [2025-05-22 13:13:12]: k, Uploaded to https://www.mixcloud.com/catalyst/k/
+[soundcloud]: success [2025-05-22 13:13:13]: k, Uploaded to https://soundcloud.com/mock-user/k
+[ParseSonglist]: info [2025-05-22 13:13:13]: fbec96f6-a51a-4891-967f-8314c58b5936, Worker exited with code 0
+[SonglistParser]: info [2025-05-22 13:19:03]: 2025-05-20_catalyst_l.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-22 13:19:03]: 2025-05-20_catalyst_l.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-22 13:19:04]: 846101ea-3a95-4f03-91cb-26cd8801a47b, Launching worker thread
+[azuracast]: success [2025-05-22 13:19:05]: l, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747919945578.mp3
+[mixcloud]: success [2025-05-22 13:19:06]: l, Uploaded to https://www.mixcloud.com/catalyst/l/
+[soundcloud]: success [2025-05-22 13:19:07]: l, Uploaded to https://soundcloud.com/mock-user/l
+[ParseSonglist]: info [2025-05-22 13:19:08]: 846101ea-3a95-4f03-91cb-26cd8801a47b, Worker exited with code 0
+[SonglistParser]: info [2025-05-22 13:24:48]: 2025-05-19_catalyst_m.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-22 13:24:48]: 2025-05-19_catalyst_m.nml, Parsing complete, found 13 songs
+[ParseSonglist]: info [2025-05-22 13:24:49]: 74ce0458-b51b-4783-b721-fdbb23f012fc, Launching worker thread
+[azuracast]: success [2025-05-22 13:24:50]: m, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1747920290524.mp3
+[mixcloud]: success [2025-05-22 13:24:51]: m, Uploaded to https://www.mixcloud.com/catalyst/m/
+[soundcloud]: success [2025-05-22 13:24:52]: m, Uploaded to https://soundcloud.com/mock-user/m
+[ParseSonglist]: info [2025-05-22 13:24:52]: 74ce0458-b51b-4783-b721-fdbb23f012fc, Worker exited with code 0

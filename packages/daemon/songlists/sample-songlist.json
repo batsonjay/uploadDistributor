@@ -4,7 +4,6 @@
     "broadcast_time": "20:00:00",
     "DJ": "Test DJ",
     "setTitle": "Test Mix",
-    "duration": "01:00:00",
     "genre": "Deep House",
     "tags": ["electronic", "house", "deep", "melodic"],
     "artwork": "/path/to/cover-image.jpg",
