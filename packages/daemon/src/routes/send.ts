@@ -14,6 +14,7 @@ import { anyAuthenticated } from '../middleware/roleVerification.js';
 import { AuthService, USER_ROLES } from '../services/AuthService.js';
 import { logParserEvent, ParserLogType } from '../utils/LoggingUtils.js';
 import { log, logError } from '@uploadDistributor/logging';
+import { FileManager } from '../services/FileManager.js';
 
 const router = express.Router();
 const authService = AuthService.getInstance();
@@ -323,6 +324,83 @@ router.get('/status/:fileId', anyAuthenticated, async (req: express.Request, res
     res.status(500).json({
       error: 'Status retrieval failed',
       message: err instanceof Error ? err.message : 'Failed to get status'
+    });
+  }
+});
+
+/**
+ * Check if a file has been archived and get its status
+ * @route GET /send/archive-status/:fileId
+ * @returns {object} 200 - Archive status information
+ */
+router.get('/archive-status/:fileId', anyAuthenticated, async (req: express.Request, res: express.Response) => {
+  const fileId = req.params.fileId;
+  if (!fileId) {
+    return res.status(400).json({
+      error: 'Bad request',
+      message: 'File ID is required'
+    });
+  }
+
+  try {
+    // Create FileManager instance
+    const fileManager = new FileManager();
+    
+    // Get the archive directory
+    const archiveDir = fileManager.getArchiveDir();
+    
+    // Search for status files in the archive that contain this fileId
+    // This is a simple implementation - could be optimized for production
+    let found = false;
+    let archiveStatus = null;
+    
+    // Get the current year for a reasonable starting point
+    const currentYear = new Date().getFullYear().toString();
+    const yearDir = path.join(archiveDir, currentYear);
+    
+    if (fs.existsSync(yearDir)) {
+      // Read all files in the year directory
+      const files = fs.readdirSync(yearDir);
+      
+      // Look for status files
+      for (const file of files) {
+        if (file.endsWith('_status.json')) {
+          const statusPath = path.join(yearDir, file);
+          try {
+            const statusContent = fs.readFileSync(statusPath, 'utf8');
+            const statusData = JSON.parse(statusContent);
+            
+            // Check if this status file contains our fileId
+            if (statusData.fileId === fileId) {
+              found = true;
+              archiveStatus = statusData;
+              break;
+            }
+          } catch (err) {
+            // Skip files that can't be parsed
+            continue;
+          }
+        }
+      }
+    }
+    
+    if (found && archiveStatus) {
+      return res.json({
+        success: true,
+        archived: true,
+        status: archiveStatus
+      });
+    } else {
+      return res.json({
+        success: true,
+        archived: false
+      });
+    }
+  } catch (err) {
+    logParserEvent('SendRoutes', ParserLogType.ERROR, fileId, `Error checking archive status: ${err}`);
+    return res.status(500).json({
+      error: 'Archive status check failed',
+      message: err instanceof Error ? err.message : 'Failed to check archive status'
     });
   }
 });

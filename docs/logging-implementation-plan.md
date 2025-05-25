@@ -1,181 +1,172 @@
 # Unified Logging Implementation Plan
 
-This document outlines the plan for implementing a unified logging approach across the Upload Distributor project, with a focus on standardizing parser logging and preparing for destination upload development.
+This document outlines the plan for implementing a unified logging approach across the Upload Distributor project, focusing on migrating to the new `@uploadDistributor/logging` package and standardizing logging practices throughout the codebase.
 
 ## Goals
 
-1. Reduce console output verbosity while maintaining useful information
-2. Standardize logging across all parsers
-3. Prepare logging infrastructure for destination upload development
-4. Implement environment-based logging control
+1. Standardize logging across all components using the new logging system
+2. Improve debugging capabilities with categorized and identifiable log messages
+3. Reduce console output verbosity while maintaining useful information
+4. Implement consistent error logging with appropriate context
+5. Prepare for future enhancements like structured logging and log aggregation
 
-## Implementation Strategy
+## Current Issues
 
-### 1. Extend LoggingUtils Module
+Based on analysis of the current codebase and log output:
 
-Extend the existing `LoggingUtils.ts` module to include parser-specific logging functions:
+- Inconsistent log formats (some with timestamps, some without)
+- Excessive logging of routine operations
+- Lack of categorization in many log messages
+- Mix of logging styles making it difficult to trace execution flow
+- Direct use of console.log/error in many places
+- Two parallel logging systems (LoggingUtils.ts and @uploadDistributor/logging)
 
-```typescript
-// Add to LoggingUtils.ts
-export enum ParserLogType {
-  INFO = 'info',
-  WARNING = 'warning',
-  ERROR = 'error',
-  DEBUG = 'debug'
-}
+## Implementation Strategy for Daemon
 
-export function logParserEvent(
-  parserName: string,
-  eventType: ParserLogType,
-  message: string,
-  details?: any
-): void {
-  const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
-  
-  // Only log to console based on level and environment setting
-  const logLevel = process.env.LOG_LEVEL || 'info';
-  
-  // Determine if we should log based on level
-  const shouldLog = (
-    (eventType === ParserLogType.ERROR) ||
-    (eventType === ParserLogType.WARNING && logLevel !== 'error') ||
-    (eventType === ParserLogType.INFO && ['info', 'debug'].includes(logLevel)) ||
-    (eventType === ParserLogType.DEBUG && logLevel === 'debug')
-  );
-  
-  if (shouldLog) {
-    switch (eventType) {
-      case ParserLogType.ERROR:
-        console.error(`[${parserName}] [${timestamp}]: ${message}`);
-        break;
-      case ParserLogType.WARNING:
-        console.warn(`[${parserName}] [${timestamp}]: ${message}`);
-        break;
-      case ParserLogType.INFO:
-      case ParserLogType.DEBUG:
-        console.log(`[${parserName}] [${timestamp}]: ${message}`);
-        break;
-    }
-  }
-  
-  // Optionally log to file as well
-  if (process.env.LOG_TO_FILE === 'true') {
-    const parserLogFile = path.join(logsDir, 'parser-events.log');
-    const logEntry = `[${parserName}] [${eventType}] [${timestamp}]: ${message}${details ? '\nDetails: ' + JSON.stringify(details, null, 2) : ''}\n`;
-    fs.appendFileSync(parserLogFile, logEntry);
-  }
-}
-```
+We'll organize the work into logical buckets for a systematic approach:
 
-### 2. Update Parser Implementations
+### Bucket 1: Core Logging Infrastructure
 
-Refactor all parsers to use the new logging utility:
+1. **Enhance Logging Package (Already Done)**
+   - ✅ Created `@uploadDistributor/logging` package with categorized logging
+   - ✅ Implemented log and logError functions with category filtering
+   - ✅ Defined daemon, client, and shared categories
 
-#### M3U8Parser
+2. **Deprecate LoggingUtils.ts**
+   - Instead of adapting it, we'll gradually replace all its usages with direct calls to the new logging system
+   - Eventually remove LoggingUtils.ts once all references are updated
 
-```typescript
-// Replace all console.log/error calls with:
-import { logParserEvent, ParserLogType } from '../../daemon/src/utils/LoggingUtils.js';
+### Bucket 2: Server and Route Handler Logging
 
-// At start of parse method:
-logParserEvent('M3U8Parser', ParserLogType.INFO, `Starting to parse file: ${path.basename(filePath)}`);
+1. **Update index.ts**
+   - Replace direct console.log calls with categorized logging
+   - Use 'D:SYSTEM' for server startup/shutdown
+   - Use 'D:ROUTE' for request/response logging
 
-// For detailed parsing steps (currently verbose console.log):
-logParserEvent('M3U8Parser', ParserLogType.DEBUG, `Read file content, length: ${content.length}`);
-logParserEvent('M3U8Parser', ParserLogType.DEBUG, `Split into ${lines.length} lines`);
+2. **Update Route Handlers**
+   - Update auth.ts, send.ts, receive.ts, etc.
+   - Replace logParserEvent calls with new logging system
+   - Use consistent message IDs for each route
 
-// For warnings:
-logParserEvent('M3U8Parser', ParserLogType.WARNING, `No separator found, using full text as title`);
+### Bucket 3: Middleware and Service Logging
 
-// For errors:
-logParserEvent('M3U8Parser', ParserLogType.ERROR, `Error parsing M3U8 file: ${error}`);
+1. **Update Middleware**
+   - Update roleVerification.js and other middleware
+   - Use 'D:AUTH' category for authentication logs
 
-// At end of parse method:
-logParserEvent('M3U8Parser', ParserLogType.INFO, `Completed parsing, found ${songs.length} songs`);
-```
+2. **Update Services**
+   - Update AuthService, AzuraCastService, etc.
+   - Use 'D:API' for external API calls
+   - Use 'D:FILE' for file operations
 
-#### Apply similar changes to other parsers:
-- NMLParser
-- TXTParser
-- RTFLibParser
-- TextractParser
+### Bucket 4: Processor and Worker Logging
 
-### 3. Add Environment Configuration
+1. **Update File Processor**
+   - Replace process.stdout/stderr with categorized logging
+   - Use 'D:WORKER' for worker thread operations
+   - Use 'D:FILE' for file operations
 
-Update the project's environment configuration to include logging settings:
+2. **Update Parser Services**
+   - Update SonglistParserService
+   - Use 'D:PARSER' for parsing operations
 
-```
-# Add to .env.example
-# Logging configuration
-LOG_LEVEL=info      # error, warning, info, debug
-LOG_TO_FILE=false   # true, false
-```
+### Bucket 5: Testing and Validation
 
-Add documentation for these settings in the README or a dedicated logging document.
+1. **Create Logging Test Cases**
+   - Verify all log categories work as expected
+   - Test error handling paths
+   - Validate log format consistency
 
-### 4. Prepare for Destination Upload Logging
+2. **Run Integration Tests**
+   - Verify logging during normal operation
+   - Test logging during error conditions
+   - Ensure no excessive logging
 
-Extend the existing destination logging functions to include more granular status updates:
+## Implementation Strategy for Web UI
 
-```typescript
-// Add to LoggingUtils.ts
-export enum UploadStage {
-  INIT = 'initialization',
-  METADATA = 'metadata',
-  UPLOAD = 'upload',
-  FINALIZE = 'finalization'
-}
+After completing the daemon logging updates, we'll extend the standardized logging to the web UI:
 
-export function logUploadProgress(
-  serviceName: string,
-  title: string,
-  stage: UploadStage,
-  progress: number,
-  message: string
-): void {
-  const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
-  const logEntry = `[${serviceName}]: progress [${timestamp}]: ${title}, ${stage}, ${Math.round(progress * 100)}%, ${message}\n`;
-  
-  // Log to console if not in production
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(logEntry.trim());
-  }
-  
-  // Always log to file
-  fs.appendFileSync(successErrorLogFile, logEntry);
-}
-```
+### Bucket 6: Web UI Core Logging
 
-### 5. Implementation Phases
+1. **Client-Side Logging Setup**
+   - Configure client categories in the logging package
+   - Implement browser-appropriate logging mechanisms
+   - Add development vs. production logging modes
 
-#### Phase 1: LoggingUtils Extension
-1. Update LoggingUtils.ts with new parser logging functions
-2. Add environment variable handling for log levels
-3. Update .env.example with logging configuration options
+2. **Error Boundary Logging**
+   - Add structured error logging for React error boundaries
+   - Implement consistent error reporting
 
-#### Phase 2: Parser Refactoring
-1. Refactor M3U8Parser to use the new logging utilities
-2. Refactor NMLParser to use the new logging utilities
-3. Refactor TXTParser to use the new logging utilities
-4. Refactor RTFLibParser to use the new logging utilities
-5. Refactor TextractParser to use the new logging utilities
+### Bucket 7: Component and Page Logging
 
-#### Phase 3: Destination Upload Logging
-1. Implement upload progress logging functions
-2. Add logging points in destination service implementations
-3. Test with mock uploads to verify logging behavior
+1. **Auth Flow Logging**
+   - Add logging to authentication flows
+   - Track login/logout events and errors
+
+2. **Form Submission Logging**
+   - Log form validation and submission events
+   - Track user interactions with appropriate privacy considerations
+
+3. **API Interaction Logging**
+   - Log requests to the daemon
+   - Track response times and errors
+
+### Bucket 8: State Management Logging
+
+1. **Context API Logging**
+   - Add logging to context providers and consumers
+   - Track state changes with appropriate detail level
+
+2. **Form State Logging**
+   - Log form state transitions
+   - Track validation errors
+
+### Bucket 9: Web UI Testing and Validation
+
+1. **Client-Side Log Testing**
+   - Verify client-side logging works as expected
+   - Test error scenarios
+
+2. **End-to-End Testing**
+   - Validate logging during user flows
+   - Ensure appropriate logging in production builds
+
+## Implementation Approach
+
+1. **Start with Core Infrastructure** (Bucket 1)
+   - This provides the foundation for all other changes
+
+2. **Tackle Server and Middleware** (Bucket 2)
+   - These affect all requests and provide the execution context
+
+3. **Update Route Handlers** (Bucket 3)
+   - Focus on one route at a time, starting with most critical paths
+
+4. **Refactor Services and Processors** (Bucket 4)
+   - These contain the business logic and most complex operations
+
+5. **Test and Validate Daemon Changes** (Bucket 5)
+   - Ensure all daemon changes work as expected
+
+6. **Implement Web UI Logging** (Buckets 6-9)
+   - After daemon logging is stable
 
 ## Expected Outcomes
 
-1. **Reduced Console Noise**: By default, only INFO level and above will be logged to console
-2. **Consistent Format**: All logs will follow the same format with timestamps and context
-3. **Flexible Verbosity**: Developers can increase log detail during development without code changes
-4. **File Logging Option**: Detailed logs can be captured to files for later analysis
-5. **Prepared for Uploads**: Logging infrastructure ready for destination upload development
+1. **Improved Debugging**: Categorized logs make it easier to trace execution flow
+2. **Consistent Format**: All logs follow the same format with categories and IDs
+3. **Appropriate Verbosity**: Different log levels for different environments
+4. **Better Error Context**: Errors include relevant context for faster debugging
+5. **Future-Ready**: Foundation for structured logging and log aggregation
 
-## Future Considerations
+## Previous Logging System (Historical Reference)
 
-1. **Structured Logging**: Consider outputting logs in JSON format for better parsing
-2. **Log Rotation**: Implement log rotation for production deployments
-3. **Centralized Logging**: Prepare for integration with centralized logging systems
-4. **Performance Metrics**: Add timing information to track parser and upload performance
+The previous logging approach focused primarily on parser-specific logging and destination upload tracking. It included:
+
+- `LoggingUtils.ts` with functions like `logParserEvent`, `logDestinationStatus`, and `logDetailedError`
+- Environment variables for controlling log levels (LOG_LEVEL, LOG_TO_FILE)
+- Timestamp-based logging with different formats for different components
+- File-based logging for specific operations (parser events, destination status)
+- Enum-based log types (ParserLogType, LogType, ErrorType)
+
+This approach had limitations in consistency and scalability, which the new logging system addresses through categorization, standardized message IDs, and a unified interface across all application components.

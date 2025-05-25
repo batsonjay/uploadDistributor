@@ -8,9 +8,9 @@
 // Log categories configuration - only these categories will be shown in the console
 export const LogConfig = {
   // Daemon categories
-  'D:AUTH': true,    // Authentication-related logs
-  'D:FILE': true,    // File operations
-  'D:API': true,     // External API interactions
+  'D:AUTH ': true,   // Authentication-related logs
+  'D:FILE ': true,   // File operations
+  'D:API  ': true,   // External API interactions
   'D:ROUTE': true,   // HTTP route handling
   'D:PARSER': true,  // Songlist parsing operations
   'D:WORKER': true,  // Worker thread operations
@@ -18,10 +18,10 @@ export const LogConfig = {
   'D:STATUS': true,  // Status updates and tracking
   
   // Client categories
-  'C:AUTH': true,    // Authentication flows
-  'C:FORM': true,    // Form submissions and validations
-  'C:API': true,     // API requests to the daemon
-  'C:NAV': true,     // Navigation and routing
+  'C:AUTH ': true,   // Authentication flows
+  'C:FORM ': true,   // Form submissions and validations
+  'C:API  ': true,   // API requests to the daemon
+  'C:NAV  ': true,   // Navigation and routing
   'C:STATE': true,   // State management
   
   // Shared categories
