@@ -12,6 +12,7 @@ export const LogConfig = {
   'D:FILE ': true,   // File operations
   'D:API  ': true,   // External API interactions
   'D:ROUTE': true,   // HTTP route handling
+  'D:RTEDB': false,   // HTTP route handling - deeper debugging
   'D:PARSER': true,  // Songlist parsing operations
   'D:WORKER': true,  // Worker thread operations
   'D:SYSTEM': true,  // System-level operations

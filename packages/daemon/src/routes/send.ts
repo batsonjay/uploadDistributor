@@ -120,9 +120,9 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
               metadata[key] = parsedMetadata[key];
             }
           }
-          log('D:ROUTE', 'RO:001', `Parsed metadata: ${JSON.stringify(metadata, null, 2)}`);
+          log('D:RTEDB', 'RO:001', `Parsed metadata: ${JSON.stringify(metadata, null, 2)}`);
         } catch (err) {
-          logError('D:ROUTE', 'RO:002', `Error parsing metadata: ${err}`);
+          logError('D:RTEDB', 'RO:002', `Error parsing metadata: ${err}`);
         }
       } else if (name in metadata) {
         metadata[name] = val;

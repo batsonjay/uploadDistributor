@@ -8,6 +8,7 @@ import { default as authRoutes } from './routes/auth.js';
 import { parseSonglistRoutes } from './routes/parse-songlist.js';
 import { default as uploadRoutes } from './routes/upload.js';
 import { sendRoutes } from './routes/send.js';
+import { log, logError } from '@uploadDistributor/logging';
 
 // Load environment variables
 dotenv.config();
@@ -20,15 +21,15 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json({
   verify: (req, res, buf, encoding) => {
-    console.log('JSON body parser called');
-    console.log('Content-Type:', req.headers['content-type']);
-    console.log('Body length:', buf.length);
+    log('D:ROUTE', 'RO:010', 'JSON body parser called');
+    log('D:ROUTE', 'RO:011', `Content-Type: ${req.headers['content-type']}`);
+    log('D:ROUTE', 'RO:012', `Body length: ${buf.length}`);
     if (buf.length > 0) {
       try {
         const body = JSON.parse(buf.toString());
-        console.log('Parsed JSON body:', body);
+        log('D:ROUTE', 'RO:013', `Parsed JSON body:`, body);
       } catch (e) {
-        console.error('Failed to parse JSON body for logging:', e);
+        logError('D:ROUTE', 'RO:014', 'Failed to parse JSON body for logging:', e);
       }
     }
   }
@@ -50,17 +51,17 @@ app.get('/health', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Daemon running on http://localhost:${PORT}`);
+  log('D:SYSTEM', 'SY:001', `Daemon running on http://localhost:${PORT}`);
 });
 
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+  log('D:SYSTEM', 'SY:002', 'SIGTERM signal received: closing HTTP server');
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.log('SIGINT signal received: closing HTTP server');
+  log('D:SYSTEM', 'SY:003', 'SIGINT signal received: closing HTTP server');
   process.exit(0);
 });
 
