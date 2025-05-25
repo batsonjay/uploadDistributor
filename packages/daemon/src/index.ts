@@ -21,15 +21,15 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json({
   verify: (req, res, buf, encoding) => {
-    log('D:ROUTE', 'RO:010', 'JSON body parser called');
-    log('D:ROUTE', 'RO:011', `Content-Type: ${req.headers['content-type']}`);
-    log('D:ROUTE', 'RO:012', `Body length: ${buf.length}`);
+    log('D:ROUTE ', 'RO:010', 'JSON body parser called');
+    log('D:ROUTE ', 'RO:011', `Content-Type: ${req.headers['content-type']}`);
+    log('D:ROUTE ', 'RO:012', `Body length: ${buf.length}`);
     if (buf.length > 0) {
       try {
         const body = JSON.parse(buf.toString());
-        log('D:ROUTE', 'RO:013', `Parsed JSON body:`, body);
+        log('D:RTEDB ', 'RO:013', `Parsed JSON body:`, body);
       } catch (e) {
-        logError('D:ROUTE', 'RO:014', 'Failed to parse JSON body for logging:', e);
+        logError('D:ROUTE ', 'RO:014', 'Failed to parse JSON body for logging:', e);
       }
     }
   }

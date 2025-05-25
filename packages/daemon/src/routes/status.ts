@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as glob from 'glob';
 import { anyAuthenticated } from '../middleware/roleVerification.js';
 import { FileManager } from '../services/FileManager.js';
+import { log, logError } from '@uploadDistributor/logging';
 
 const router = express.Router();
 
@@ -38,16 +39,16 @@ router.get('/:fileId', anyAuthenticated, (req: Request, res: Response) => {
   
   // If the original directory doesn't exist, check if it's been archived
   if (!fs.existsSync(fileDir)) {
-    console.log(`Original file directory not found: ${fileDir}, checking archive...`);
+    log('D:STATUS', 'ST:001', `Original file directory not found: ${fileDir}, checking archive...`);
     
     // Search for status file in archive directory with the fileId in the content
     try {
       // Use glob to find all status files in the archive directory
       const globPattern = path.join(archiveDir, '**', '*_status.json');
-      console.log(`Searching for archived status files with pattern: ${globPattern}`);
+      log('D:STATDB', 'ST:002', `Searching for archived status files with pattern: ${globPattern}`);
       
       const statusFiles = glob.sync(globPattern);
-      console.log(`Found ${statusFiles.length} status files in archive`);
+      log('D:STATDB', 'ST:003', `Found ${statusFiles.length} status files in archive`);
       
       // Track all matching status files by timestamp
       const matchingStatusFiles: { file: string; timestamp: string }[] = [];
@@ -55,11 +56,11 @@ router.get('/:fileId', anyAuthenticated, (req: Request, res: Response) => {
       // Check each status file for the fileId
       for (const file of statusFiles) {
         try {
-          console.log(`Checking archive status file: ${file}`);
+          log('D:STATDB', 'ST:004', `Checking archive status file: ${file}`);
           const content = fs.readFileSync(file, 'utf8');
           const status = JSON.parse(content);
           
-          console.log(`Status file contains fileId: ${status.fileId}, looking for: ${fileId}`);
+          log('D:STATDB', 'ST:005', `Status file contains fileId: ${status.fileId}, looking for: ${fileId}`);
           
           // If this status file contains our fileId, add it to matching files
           if (status.fileId === fileId && status.timestamp) {
@@ -67,10 +68,10 @@ router.get('/:fileId', anyAuthenticated, (req: Request, res: Response) => {
               file,
               timestamp: status.timestamp
             });
-            console.log(`Found matching archived status file: ${file} with timestamp ${status.timestamp}`);
+            log('D:STATUS', 'ST:006', `Found matching archived status file: ${file} with timestamp ${status.timestamp}`);
           }
         } catch (err) {
-          console.error(`Error reading archive status file ${file}:`, err);
+          logError('ERROR   ', 'ST:007', `Error reading archive status file ${file}:`, err);
         }
       }
       
@@ -86,7 +87,7 @@ router.get('/:fileId', anyAuthenticated, (req: Request, res: Response) => {
         const mostRecentMatch = matchingStatusFiles[0]!;
         archiveStatusFile = mostRecentMatch.file;
         isArchived = true;
-        console.log(`Using most recent archived status file: ${archiveStatusFile} with timestamp ${mostRecentMatch.timestamp}`);
+        log('D:STATUS', 'ST:008', `Using most recent archived status file: ${archiveStatusFile} with timestamp ${mostRecentMatch.timestamp}`);
         
         // Check if the timestamp is recent (within the last hour)
         const timestampDate = new Date(mostRecentMatch.timestamp);
@@ -94,18 +95,18 @@ router.get('/:fileId', anyAuthenticated, (req: Request, res: Response) => {
         const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
         
         if (timestampDate < oneHourAgo) {
-          console.log(`Warning: Using archived status file with old timestamp: ${mostRecentMatch.timestamp}`);
+          log('D:STATDB', 'ST:009', `Warning: Using archived status file with old timestamp: ${mostRecentMatch.timestamp}`);
         }
       } else {
         // If we didn't find the file in the archive, return 404
-        console.log(`File not found in archive: ${fileId}`);
+        log('D:STATUS', 'ST:010', `File not found in archive: ${fileId}`);
         return res.status(404).json({
           error: 'File not found',
           message: `No file found with ID ${fileId}`
         });
       }
     } catch (err) {
-      console.error('Error searching archive directory:', err);
+      logError('ERROR   ', 'ST:011', 'Error searching archive directory:', err);
       return res.status(500).json({
         error: 'Internal server error',
         message: 'Could not search archive directory'
@@ -122,8 +123,8 @@ router.get('/:fileId', anyAuthenticated, (req: Request, res: Response) => {
       // If the file is archived, we don't need to get additional metadata or file info
       // as it should already be in the status object
       if (isArchived) {
-        console.log(`Returning archived status for file: ${fileId}`);
-        console.log(`Archive path: ${path.dirname(archiveStatusFile)}`);
+        log('D:STATUS', 'ST:012', `Returning archived status for file: ${fileId}`);
+        log('D:STATDB', 'ST:013', `Archive path: ${path.dirname(archiveStatusFile)}`);
         
         // Add archive information to the response
         return res.json({
@@ -141,7 +142,7 @@ router.get('/:fileId', anyAuthenticated, (req: Request, res: Response) => {
         try {
           metadata = JSON.parse(fs.readFileSync(metadataFile, 'utf8'));
         } catch (err) {
-          console.error('Error reading metadata file:', err);
+          logError('ERROR   ', 'ST:014', 'Error reading metadata file:', err);
         }
       }
       
@@ -181,7 +182,7 @@ router.get('/:fileId', anyAuthenticated, (req: Request, res: Response) => {
         files
       });
     } catch (err) {
-      console.error('Error reading status file:', err);
+      logError('ERROR   ', 'ST:015', 'Error reading status file:', err);
       return res.status(500).json({
         error: 'Internal server error',
         message: 'Could not read upload status'

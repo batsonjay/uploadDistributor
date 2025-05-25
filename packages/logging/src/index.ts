@@ -8,27 +8,32 @@
 // Log categories configuration - only these categories will be shown in the console
 export const LogConfig = {
   // Daemon categories
-  'D:AUTH ': true,   // Authentication-related logs
-  'D:FILE ': true,   // File operations
-  'D:API  ': true,   // External API interactions
-  'D:ROUTE': true,   // HTTP route handling
-  'D:RTEDB': false,   // HTTP route handling - deeper debugging
+  'D:AUTH  ': true,  // Authentication-related logs
+  'D:AUTHDB': false, // Authentication-related logs - deeper debugging
+  'D:FILE  ': true,  // File operations
+  'D:FILEDB': false, // File operations - deeper debugging
+  'D:API   ': true,  // External API interactions
+  'D:ROUTE ': true,  // HTTP route handling
+  'D:RTEDB ': false, // HTTP route handling - deeper debugging
   'D:PARSER': true,  // Songlist parsing operations
+  'D:PARSDB': false, // Songlist parsing operations - deeper debugging
   'D:WORKER': true,  // Worker thread operations
+  'D:WORKDB': false, // Worker thread operations - deeper debugging
   'D:SYSTEM': true,  // System-level operations
   'D:STATUS': true,  // Status updates and tracking
+  'D:STATDB': false, // Status updates and tracking - deeper debugging
   
   // Client categories
-  'C:AUTH ': true,   // Authentication flows
-  'C:FORM ': true,   // Form submissions and validations
-  'C:API  ': true,   // API requests to the daemon
-  'C:NAV  ': true,   // Navigation and routing
-  'C:STATE': true,   // State management
+  'C:AUTH  ': true,  // Authentication flows
+  'C:FORM  ': true,  // Form submissions and validations
+  'C:API   ': true,  // API requests to the daemon
+  'C:NAV   ': true,  // Navigation and routing
+  'C:STATE ': true,  // State management
   
   // Shared categories
   'SECURITY': true,  // Security-related events (always enabled)
-  'ERROR': true,     // Error logging (always enabled)
-  'DEBUG': true      // Detailed debugging information
+  'ERROR   ': true,  // Error logging (always enabled)
+  'DEBUG   ': true   // Detailed debugging information
 };
 
 // Store original console methods
@@ -45,7 +50,7 @@ const originalConsoleError = console.error;
  */
 export const log = (category: keyof typeof LogConfig, id: string, message: string, ...args: any[]) => {
   if (LogConfig[category]) {
-    originalConsoleLog(`${category}[${id}] - ${message}`, ...args);
+    originalConsoleLog(`[${category}][${id}] - ${message}`, ...args);
   }
 };
 
@@ -59,7 +64,7 @@ export const log = (category: keyof typeof LogConfig, id: string, message: strin
  */
 export const logError = (category: keyof typeof LogConfig, id: string, message: string, ...args: any[]) => {
   // Always log errors regardless of category configuration
-  originalConsoleError(`${category}[${id}] - ${message}`, ...args);
+  originalConsoleError(`[${category}][${id}] - ${message}`, ...args);
 };
 
 // Export default for convenience

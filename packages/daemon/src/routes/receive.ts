@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { fork, spawn } from 'child_process';
 import { anyAuthenticated } from '../middleware/roleVerification.js';
+import { log, logError } from '@uploadDistributor/logging';
 
 const router = express.Router();
 
@@ -37,7 +38,7 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
   
   // If directory exists, clean it up for reuse
   if (fs.existsSync(fileDir)) {
-    console.log(`Reusing existing directory for ${fileId}`);
+    log('D:FILEDB', 'RC:001', `Reusing existing directory for ${fileId}`);
     // Keep the directory but remove any existing files
     const files = fs.readdirSync(fileDir);
     files.forEach(file => {
@@ -73,7 +74,7 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
   // Handle file receiving
   bb.on('file', (name: string, file: NodeJS.ReadableStream, info: { filename: string; encoding: string; mimeType: string }) => {
     const { filename, encoding, mimeType } = info;
-    console.log(`Processing ${name} file: ${filename}, encoding: ${encoding}, mimeType: ${mimeType}`);
+    log('D:FILEDB', 'RC:002', `Processing ${name} file: ${filename}, encoding: ${encoding}, mimeType: ${mimeType}`);
     
     // Initialize buffer for this file
     fileBuffers[name] = {
@@ -113,7 +114,7 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     // Save each buffered file
     for (const [name, fileData] of Object.entries(fileBuffers)) {
       if (!fileData.buffer || !fileData.info) {
-        console.log(`Missing buffer or info for file: ${name}`);
+        log('D:FILEDB', 'RC:003', `Missing buffer or info for file: ${name}`);
         continue;
       }
       let saveTo;
@@ -127,7 +128,7 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
         saveTo = path.join(fileDir, `${normalizedBase}${ext}`);
         metadata.artworkFilename = `${normalizedBase}${ext}`;
       } else {
-        console.log(`Skipping unknown file type: ${name}`);
+        log('D:FILEDB', 'RC:004', `Skipping unknown file type: ${name}`);
         continue;
       }
 
@@ -142,7 +143,7 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     );
     
     // Add a small delay to ensure files are fully written to disk
-    console.log('Adding a small delay to ensure files are fully written to disk...');
+    log('D:FILEDB', 'RC:005', 'Adding a small delay to ensure files are fully written to disk...');
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Validate files before proceeding
@@ -159,10 +160,10 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     }
     
     // Check if files exist and have content
-    console.log(`Checking audio file at path: ${audioFilePath}`);
+    log('D:FILEDB', 'RC:006', `Checking audio file at path: ${audioFilePath}`);
     
     if (!fs.existsSync(audioFilePath)) {
-      console.log(`Audio file does not exist at path: ${audioFilePath}`);
+      log('D:FILE  ', 'RC:007', `Audio file does not exist at path: ${audioFilePath}`);
       return res.status(400).json({
         error: 'Invalid file',
         message: 'Audio file is missing'
@@ -170,10 +171,10 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     }
     
     const audioFileSize = fs.statSync(audioFilePath).size;
-    console.log(`Audio file exists and has size: ${audioFileSize} bytes`);
+    log('D:FILEDB', 'RC:008', `Audio file exists and has size: ${audioFileSize} bytes`);
     
     if (audioFileSize === 0) {
-      console.log(`Audio file is empty (0 bytes)`);
+      log('D:FILE  ', 'RC:009', `Audio file is empty (0 bytes)`);
       return res.status(400).json({
         error: 'Invalid file',
         message: 'Audio file is empty'
@@ -187,17 +188,17 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
       const bytesRead = fs.readSync(fd, buffer, 0, 10, 0);
       fs.closeSync(fd);
       
-      console.log(`Read ${bytesRead} bytes from audio file: ${buffer.toString('hex')}`);
+      log('D:FILEDB', 'RC:010', `Read ${bytesRead} bytes from audio file: ${buffer.toString('hex')}`);
       
       if (bytesRead === 0) {
-        console.log(`Could not read any bytes from audio file`);
+        log('D:FILE  ', 'RC:011', `Could not read any bytes from audio file`);
         return res.status(400).json({
           error: 'Invalid file',
           message: 'Could not read audio file'
         });
       }
     } catch (err) {
-      console.error(`Error reading audio file: ${err}`);
+      logError('ERROR   ', 'RC:012', `Error reading audio file: ${err}`);
       return res.status(400).json({
         error: 'Invalid file',
         message: `Error reading audio file: ${(err as Error).message}`
@@ -218,13 +219,13 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
       });
     }
     
-    console.log(`Songlist file exists and has size: ${fs.statSync(songlistFilePath).size} bytes`);
+    log('D:FILEDB', 'RC:013', `Songlist file exists and has size: ${fs.statSync(songlistFilePath).size} bytes`);
     
     // Check for artwork file
     const artworkFilePath = path.join(fileDir, metadata.artworkFilename || `${normalizedBase}.jpg`);
     
     if (!fs.existsSync(artworkFilePath)) {
-      console.log(`Artwork file does not exist at path: ${artworkFilePath}`);
+      log('D:FILE  ', 'RC:014', `Artwork file does not exist at path: ${artworkFilePath}`);
       return res.status(400).json({
         error: 'Invalid file',
         message: 'Artwork file is missing'
@@ -232,14 +233,14 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     }
     
     if (fs.statSync(artworkFilePath).size === 0) {
-      console.log(`Artwork file is empty (0 bytes)`);
+      log('D:FILE  ', 'RC:015', `Artwork file is empty (0 bytes)`);
       return res.status(400).json({
         error: 'Invalid file',
         message: 'Artwork file is empty'
       });
     }
     
-    console.log(`Artwork file exists and has size: ${fs.statSync(artworkFilePath).size} bytes`);
+    log('D:FILEDB', 'RC:016', `Artwork file exists and has size: ${fs.statSync(artworkFilePath).size} bytes`);
     
     // Create initial status file with 'received' status
     fs.writeFileSync(
@@ -270,7 +271,7 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
   
   // Handle errors
   bb.on('error', (err: Error) => {
-    console.error('File receiving error:', err);
+    logError('ERROR   ', 'RC:017', 'File receiving error:', err);
     res.status(500).json({
       error: 'File receiving failed',
       message: err.message

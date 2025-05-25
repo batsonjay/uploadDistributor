@@ -301,3 +301,6 @@
 [SonglistParser]: info [2025-05-25 17:31:58]: songlist.nml, Starting to parse songlist
 [SonglistParser]: info [2025-05-25 17:31:58]: songlist.nml, Parsing complete, found 13 songs
 [azuracast]: success [2025-05-25 17:32:00]: Post-build, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748194320293.mp3
+[SonglistParser]: info [2025-05-25 19:26:16]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-25 19:26:16]: songlist.nml, Parsing complete, found 13 songs
+[azuracast]: success [2025-05-25 19:26:18]: T100, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748201178426.mp3
