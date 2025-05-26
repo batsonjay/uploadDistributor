@@ -44,7 +44,7 @@ if (!fileId || typeof fileId !== 'string') {
 
 // Define paths
 const receivedFilesDir = process.env.RECEIVED_FILES_DIR || path.join(path.dirname(new URL(import.meta.url).pathname), '../../received-files');
-log('D:WORKER', 'FP:002', `Files directory: ${receivedFilesDir}`);
+log('D:WORKDB', 'FP:002', `Files directory: ${receivedFilesDir}`);
 const fileDir = path.join(receivedFilesDir, fileId);
 const metadataFile = path.join(fileDir, 'metadata.json');
 
@@ -120,7 +120,7 @@ export async function processFile(fileId: string) {
     statusManager.updateStatus('processing', 'Processing started');
     
     // Log the start of processing
-    log('D:WORKER', 'FP:008', `Processing files for ${fileId}`);
+    log('D:WORKDB', 'FP:008', `Processing files for ${fileId}`);
     log('D:WORKDB', 'FP:009', `Metadata: ${JSON.stringify(metadata, null, 2)}`);
     
     // Get user role from metadata or default to DJ

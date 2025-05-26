@@ -46,7 +46,7 @@ export const verifyRole = (requiredRoles: UserRole[]) => {
       // Check if user has required role
       const hasRequiredRole = requiredRoles.includes(result.user.role);
       
-      log('D:AUTHDB', 'RV:004', `User ${result.user.displayName} has role ${result.user.role}, required roles: ${requiredRoles.join(', ')}`);
+      log('D:AUTH  ', 'RV:004', `User ${result.user.displayName} has role ${result.user.role}, required roles: ${requiredRoles.join(', ')}`);
       
       if (!hasRequiredRole) {
         log('D:AUTH  ', 'RV:005', `Insufficient permissions for user ${result.user.displayName} with role ${result.user.role}`);
@@ -60,7 +60,7 @@ export const verifyRole = (requiredRoles: UserRole[]) => {
       // Add user to request object for use in route handlers
       (req as any).user = result.user;
       
-      log('D:AUTHDB', 'RV:006', `Authentication successful for user ${result.user.displayName}`);
+      log('D:AUTH  ', 'RV:006', `Authentication successful for user ${result.user.displayName}`);
       
       // User has required role, proceed to route handler
       next();

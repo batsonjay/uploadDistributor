@@ -25,7 +25,7 @@ export class StatusManager {
   
   constructor(fileId: string) {
     this.fileId = fileId;
-    log('D:STATUS', 'SM:001', `StatusManager initialized for fileId: ${fileId}`);
+    log('D:STATDB', 'SM:001', `StatusManager initialized for fileId: ${fileId}`);
     
     // Define status file path
     // When running with ts-node, __dirname is /packages/daemon/src/services
@@ -60,7 +60,7 @@ export class StatusManager {
    * Update the status file
    */
   public updateStatus(status: string, message: string, destinations?: any): void {
-    log('D:STATUS', 'SM:004', `Status updated: ${status} - ${message}`);
+    log('D:STATDB', 'SM:004', `Status updated: ${status} - ${message}`);
     
     const statusData: StatusData = {
       fileId: this.fileId,

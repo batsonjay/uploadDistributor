@@ -9,7 +9,7 @@
 export const LogConfig = {
   // Daemon categories
   'D:AUTH  ': true,  // Authentication-related logs
-  'D:AUTHDB': true, // Authentication-related logs - deeper debugging
+  'D:AUTHDB': false, // Authentication-related logs - deeper debugging
   'D:FILE  ': true,  // File operations
   'D:FILEDB': false, // File operations - deeper debugging
   'D:API   ': true,  // External API interactions

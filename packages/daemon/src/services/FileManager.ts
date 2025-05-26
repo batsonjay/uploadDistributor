@@ -28,7 +28,7 @@ export class FileManager {
       '../../archive'
     );
     
-    log('D:FILE  ', 'FM:001', `Files directory: ${this.receivedFilesDir}`);
+    log('D:FILEDB', 'FM:001', `Files directory: ${this.receivedFilesDir}`);
     log('D:FILEDB', 'FM:002', `Archive directory: ${this.archiveDir}`);
     
     // Ensure archive directory exists

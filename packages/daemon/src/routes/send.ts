@@ -231,7 +231,7 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
       const { Worker } = await import('node:worker_threads');
       const workerPath = new URL('../processors/file-processor-worker.js', import.meta.url).pathname;
       
-      log('D:ROUTE ', 'SE:009', `Starting file processing for ${fileId}`);
+      log('D:RTEDB ', 'SE:009', `Starting file processing for ${fileId}`);
       
       try {
         const worker = new Worker(workerPath, {

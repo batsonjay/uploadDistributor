@@ -5,11 +5,10 @@ import { log, logError } from '@uploadDistributor/logging';
 export class SonglistParserService {
   static async parse(filePath: string): Promise<ParseResult> {
     try {
-      log('D:PARSER', 'SP:001', `parseSonglist called with: ${filePath}`);
-      
+      // The songlist-parser package already logs these events with SP:101 and SP:110
       const result = await parseSonglist(filePath);
       
-      log('D:PARSER', 'SP:002', `Parsing complete, found ${result.songs.length} songs`);
+      // Keep the detailed debug logging since it's unique to this service
       log('D:PARSDB', 'SP:003', `Parser result: ${JSON.stringify(result, null, 2)}`);
       
       return result;
