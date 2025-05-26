@@ -304,3 +304,31 @@
 [SonglistParser]: info [2025-05-25 19:26:16]: songlist.nml, Starting to parse songlist
 [SonglistParser]: info [2025-05-25 19:26:16]: songlist.nml, Parsing complete, found 13 songs
 [azuracast]: success [2025-05-25 19:26:18]: T100, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748201178426.mp3
+[SonglistParser]: info [2025-05-25 19:43:05]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-25 19:43:05]: songlist.nml, Parsing complete, found 13 songs
+[azuracast]: success [2025-05-25 19:43:08]: TIT150, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748202188116.mp3
+[SonglistParser]: info [2025-05-25 19:46:50]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-25 19:46:50]: songlist.nml, Parsing complete, found 13 songs
+[azuracast]: success [2025-05-25 19:46:55]: TIT2, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748202414667.mp3
+[SonglistParser]: info [2025-05-25 21:11:48]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-25 21:11:48]: songlist.nml, Parsing complete, found 13 songs
+[azuracast]: success [2025-05-25 21:11:51]: T1, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748207511070.mp3
+[SonglistParser]: info [2025-05-25 21:16:10]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-25 21:16:10]: songlist.nml, Parsing complete, found 13 songs
+[azuracast]: success [2025-05-25 21:16:13]: T2, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748207772774.mp3
+[SonglistParser]: info [2025-05-25 23:22:07]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-25 23:22:07]: songlist.nml, Parsing complete, found 13 songs
+[azuracast]: success [2025-05-25 23:22:10]: T50, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748215329851.mp3
+[SonglistParser]: info [2025-05-25 23:25:45]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-25 23:25:45]: songlist.nml, Parsing complete, found 13 songs
+[azuracast]: success [2025-05-25 23:25:47]: T75, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748215547443.mp3
+[SonglistParser]: info [2025-05-25 23:30:15]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-25 23:30:15]: songlist.nml, Parsing complete, found 13 songs
+[azuracast]: success [2025-05-25 23:30:18]: T90, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748215818509.mp3
+[SonglistParser]: info [2025-05-25 23:34:36]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-25 23:34:36]: songlist.nml, Parsing complete, found 13 songs
+[azuracast]: success [2025-05-25 23:34:39]: T99, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748216078772.mp3
+[SonglistParser]: info [2025-05-25 23:51:04]: songlist.nml, Starting to parse songlist
+[SonglistParser]: info [2025-05-25 23:51:04]: songlist.nml, Parsing complete, found 13 songs
+[azuracast]: success [2025-05-25 23:51:06]: T55, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748217066450.mp3
+[azuracast]: success [2025-05-25 23:53:39]: T75, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748217218925.mp3

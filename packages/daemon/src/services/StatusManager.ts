@@ -8,12 +8,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { 
-  logDestinationStatus, 
-  logDetailedError, 
-  LogType, 
-  ErrorType 
-} from '../utils/LoggingUtils.js';
+import { log, logError } from '@uploadDistributor/logging';
 
 export interface StatusData {
   fileId: string;
@@ -30,6 +25,7 @@ export class StatusManager {
   
   constructor(fileId: string) {
     this.fileId = fileId;
+    log('D:STATUS', 'SM:001', `StatusManager initialized for fileId: ${fileId}`);
     
     // Define status file path
     // When running with ts-node, __dirname is /packages/daemon/src/services
@@ -54,15 +50,18 @@ export class StatusManager {
       }
     }
     
-    process.stdout.write(`Using files directory: ${filesDir}\n`);
+    log('D:STATDB', 'SM:002', `Using files directory: ${filesDir}`);
     const fileDir = path.join(filesDir, this.fileId);
     this.statusFile = path.join(fileDir, 'status.json');
+    log('D:STATDB', 'SM:003', `Status file path: ${this.statusFile}`);
   }
   
   /**
    * Update the status file
    */
   public updateStatus(status: string, message: string, destinations?: any): void {
+    log('D:STATUS', 'SM:004', `Status updated: ${status} - ${message}`);
+    
     const statusData: StatusData = {
       fileId: this.fileId,
       status,
@@ -74,8 +73,12 @@ export class StatusManager {
       statusData.destinations = destinations;
     }
     
-    fs.writeFileSync(this.statusFile, JSON.stringify(statusData, null, 2));
-    process.stdout.write(`Status updated: ${status} - ${message}\n`);
+    try {
+      fs.writeFileSync(this.statusFile, JSON.stringify(statusData, null, 2));
+      log('D:STATDB', 'SM:005', `Status file updated: ${JSON.stringify(statusData, null, 2)}`);
+    } catch (error) {
+      logError('ERROR   ', 'SM:006', `Failed to update status file: ${this.statusFile}`, error);
+    }
   }
   
   /**
@@ -86,12 +89,7 @@ export class StatusManager {
     title: string,
     message: string
   ): void {
-    logDestinationStatus(
-      serviceName,
-      LogType.SUCCESS,
-      title,
-      message
-    );
+    log('D:STATUS', 'SM:007', `${serviceName} success: ${title} - ${message}`);
   }
   
   /**
@@ -101,24 +99,28 @@ export class StatusManager {
     serviceName: string,
     title: string,
     errorMessage: string,
-    errorType: ErrorType = ErrorType.UNKNOWN,
+    errorCategory: 'AUTHENTICATION' | 'VALIDATION' | 'NETWORK' | 'SERVER' | 'UNKNOWN' = 'UNKNOWN',
     requestDetails: any = {},
     attempt: number = 1
   ): void {
-    logDestinationStatus(
-      serviceName,
-      LogType.ERROR,
-      title,
-      errorMessage
-    );
+    // Map error categories to log categories
+    let logCategory: 'ERROR   ' | 'D:AUTH  ' | 'D:ROUTE ' | 'D:API   ' | 'D:SYSTEM' = 'ERROR   ';
     
-    logDetailedError(
-      serviceName,
-      title,
-      errorType,
-      errorMessage,
+    // Use more specific categories if available
+    if (errorCategory === 'AUTHENTICATION') {
+      logCategory = 'D:AUTH  ';
+    } else if (errorCategory === 'VALIDATION') {
+      logCategory = 'D:ROUTE ';
+    } else if (errorCategory === 'NETWORK') {
+      logCategory = 'D:API   ';
+    } else if (errorCategory === 'SERVER') {
+      logCategory = 'D:SYSTEM';
+    }
+    
+    logError(logCategory, 'SM:008', `${serviceName} error: ${title} - ${errorMessage}`, {
+      errorCategory,
       requestDetails,
       attempt
-    );
+    });
   }
 }

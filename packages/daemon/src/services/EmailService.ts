@@ -13,7 +13,7 @@
 
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
-import { logParserEvent, ParserLogType } from '../utils/LoggingUtils.js';
+import { log, logError } from '@uploadDistributor/logging';
 
 interface TokenData {
   email: string;
@@ -66,13 +66,14 @@ export default class EmailService {
       
       // For testing purposes, just log the magic link and return success
       // This bypasses the actual email sending which requires proper SMTP configuration
-      console.log('===============================================');
-      console.log(`MAGIC LINK FOR ${email}:`);
-      console.log(magicLink);
-      console.log('Copy and paste this link in your browser to log in');
-      console.log('===============================================');
+      log('D:AUTH  ', 'EM:100', '===============================================');
+      log('D:AUTH  ', 'EM:101', `MAGIC LINK FOR ${email}: ${magicLink}`);
+      log('D:AUTH  ', 'EM:102', 'Copy and paste this link in your browser to log in');
+      log('D:AUTH  ', 'EM:103', '===============================================');
       
-      logParserEvent('EmailService', ParserLogType.INFO, `Generated magic link for ${email}: ${magicLink}`);
+      // Use standard level message for magic link so it's always visible
+      log('D:AUTH  ', 'EM:001', `MAGIC LINK FOR ${email}: ${magicLink}`);
+      log('D:AUTH  ', 'EM:002', `Generated magic link for ${email}: ${magicLink}`);
       
       // Skip actual email sending for testing
       /*
@@ -116,13 +117,13 @@ The Upload Distributor Team
         `
       });
       
-      logParserEvent('EmailService', ParserLogType.INFO, `Email sent to ${email}: ${info.messageId}`);
+      log('D:AUTH  ', 'EM:003', `Email sent to ${email}: ${info.messageId}`);
       */
       
       // Return success since we're bypassing actual email sending
       return true;
     } catch (error) {
-      logParserEvent('EmailService', ParserLogType.ERROR, `Failed to send email to ${email}:`, error);
+      logError('ERROR   ', 'EM:004', `Failed to send email to ${email}:`, error);
       return false;
     }
   }
@@ -153,7 +154,7 @@ The Upload Distributor Team
   public verifyToken(token: string): { valid: boolean; email?: string } {
     // Check if the token exists
     if (!this.tokens.has(token)) {
-      logParserEvent('EmailService', ParserLogType.WARNING, `Token not found: ${token}`);
+      log('D:AUTH  ', 'EM:005', `Token not found: ${token}`);
       return { valid: false };
     }
     
@@ -162,7 +163,7 @@ The Upload Distributor Team
     
     // Check if the token has expired
     if (Date.now() > tokenData.expires) {
-      logParserEvent('EmailService', ParserLogType.WARNING, `Token expired: ${token}`);
+      log('D:AUTH  ', 'EM:006', `Token expired: ${token}`);
       this.tokens.delete(token); // Clean up expired token
       return { valid: false };
     }
@@ -170,7 +171,7 @@ The Upload Distributor Team
     // Token is valid, delete it to prevent reuse
     this.tokens.delete(token);
     
-    logParserEvent('EmailService', ParserLogType.INFO, `Token verified for ${tokenData.email}`);
+    log('D:AUTH  ', 'EM:007', `Token verified for ${tokenData.email}`);
     return { valid: true, email: tokenData.email };
   }
   
@@ -190,7 +191,7 @@ The Upload Distributor Team
     }
     
     if (expiredCount > 0) {
-      logParserEvent('EmailService', ParserLogType.INFO, `Cleaned up ${expiredCount} expired tokens`);
+      log('D:AUTHDB', 'EM:008', `Cleaned up ${expiredCount} expired tokens`);
     }
   }
 }

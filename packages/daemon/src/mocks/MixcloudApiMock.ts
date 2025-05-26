@@ -6,6 +6,7 @@
 
 import { DestinationApiMock } from './DestinationApiMock.js';
 import * as fs from 'fs';
+import { log } from '@uploadDistributor/logging';
 
 export interface MixcloudUploadResponse {
   success: boolean;
@@ -76,7 +77,7 @@ export class MixcloudApiMock extends DestinationApiMock {
         };
       }
       
-      process.stdout.write(`[mixcloud] Track list validated with ${metadata.track_list.length} tracks\n`);
+      log('D:APIDB ', 'MM:001', `Track list validated with ${metadata.track_list.length} tracks`);
     }
 
     // Simulate processing time (longer for Mixcloud)

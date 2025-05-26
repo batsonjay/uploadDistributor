@@ -7,6 +7,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { AuthService, UserRole, USER_ROLES } from '../services/AuthService.js';
+import { log, logError } from '@uploadDistributor/logging';
 
 const authService = AuthService.getInstance();
 
@@ -21,7 +22,10 @@ export const verifyRole = (requiredRoles: UserRole[]) => {
       // Extract token from Authorization header
       const token = req.headers.authorization?.split(' ')[1];
       
+      log('D:AUTHDB', 'RV:001', `Verifying token for request to ${req.originalUrl}`);
+      
       if (!token) {
+        log('D:AUTH  ', 'RV:002', `Missing authentication token for request to ${req.originalUrl}`);
         return res.status(401).json({
           success: false,
           error: 'Authentication token is required'
@@ -32,6 +36,7 @@ export const verifyRole = (requiredRoles: UserRole[]) => {
       const result = await authService.validateToken(token);
       
       if (!result.success || !result.user) {
+        log('D:AUTH  ', 'RV:003', `Invalid or expired token for request to ${req.originalUrl}`);
         return res.status(401).json({
           success: false,
           error: 'Invalid or expired token'
@@ -41,7 +46,10 @@ export const verifyRole = (requiredRoles: UserRole[]) => {
       // Check if user has required role
       const hasRequiredRole = requiredRoles.includes(result.user.role);
       
+      log('D:AUTHDB', 'RV:004', `User ${result.user.displayName} has role ${result.user.role}, required roles: ${requiredRoles.join(', ')}`);
+      
       if (!hasRequiredRole) {
+        log('D:AUTH  ', 'RV:005', `Insufficient permissions for user ${result.user.displayName} with role ${result.user.role}`);
         return res.status(403).json({
           success: false,
           error: 'Insufficient permissions',
@@ -52,10 +60,12 @@ export const verifyRole = (requiredRoles: UserRole[]) => {
       // Add user to request object for use in route handlers
       (req as any).user = result.user;
       
+      log('D:AUTHDB', 'RV:006', `Authentication successful for user ${result.user.displayName}`);
+      
       // User has required role, proceed to route handler
       next();
     } catch (err) {
-      console.error('Role verification error:', err);
+      logError('ERROR   ', 'RV:007', 'Role verification error:', err);
       return res.status(500).json({
         success: false,
         error: 'Internal server error'
@@ -69,6 +79,6 @@ export const adminOnly = verifyRole([USER_ROLES.ADMIN]);
 export const anyAuthenticated = verifyRole([USER_ROLES.ADMIN, USER_ROLES.DJ]);
 
 // Add debug logging to help diagnose issues
-console.log('Role verification middleware loaded');
-console.log('Admin role:', USER_ROLES.ADMIN);
-console.log('DJ role:', USER_ROLES.DJ);
+log('D:AUTH  ', 'RV:008', 'Role verification middleware loaded');
+log('D:AUTHDB', 'RV:009', `Admin role: ${USER_ROLES.ADMIN}`);
+log('D:AUTHDB', 'RV:010', `DJ role: ${USER_ROLES.DJ}`);

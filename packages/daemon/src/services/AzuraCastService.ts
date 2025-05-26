@@ -11,10 +11,10 @@
 import path from 'path';
 import { AzuraCastApiMock, AzuraCastMetadata, AzuraCastUploadResponse } from '../mocks/AzuraCastApiMock.simple.js';
 import { StatusManager } from './StatusManager.js';
-import { ErrorType, ParserLogType, logParserEvent } from '../utils/LoggingUtils.js';
 import { retry, RetryOptions } from '../utils/RetryUtils.js';
 import { SonglistData } from '../storage/SonglistStorage.js';
 import { utcToCet } from '../utils/TimezoneUtils.js';
+import { log, logError } from '@uploadDistributor/logging';
 
 export class AzuraCastService {
   private api: AzuraCastApiMock;
@@ -32,6 +32,7 @@ export class AzuraCastService {
    * @returns AzuraCast metadata object
    */
   public createMetadataFromSonglist(songlist: SonglistData): AzuraCastMetadata {
+    log('D:API   ', 'AZ:001', `Creating metadata from songlist for ${songlist.broadcast_data.DJ || 'Unknown DJ'}`);
     // Convert UTC timestamps to CET
     const broadcastDate = songlist.broadcast_data.broadcast_date;
     const broadcastTime = songlist.broadcast_data.broadcast_time;
@@ -56,8 +57,9 @@ export class AzuraCastService {
     audioFilePath: string, 
     metadata: AzuraCastMetadata
   ): Promise<{ success: boolean; id?: string; path?: string; error?: string }> {
-    logParserEvent('AzuraCastService', ParserLogType.DEBUG, 'Uploading to AzuraCast...');
-    logParserEvent('AzuraCastService', ParserLogType.DEBUG, `File: ${path.basename(audioFilePath)}`);
+    log('D:API   ', 'AZ:001', 'Uploading to AzuraCast...');
+    log('D:APIDB ', 'AZ:002', `File: ${path.basename(audioFilePath)}`);
+    log('D:API   ', 'AZ:003', 'Starting upload to AzuraCast...');
     
     // Define retry options
     const retryOptions: RetryOptions = {
@@ -65,8 +67,8 @@ export class AzuraCastService {
       initialDelay: 1000,
       backoffFactor: 2,
       onRetry: (attempt, error, delay) => {
-        logParserEvent('AzuraCastService', ParserLogType.DEBUG, 
-          `AzuraCast operation failed, retrying in ${delay/1000}s... (${attempt}/${retryOptions.maxRetries})`);
+        log('D:APIDB ', 'AZ:004', `AzuraCast operation failed, retrying in ${delay/1000}s... (${attempt}/${retryOptions.maxRetries})`);
+        logError('ERROR   ', 'AZ:005', `AzuraCast operation failed: ${error.message}`);
       }
     };
     
@@ -74,42 +76,57 @@ export class AzuraCastService {
       // Use the retry utility to handle the entire upload process
       const result = await retry(async () => {
         // Step 1: Upload the file
+        log('D:APIDB ', 'AZ:006', `Request to uploadFile: ${JSON.stringify({
+          file: "[Binary file: " + audioFilePath + "]",
+          metadata
+        }, null, 2)}`);
         const uploadResult = await this.api.uploadFile(audioFilePath, metadata);
         
         if (!uploadResult.success) {
+          logError('ERROR   ', 'AZ:007', `Failed to upload file to AzuraCast: ${uploadResult.error || 'Unknown error'}`);
           this.statusManager.logError(
             'azuracast',
             metadata.title,
             uploadResult.error || 'Unknown error',
-            ErrorType.UNKNOWN,
+            'UNKNOWN',
             { audioFilePath, metadata }
           );
           throw new Error(uploadResult.error || 'Upload failed');
         }
         
         // Step 2: Set metadata
+        log('D:APIDB ', 'AZ:008', `Request to setMetadata: ${JSON.stringify({
+          fileId: uploadResult.id,
+          metadata
+        }, null, 2)}`);
         const metadataResult = await this.api.setMetadata(uploadResult.id, metadata);
         
         if (!metadataResult.success) {
+          logError('ERROR   ', 'AZ:009', `Failed to set metadata in AzuraCast: ${metadataResult.error || 'Unknown error'}`);
           this.statusManager.logError(
             'azuracast',
             metadata.title,
             metadataResult.error || 'Failed to set metadata',
-            ErrorType.UNKNOWN,
+            'UNKNOWN',
             { trackId: uploadResult.id, metadata }
           );
           throw new Error(metadataResult.error || 'Failed to set metadata');
         }
         
         // Step 3: Add to playlist
+        log('D:APIDB ', 'AZ:010', `Request to addToPlaylist: ${JSON.stringify({
+          fileId: uploadResult.id,
+          playlistId: "1"
+        }, null, 2)}`);
         const playlistResult = await this.api.addToPlaylist(uploadResult.id);
         
         if (!playlistResult.success) {
+          logError('ERROR   ', 'AZ:011', `Failed to add to playlist in AzuraCast: ${playlistResult.error || 'Unknown error'}`);
           this.statusManager.logError(
             'azuracast',
             metadata.title,
             playlistResult.error || 'Failed to add to playlist',
-            ErrorType.UNKNOWN,
+            'UNKNOWN',
             { trackId: uploadResult.id }
           );
           throw new Error(playlistResult.error || 'Failed to add to playlist');
@@ -127,8 +144,8 @@ export class AzuraCastService {
       );
       
       // Reduce logging - just log the essential information
-      logParserEvent('AzuraCastService', ParserLogType.DEBUG, 'AzuraCast upload completed successfully');
-      logParserEvent('AzuraCastService', ParserLogType.DEBUG, `File ID: ${result.id}`);
+      log('D:API   ', 'AZ:012', 'AzuraCast upload completed successfully');
+      log('D:APIDB ', 'AZ:013', `File ID: ${result.id}, Path: ${result.path}`);
       
       return {
         success: true,
@@ -141,9 +158,10 @@ export class AzuraCastService {
         'azuracast',
         metadata.title,
         (err as Error).message,
-        ErrorType.UNKNOWN,
+        'UNKNOWN',
         { audioFilePath, metadata }
       );
+      logError('ERROR   ', 'AZ:014', `AzuraCast upload failed after all retries: ${(err as Error).message}`);
       
       return {
         success: false,

@@ -8,6 +8,8 @@
  * - Authentication stub
  */
 
+import { log } from '@uploadDistributor/logging';
+
 export interface RequestRecord {
   endpoint: string;
   data: any;
@@ -33,7 +35,7 @@ export class DestinationApiMock {
     };
     
     this.requests.push(record);
-    process.stdout.write(`[${this.destination}] Request to ${endpoint}: ${JSON.stringify(data, null, 2)}\n`);
+    log('D:API   ', 'DM:001', `[${this.destination}] Request to ${endpoint}: ${JSON.stringify(data, null, 2)}`);
   }
 
   /**
@@ -43,11 +45,11 @@ export class DestinationApiMock {
     const missing = requiredFields.filter(field => !data[field]);
     
     if (missing.length > 0) {
-      process.stderr.write(`[${this.destination}] Missing required fields: ${missing.join(', ')}\n`);
+      log('D:API   ', 'DM:002', `[${this.destination}] Missing required fields: ${missing.join(', ')}`);
       return false;
     }
     
-    process.stdout.write(`[${this.destination}] All required fields present\n`);
+    log('D:API   ', 'DM:003', `[${this.destination}] All required fields present`);
     return true;
   }
 
@@ -55,7 +57,7 @@ export class DestinationApiMock {
    * Stub for authentication (to be implemented later)
    */
   public authenticate(): Promise<{ success: boolean; token: string }> {
-    process.stdout.write(`[${this.destination}] Authentication stub called\n`);
+    log('D:API   ', 'DM:004', `[${this.destination}] Authentication stub called`);
     return Promise.resolve({ success: true, token: 'mock-token' });
   }
 
@@ -71,6 +73,6 @@ export class DestinationApiMock {
    */
   public reset(): void {
     this.requests = [];
-    process.stdout.write(`[${this.destination}] Mock state reset\n`);
+    log('D:API   ', 'DM:005', `[${this.destination}] Mock state reset`);
   }
 }

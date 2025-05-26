@@ -9,6 +9,7 @@
 import { DestinationApiMock } from './DestinationApiMock.js';
 import * as fs from 'fs';
 import { AuthService } from '../services/AuthService.js';
+import { log } from '@uploadDistributor/logging';
 
 export interface AzuraCastUploadResponse {
   success: boolean;
@@ -89,7 +90,7 @@ export class AzuraCastApiMock extends DestinationApiMock {
    * Override the base authenticate method
    */
   public override authenticate(): Promise<{ success: boolean; token: string }> {
-    process.stdout.write(`[${this.destination}] Authentication stub called\n`);
+    log('D:API   ', 'AZ:200', `[${this.destination}] Authentication stub called`);
     return Promise.resolve({ success: true, token: 'mock-token' });
   }
   
@@ -137,6 +138,7 @@ export class AzuraCastApiMock extends DestinationApiMock {
     // Validate required fields
     const isValid = this.validateRequiredFields(metadata, ['title', 'artist']);
     if (!isValid) {
+      log('D:API   ', 'AZ:101', `Missing required metadata fields for uploadFile`);
       return {
         success: false,
         id: '',
@@ -146,6 +148,7 @@ export class AzuraCastApiMock extends DestinationApiMock {
 
     // Check if file exists
     if (!fs.existsSync(filePath)) {
+      log('D:API   ', 'AZ:102', `File not found: ${filePath}`);
       return {
         success: false,
         id: '',
@@ -158,6 +161,11 @@ export class AzuraCastApiMock extends DestinationApiMock {
       file: `[Binary file: ${filePath}]`,
       metadata
     });
+    
+    log('D:API   ', 'AZ:103', `Request to uploadFile: ${JSON.stringify({
+      file: `[Binary file: ${filePath}]`,
+      metadata
+    }, null, 2)}`);
 
     // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -181,6 +189,7 @@ export class AzuraCastApiMock extends DestinationApiMock {
     // Validate required fields
     const isValid = this.validateRequiredFields(metadata, ['title', 'artist']);
     if (!isValid) {
+      log('D:API   ', 'AZ:104', `Missing required metadata fields for setMetadata`);
       return {
         success: false,
         error: 'Missing required metadata fields'
@@ -192,6 +201,11 @@ export class AzuraCastApiMock extends DestinationApiMock {
       fileId,
       metadata
     });
+    
+    log('D:API   ', 'AZ:105', `Request to setMetadata: ${JSON.stringify({
+      fileId,
+      metadata
+    }, null, 2)}`);
 
     // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -217,6 +231,11 @@ export class AzuraCastApiMock extends DestinationApiMock {
       fileId,
       playlistId: playlist
     });
+    
+    log('D:API   ', 'AZ:106', `Request to addToPlaylist: ${JSON.stringify({
+      fileId,
+      playlistId: playlist
+    }, null, 2)}`);
 
     // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 200));

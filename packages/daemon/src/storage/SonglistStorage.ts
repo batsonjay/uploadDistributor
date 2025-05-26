@@ -9,6 +9,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { USER_ROLES, UserRole } from '../services/AuthService.js';
+import { log, logError } from '@uploadDistributor/logging';
 
 // Define the songlist data structure
 export interface TrackData {
@@ -73,7 +74,7 @@ export function storeSonglist(uploadId: string, songlist: SonglistData): string 
   // Write the songlist to file
   fs.writeFileSync(filePath, JSON.stringify(songlist, null, 2));
   
-  process.stdout.write(`Songlist stored at: ${filePath}\n`);
+  log('D:SYSTEM', 'SS:001', `Songlist stored at: ${filePath}`);
   
   return filePath;
 }
@@ -110,7 +111,7 @@ export function getSonglistByDjAndTitle(dj: string, title: string): SonglistData
     const fileContent = fs.readFileSync(filePath, 'utf8');
     return JSON.parse(fileContent) as SonglistData;
   } catch (err) {
-    process.stderr.write(`Error reading songlist file: ${err}\n`);
+    logError('ERROR   ', 'SS:002', `Error reading songlist file:`, err);
     return null;
   }
 }
@@ -135,7 +136,7 @@ export function parseSonglist(filePath: string): SonglistData {
     
     return songlist;
   } catch (err) {
-    process.stderr.write(`Error parsing songlist file: ${err}\n`);
+    logError('ERROR   ', 'SS:003', `Error parsing songlist file:`, err);
     throw new Error(`Failed to parse songlist file: ${err}`);
   }
 }
@@ -166,7 +167,7 @@ export function listSonglistsByDj(dj: string): SonglistData[] {
       const fileContent = fs.readFileSync(filePath, 'utf8');
       songlists.push(JSON.parse(fileContent) as SonglistData);
     } catch (err) {
-      process.stderr.write(`Error reading songlist file ${file}: ${err}\n`);
+      logError('ERROR   ', 'SS:004', `Error reading songlist file ${file}:`, err);
     }
   }
   

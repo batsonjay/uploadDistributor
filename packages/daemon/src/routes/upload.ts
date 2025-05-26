@@ -12,7 +12,7 @@ import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { anyAuthenticated } from '../middleware/roleVerification.js';
 import { AuthService, USER_ROLES } from '../services/AuthService.js';
-import { logParserEvent, ParserLogType } from '../utils/LoggingUtils.js';
+import { log, logError } from '@uploadDistributor/logging';
 
 const router = express.Router();
 const authService = AuthService.getInstance();
@@ -117,19 +117,17 @@ router.post('/', anyAuthenticated, async (req: express.Request, res: express.Res
     bb.on('finish', async () => {
       // Process DJ selection if applicable
       if (authUser.role === USER_ROLES.ADMIN && selectedDjId) {
-        logParserEvent('UploadRoutes', ParserLogType.INFO, 
-          `Admin ${authUser.displayName} attempting to upload as DJ ID: ${selectedDjId}`);
+        log('D:ROUTE ', 'UP:001', `Admin ${authUser.displayName} attempting to upload as DJ ID: ${selectedDjId}`);
         
         // Get the selected DJ's information
         const selectedDj = await authService.getUserById(selectedDjId);
         if (selectedDj.success && selectedDj.user) {
           // Use the selected DJ as the effective user for this upload
           effectiveUser = selectedDj.user;
-          logParserEvent('UploadRoutes', ParserLogType.INFO,
-            `Admin ${authUser.displayName} uploading on behalf of DJ ${effectiveUser.displayName}`);
+          log('D:ROUTE ', 'UP:002', `Admin ${authUser.displayName} uploading on behalf of DJ ${effectiveUser.displayName}`);
         } else {
-          logParserEvent('UploadRoutes', ParserLogType.WARNING,
-            `Admin ${authUser.displayName} attempted to upload as invalid DJ ID: ${selectedDjId}`);
+          log('D:ROUTE ', 'UP:003', `Admin ${authUser.displayName} attempted to upload as invalid DJ ID: ${selectedDjId}`);
+          logError('ERROR   ', 'UP:003', `Admin ${authUser.displayName} attempted to upload as invalid DJ ID: ${selectedDjId}`);
           return res.status(400).json({
             success: false,
             error: 'Invalid DJ selected'
@@ -139,6 +137,7 @@ router.post('/', anyAuthenticated, async (req: express.Request, res: express.Res
       
       // Check if we have all required metadata
       if (!metadata.broadcastDate || !metadata.title) {
+        log('D:ROUTE ', 'UP:004', `Missing required metadata fields: broadcastDate=${metadata.broadcastDate}, title=${metadata.title}`);
         return res.status(400).json({
           success: false,
           error: 'Invalid metadata',
@@ -148,6 +147,7 @@ router.post('/', anyAuthenticated, async (req: express.Request, res: express.Res
       
       // Check if we have all required files
       if (!fileBuffers.audio || !fileBuffers.artwork || !fileBuffers.songlist) {
+        log('D:ROUTE ', 'UP:005', `Missing required files: audio=${!!fileBuffers.audio}, artwork=${!!fileBuffers.artwork}, songlist=${!!fileBuffers.songlist}`);
         return res.status(400).json({
           success: false,
           error: 'Missing required files',
@@ -164,7 +164,7 @@ router.post('/', anyAuthenticated, async (req: express.Request, res: express.Res
       // Save each buffered file
       for (const [name, fileData] of Object.entries(fileBuffers)) {
         if (!fileData.buffer || !fileData.info) {
-          logParserEvent('UploadRoutes', ParserLogType.WARNING, `Missing buffer or info for file: ${name}`);
+          log('D:ROUTE ', 'UP:006', `Missing buffer or info for file: ${name}`);
           continue;
         }
         let saveTo;
@@ -179,7 +179,7 @@ router.post('/', anyAuthenticated, async (req: express.Request, res: express.Res
           saveTo = path.join(fileDir, `${normalizedBase}${ext}`);
           metadata.artworkFilename = `${normalizedBase}${ext}`;
         } else {
-          logParserEvent('UploadRoutes', ParserLogType.WARNING, `Skipping unknown file type: ${name}`);
+          log('D:ROUTE ', 'UP:007', `Skipping unknown file type: ${name}`);
           continue;
         }
         
@@ -210,8 +210,10 @@ router.post('/', anyAuthenticated, async (req: express.Request, res: express.Res
           timestamp: new Date().toISOString()
         }, null, 2)
       );
+      log('D:ROUTE ', 'UP:008', `Created status file for ${fileId}`);
       
       // Return file ID to client with 'received' status
+      log('D:ROUTE ', 'UP:009', `File ${fileId} successfully received and validated`);
       res.json({
         success: true,
         fileId: fileId,
@@ -222,7 +224,7 @@ router.post('/', anyAuthenticated, async (req: express.Request, res: express.Res
     
     // Handle errors
     bb.on('error', (err: Error) => {
-      logParserEvent('UploadRoutes', ParserLogType.ERROR, `File receiving error:`, err);
+      logError('ERROR   ', 'UP:010', `File receiving error:`, err);
       res.status(500).json({
         success: false,
         error: 'File receiving failed',
@@ -233,7 +235,7 @@ router.post('/', anyAuthenticated, async (req: express.Request, res: express.Res
     // Pipe request to busboy
     req.pipe(bb);
   } catch (err) {
-    logParserEvent('UploadRoutes', ParserLogType.ERROR, `Error in upload:`, err);
+    logError('ERROR   ', 'UP:011', `Error in upload:`, err);
     return res.status(500).json({
       success: false,
       error: 'Internal server error',

@@ -9,10 +9,10 @@
 
 import { MixcloudApiMock, MixcloudMetadata, MixcloudUploadResponse } from '../mocks/MixcloudApiMock.simple.js';
 import { StatusManager } from './StatusManager.js';
-import { ErrorType } from '../utils/LoggingUtils.js';
 import { retry, RetryOptions } from '../utils/RetryUtils.js';
 import { SonglistData } from '../storage/SonglistStorage.js';
 import { utcToCet } from '../utils/TimezoneUtils.js';
+import { log, logError } from '@uploadDistributor/logging';
 
 export class MixcloudService {
   private api: MixcloudApiMock;
@@ -58,7 +58,7 @@ export class MixcloudService {
     audioFilePath: string, 
     metadata: MixcloudMetadata
   ): Promise<{ success: boolean; id?: string; url?: string; error?: string }> {
-    process.stdout.write('Uploading to Mixcloud...\n');
+    log('D:API   ', 'MX:001', 'Uploading to Mixcloud...');
     
     // Track whether we've already tried with simplified metadata
     let usedSimplifiedMetadata = false;
@@ -69,7 +69,7 @@ export class MixcloudService {
       maxRetries: 1, // Only retry once for Mixcloud
       initialDelay: 1000,
       onRetry: (attempt, error, delay) => {
-        process.stdout.write(`Mixcloud upload failed, retrying in ${delay/1000}s... (${attempt}/1)\n`);
+        log('D:API   ', 'MX:002', `Mixcloud upload failed, retrying in ${delay/1000}s... (${attempt}/1)`);
       },
       // Custom function to determine if an error is retryable and to modify the metadata
       isRetryable: (error: Error) => {
@@ -80,12 +80,12 @@ export class MixcloudService {
         
         // If the error is related to track list validation, simplify the track list
         if (error.message.includes('track list')) {
-          process.stdout.write('Mixcloud upload failed due to track list issues, retrying with simplified track list...\n');
+          log('D:API   ', 'MX:003', 'Mixcloud upload failed due to track list issues, retrying with simplified track list...');
           
           // Create simplified track list (limit to 5 tracks if there are more)
           if (currentMetadata.track_list && currentMetadata.track_list.length > 5) {
             currentMetadata.track_list = currentMetadata.track_list.slice(0, 5);
-            process.stdout.write(`Simplified track list to ${currentMetadata.track_list.length} tracks\n`);
+            log('D:API   ', 'MX:004', `Simplified track list to ${currentMetadata.track_list.length} tracks`);
           }
           
           usedSimplifiedMetadata = true;
@@ -108,7 +108,7 @@ export class MixcloudService {
             'mixcloud',
             metadata.title,
             uploadResult.error || 'Unknown error',
-            uploadResult.error?.includes('track list') ? ErrorType.VALIDATION : ErrorType.UNKNOWN,
+            uploadResult.error?.includes('track list') ? 'VALIDATION' : 'UNKNOWN',
             { audioFilePath, metadata: currentMetadata }
           );
           
@@ -132,13 +132,13 @@ export class MixcloudService {
       };
     } catch (err) {
       // Final error after all retries
-      process.stderr.write(`Mixcloud upload error: ${err}\n`);
+      logError('ERROR   ', 'MX:005', `Mixcloud upload error: ${err}`);
       
       this.statusManager.logError(
         'mixcloud',
         metadata.title,
         (err as Error).message,
-        ErrorType.UNKNOWN,
+        'UNKNOWN',
         { audioFilePath, metadata: currentMetadata }
       );
       

@@ -6,7 +6,7 @@
  */
 
 import { AzuraCastApi } from '../apis/AzuraCastApi.js';
-import { logDetailedError, ErrorType } from '../utils/LoggingUtils.js';
+import { logError } from '@uploadDistributor/logging';
 
 // Station ID for the dev/test station
 const STATION_ID = '2';
@@ -49,24 +49,20 @@ async function testDirectoryCheck() {
     
     // Log errors to the error log file if needed
     if (!correctResult.success) {
-      logDetailedError(
-        'azuracast',
-        `Directory check for ${CORRECT_DJ_NAME}`,
-        ErrorType.UNKNOWN,
-        correctResult.error || 'Unknown error',
-        { stationId: STATION_ID, djName: CORRECT_DJ_NAME },
-        1
+      logError(
+        'ERROR   ',
+        'TD:001',
+        `Directory check for ${CORRECT_DJ_NAME} failed: ${correctResult.error || 'Unknown error'}`,
+        { errorType: 'UNKNOWN', stationId: STATION_ID, djName: CORRECT_DJ_NAME }
       );
     }
     
     if (!incorrectResult.success) {
-      logDetailedError(
-        'azuracast',
-        `Directory check for ${INCORRECT_DJ_NAME}`,
-        ErrorType.VALIDATION,
-        incorrectResult.error || 'Directory not found',
-        { stationId: STATION_ID, djName: INCORRECT_DJ_NAME },
-        1
+      logError(
+        'ERROR   ',
+        'TD:002',
+        `Directory check for ${INCORRECT_DJ_NAME} failed: ${incorrectResult.error || 'Directory not found'}`,
+        { errorType: 'VALIDATION', stationId: STATION_ID, djName: INCORRECT_DJ_NAME }
       );
     }
     

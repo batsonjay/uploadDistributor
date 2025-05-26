@@ -1,8 +1,8 @@
 import { Song, ParseResult, ParseError } from '../types.js';
 import { SonglistParser } from './parser.js';
 import textract from 'textract';
-import { logParserEvent, ParserLogType } from '../utils/LoggingUtils.js';
 import * as path from 'path';
+import { log, logError } from '@uploadDistributor/logging';
 
 const extractText = (filePath: string) => {
   return new Promise<string>((resolve, reject) => {
@@ -23,22 +23,22 @@ export class TextractParser implements SonglistParser {
   async parse(filePath: string): Promise<ParseResult> {
     try {
       // Log start of parsing
-      logParserEvent('TextractParser', ParserLogType.INFO, `Starting to parse file: ${path.basename(filePath)}`);
+      log('D:PARSER', 'TX:001', `Starting to parse file: ${path.basename(filePath)}`);
       
       const textContent = await extractText(filePath);
       if (!textContent) {
-        logParserEvent('TextractParser', ParserLogType.ERROR, `Failed to extract text from file: ${path.basename(filePath)}`);
+        logError('ERROR   ', 'TX:002', `Failed to extract text from file: ${path.basename(filePath)}`);
         return {
           songs: [],
           error: ParseError.FILE_READ_ERROR
         };
       }
       
-      logParserEvent('TextractParser', ParserLogType.DEBUG, `Successfully extracted text, length: ${textContent.length}`);
+      log('D:PARSDB', 'TX:003', `Successfully extracted text, length: ${textContent.length}`);
       
       // Split into lines and find where tracks start
       const lines = textContent.split(/\r\n|\r|\n/);
-      logParserEvent('TextractParser', ParserLogType.DEBUG, `Split into ${lines.length} lines`);
+      log('D:PARSDB', 'TX:004', `Split into ${lines.length} lines`);
       
       // Find where tracks start - either numbered lines or lines with artist-title delimiters
       const trackStartIndex = lines.findIndex((line: string, index: number) => {
@@ -58,14 +58,14 @@ export class TextractParser implements SonglistParser {
       });
       
       if (trackStartIndex === -1) {
-        logParserEvent('TextractParser', ParserLogType.WARNING, 'No track lines found in file');
+        log('D:PARSER', 'TX:005', 'No track lines found in file');
         return {
           songs: [],
           error: ParseError.NO_TRACKS_DETECTED
         };
       }
       
-      logParserEvent('TextractParser', ParserLogType.DEBUG, `Track start index: ${trackStartIndex}`);
+      log('D:PARSDB', 'TX:006', `Track start index: ${trackStartIndex}`);
       
       // Get only the track lines
       const tracks = lines
@@ -86,14 +86,14 @@ export class TextractParser implements SonglistParser {
         });
       
       if (tracks.length === 0) {
-        logParserEvent('TextractParser', ParserLogType.WARNING, 'No valid track lines found after filtering');
+        log('D:PARSER', 'TX:007', 'No valid track lines found after filtering');
         return {
           songs: [],
           error: ParseError.NO_TRACKS_DETECTED
         };
       }
 
-      logParserEvent('TextractParser', ParserLogType.DEBUG, `Found ${tracks.length} potential track lines`);
+      log('D:PARSDB', 'TX:008', `Found ${tracks.length} potential track lines`);
 
       const delimiters = [
         /\s+[-–]\s+/,          // Hyphen with spaces
@@ -107,20 +107,20 @@ export class TextractParser implements SonglistParser {
         // Remove track numbers at start of line
         const cleanedTrack = track.replace(/^\d+[\.\)]?\s+/, '');
         
-        logParserEvent('TextractParser', ParserLogType.DEBUG, `Processing track: ${track}`);
+        log('D:PARSDB', 'TX:009', `Processing track: ${track}`);
         
         let title = cleanedTrack;
         let artist = 'Unknown Artist';
 
         for (const delimiter of delimiters) {
-          logParserEvent('TextractParser', ParserLogType.DEBUG, `Trying delimiter: ${delimiter}`);
+          log('D:PARSDB', 'TX:010', `Trying delimiter: ${delimiter}`);
           const attempt = cleanedTrack.split(delimiter)
             .map(p => p.trim())
             .filter(p => p.length > 0);
           
           const firstPart = attempt[0];
           if (attempt.length >= 2 && firstPart && !firstPart.match(/^\d+$/)) {
-            logParserEvent('TextractParser', ParserLogType.DEBUG, 'Found valid split');
+            log('D:PARSDB', 'TX:011', 'Found valid split');
             title = firstPart;
             const remainingParts = attempt.slice(1);
             if (remainingParts.length > 0) {
@@ -134,26 +134,26 @@ export class TextractParser implements SonglistParser {
           title: title.trim(),
           artist: artist.trim()
         };
-        logParserEvent('TextractParser', ParserLogType.DEBUG, `Parsed track: "${result.title}" by "${result.artist}"`);
+        log('D:PARSDB', 'TX:012', `Parsed track: "${result.title}" by "${result.artist}"`);
         return result;
       });
       
       if (songs.length === 0) {
-        logParserEvent('TextractParser', ParserLogType.WARNING, 'No valid songs extracted from track lines');
+        log('D:PARSER', 'TX:013', 'No valid songs extracted from track lines');
         return {
           songs: [],
           error: ParseError.NO_VALID_SONGS
         };
       }
       
-      logParserEvent('TextractParser', ParserLogType.INFO, `Completed parsing, found ${songs.length} songs`);
+      log('D:PARSER', 'TX:014', `Completed parsing, found ${songs.length} songs`);
       return {
         songs,
         error: ParseError.NONE
       };
       
     } catch (error) {
-      logParserEvent('TextractParser', ParserLogType.ERROR, `Error parsing file: ${error}`);
+      logError('ERROR   ', 'TX:015', `Error parsing file: ${error}`);
       return {
         songs: [],
         error: ParseError.UNKNOWN_ERROR

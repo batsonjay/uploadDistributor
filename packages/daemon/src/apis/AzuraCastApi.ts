@@ -6,7 +6,7 @@
  */
 
 import axios from 'axios';
-import { ErrorType } from '../utils/LoggingUtils.js';
+import { log, logError } from '@uploadDistributor/logging';
 
 export class AzuraCastApi {
   private baseUrl: string;
@@ -57,7 +57,7 @@ export class AzuraCastApi {
         error: `User with email ${email} not found`
       };
     } catch (error) {
-      console.error('Find user error:', error instanceof Error ? error.message : 'Unknown error');
+      logError('ERROR   ', 'AZ:001', `Find user error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
       if (axios.isAxiosError(error) && error.response) {
         return {
@@ -100,7 +100,7 @@ export class AzuraCastApi {
         }
       };
     } catch (error) {
-      console.error('Get user profile error:', error instanceof Error ? error.message : 'Unknown error');
+      logError('ERROR   ', 'AZ:002', `Get user profile error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
       if (axios.isAxiosError(error) && error.response) {
         return {
@@ -157,7 +157,7 @@ export class AzuraCastApi {
         }
       } else {
         // Only log if there's an unexpected response format
-        console.error('Response format unexpected - unable to check directories');
+        logError('ERROR   ', 'AZ:003', 'Response format unexpected - unable to check directories');
       }
       return {
         success: true,
@@ -165,7 +165,7 @@ export class AzuraCastApi {
         rawResponse: response.data
       };
     } catch (error) {
-      console.error(`Directory check error for DJ "${djName}":`, error);
+      logError('ERROR   ', 'AZ:004', `Directory check error for DJ "${djName}": ${error}`);
       
       if (axios.isAxiosError(error) && error.response) {
         // If we get a 404, the directory doesn't exist
@@ -215,7 +215,7 @@ export class AzuraCastApi {
         users: response.data
       };
     } catch (error) {
-      console.error('Get all users error:', error instanceof Error ? error.message : 'Unknown error');
+      logError('ERROR   ', 'AZ:005', `Get all users error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
       if (axios.isAxiosError(error) && error.response) {
         return {
@@ -267,7 +267,7 @@ export class AzuraCastApi {
         error: `User with ID ${userId} not found`
       };
     } catch (error) {
-      console.error('Get user by ID error:', error instanceof Error ? error.message : 'Unknown error');
+      logError('ERROR   ', 'AZ:006', `Get user by ID error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
       if (axios.isAxiosError(error) && error.response) {
         return {

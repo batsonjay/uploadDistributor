@@ -1,27 +1,27 @@
 import { Song, ParseResult, ParseError } from '../types.js';
 import { SonglistParser } from './parser.js';
 import { readFile } from 'fs/promises';
-import { logParserEvent, ParserLogType } from '../utils/LoggingUtils.js';
 import * as path from 'path';
+import { log, logError } from '@uploadDistributor/logging';
 
 export class M3U8Parser implements SonglistParser {
   async parse(filePath: string): Promise<ParseResult> {
     try {
       // Log start of parsing
-      logParserEvent('M3U8Parser', ParserLogType.INFO, `Starting to parse file: ${path.basename(filePath)}`);
+      log('D:PARSER', 'M3U:001', `Starting to parse file: ${path.basename(filePath)}`);
       
       // Read the file content
       const content = await readFile(filePath, 'utf8');
-      logParserEvent('M3U8Parser', ParserLogType.DEBUG, `Read file content, length: ${content.length}`);
+      log('D:PARSER', 'M3U:002', `Read file content, length: ${content.length}`);
       
       // Split into lines
       const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
-      logParserEvent('M3U8Parser', ParserLogType.DEBUG, `Split into ${lines.length} lines`);
-      logParserEvent('M3U8Parser', ParserLogType.DEBUG, `First few lines: ${lines.slice(0, 3).join('\n')}`);
+      log('D:PARSER', 'M3U:003', `Split into ${lines.length} lines`);
+      log('D:PARSDB', 'M3U:004', `First few lines: ${lines.slice(0, 3).join('\n')}`);
       
       // Check if this is a valid M3U8 file
       if (!lines[0]?.startsWith('#EXTM3U')) {
-        logParserEvent('M3U8Parser', ParserLogType.WARNING, `Not a valid M3U8 file, first line: ${lines[0]}`);
+        log('D:PARSER', 'M3U:005', `Not a valid M3U8 file, first line: ${lines[0]}`);
         return {
           songs: [],
           error: ParseError.FILE_READ_ERROR
@@ -36,7 +36,7 @@ export class M3U8Parser implements SonglistParser {
         
         // Check if this is an EXTINF line
         if (currentLine && currentLine.startsWith('#EXTINF:')) {
-          logParserEvent('M3U8Parser', ParserLogType.DEBUG, `Found EXTINF line: ${currentLine}`);
+          log('D:PARSDB', 'M3U:006', `Found EXTINF line: ${currentLine}`);
           
           // Extract the metadata part after the duration and first comma
           // Format is typically: #EXTINF:duration,Artist - Title
@@ -46,7 +46,7 @@ export class M3U8Parser implements SonglistParser {
           if (firstCommaIndex > 0) {
             // Get everything after the first comma
             const fullMetadata = currentLine.substring(firstCommaIndex + 1).trim();
-            logParserEvent('M3U8Parser', ParserLogType.DEBUG, `Full metadata: ${fullMetadata}`);
+            log('D:PARSDB', 'M3U:007', `Full metadata: ${fullMetadata}`);
             
             // Find the dash separator
             const dashIndex = fullMetadata.indexOf(' - ');
@@ -56,8 +56,8 @@ export class M3U8Parser implements SonglistParser {
               const artistPart = fullMetadata.substring(0, dashIndex).trim();
               const titlePart = fullMetadata.substring(dashIndex + 3).trim();
               
-              logParserEvent('M3U8Parser', ParserLogType.DEBUG, `Found dash separator at index ${dashIndex}`);
-              logParserEvent('M3U8Parser', ParserLogType.DEBUG, `Artist part: "${artistPart}", Title part: "${titlePart}"`);
+              log('D:PARSDB', 'M3U:008', `Found dash separator at index ${dashIndex}`);
+              log('D:PARSDB', 'M3U:009', `Artist part: "${artistPart}", Title part: "${titlePart}"`);
               
               songs.push({
                 artist: artistPart || 'Unknown Artist',
@@ -71,8 +71,8 @@ export class M3U8Parser implements SonglistParser {
                 const artistPart = fullMetadata.substring(0, altDashIndex).trim();
                 const titlePart = fullMetadata.substring(altDashIndex + 3).trim();
                 
-                logParserEvent('M3U8Parser', ParserLogType.DEBUG, `Found alt dash separator at index ${altDashIndex}`);
-                logParserEvent('M3U8Parser', ParserLogType.DEBUG, `Artist part: "${artistPart}", Title part: "${titlePart}"`);
+                log('D:PARSDB', 'M3U:010', `Found alt dash separator at index ${altDashIndex}`);
+                log('D:PARSDB', 'M3U:011', `Artist part: "${artistPart}", Title part: "${titlePart}"`);
                 
                 songs.push({
                   artist: artistPart || 'Unknown Artist',
@@ -80,7 +80,7 @@ export class M3U8Parser implements SonglistParser {
                 });
               } else {
                 // No dash separator found, use the whole string as title
-                logParserEvent('M3U8Parser', ParserLogType.WARNING, `No separator found, using full text as title`);
+                log('D:PARSER', 'M3U:012', `No separator found, using full text as title`);
                 songs.push({
                   title: fullMetadata || 'Unknown Title',
                   artist: 'Unknown Artist'
@@ -91,13 +91,13 @@ export class M3U8Parser implements SonglistParser {
         }
       }
       
-      logParserEvent('M3U8Parser', ParserLogType.INFO, `Completed parsing, found ${songs.length} songs`);
+      log('D:PARSER', 'M3U:013', `Completed parsing, found ${songs.length} songs`);
       return {
         songs,
         error: songs.length > 0 ? ParseError.NONE : ParseError.NO_VALID_SONGS
       };
     } catch (error) {
-      logParserEvent('M3U8Parser', ParserLogType.ERROR, `Error parsing M3U8 file: ${error}`);
+      logError('ERROR   ', 'M3U:014', `Error parsing M3U8 file: ${error}`);
       return {
         songs: [],
         error: ParseError.UNKNOWN_ERROR
@@ -106,7 +106,7 @@ export class M3U8Parser implements SonglistParser {
   }
   
   private parseMetadata(metadataText: string | undefined): Song {
-    logParserEvent('M3U8Parser', ParserLogType.DEBUG, `Processing metadata: "${metadataText || ''}"`);
+    log('D:PARSDB', 'M3U:015', `Processing metadata: "${metadataText || ''}"`);
     
     if (!metadataText) {
       return {
@@ -124,8 +124,8 @@ export class M3U8Parser implements SonglistParser {
       const artistPart = fullMetadata.substring(0, dashIndex).trim();
       const titlePart = fullMetadata.substring(dashIndex + 3).trim();
       
-      logParserEvent('M3U8Parser', ParserLogType.DEBUG, `Found dash separator at index ${dashIndex}`);
-      logParserEvent('M3U8Parser', ParserLogType.DEBUG, `Artist part: "${artistPart}", Title part: "${titlePart}"`);
+      log('D:PARSDB', 'M3U:016', `Found dash separator at index ${dashIndex}`);
+      log('D:PARSDB', 'M3U:017', `Artist part: "${artistPart}", Title part: "${titlePart}"`);
       
       return {
         artist: artistPart || 'Unknown Artist',
@@ -139,8 +139,8 @@ export class M3U8Parser implements SonglistParser {
       const artistPart = fullMetadata.substring(0, altDashIndex).trim();
       const titlePart = fullMetadata.substring(altDashIndex + 3).trim();
       
-      logParserEvent('M3U8Parser', ParserLogType.DEBUG, `Found alt dash separator at index ${altDashIndex}`);
-      logParserEvent('M3U8Parser', ParserLogType.DEBUG, `Artist part: "${artistPart}", Title part: "${titlePart}"`);
+      log('D:PARSDB', 'M3U:018', `Found alt dash separator at index ${altDashIndex}`);
+      log('D:PARSDB', 'M3U:019', `Artist part: "${artistPart}", Title part: "${titlePart}"`);
       
       return {
         artist: artistPart || 'Unknown Artist',
@@ -149,7 +149,7 @@ export class M3U8Parser implements SonglistParser {
     }
     
     // Fallback if no separator found
-    logParserEvent('M3U8Parser', ParserLogType.WARNING, `No separator found, using full text as title`);
+    log('D:PARSER', 'M3U:020', `No separator found, using full text as title`);
     return {
       title: fullMetadata || 'Unknown Title',
       artist: 'Unknown Artist'

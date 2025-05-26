@@ -21,6 +21,7 @@ import {
 import { parseSonglist, ParseResult, ParseError } from '@uploadDistributor/songlist-parser';
 import { USER_ROLES, UserRole } from '../services/AuthService.js';
 import { utcToCet } from '../utils/TimezoneUtils.js';
+import { log, logError } from '@uploadDistributor/logging';
 
 // Import services
 import { StatusManager } from '../services/StatusManager.js';
@@ -37,13 +38,13 @@ import { workerData } from 'worker_threads';
 const fileId: string = workerData;
 
 if (!fileId || typeof fileId !== 'string') {
-  process.stderr.write('Invalid or missing fileId in workerData\n');
+  logError('ERROR   ', 'FP:001', 'Invalid or missing fileId in workerData');
   process.exit(1);
 }
 
 // Define paths
 const receivedFilesDir = process.env.RECEIVED_FILES_DIR || path.join(path.dirname(new URL(import.meta.url).pathname), '../../received-files');
-process.stdout.write(`Files directory: ${receivedFilesDir}\n`);
+log('D:WORKER', 'FP:002', `Files directory: ${receivedFilesDir}`);
 const fileDir = path.join(receivedFilesDir, fileId);
 const metadataFile = path.join(fileDir, 'metadata.json');
 
@@ -53,13 +54,13 @@ const fileManager = new FileManager();
 
 // Check if directory exists
 if (!fs.existsSync(fileDir)) {
-  process.stderr.write(`File directory not found: ${fileDir}\n`);
+  logError('ERROR   ', 'FP:003', `File directory not found: ${fileDir}`);
   process.exit(1);
 }
 
 // Check if metadata file exists
 if (!fs.existsSync(metadataFile)) {
-  process.stderr.write(`Metadata file not found: ${metadataFile}\n`);
+  logError('ERROR   ', 'FP:004', `Metadata file not found: ${metadataFile}`);
   statusManager.updateStatus('error', 'Metadata file not found');
   process.exit(1);
 }
@@ -67,10 +68,12 @@ if (!fs.existsSync(metadataFile)) {
 // Read metadata first to determine actual filenames
 let metadata: any;
 try {
+  log('D:WORKDB', 'FP:005', `Reading metadata file: ${metadataFile}`);
   const metadataContent = fs.readFileSync(metadataFile, 'utf8');
   metadata = JSON.parse(metadataContent);
+  log('D:WORKDB', 'FP:006', `Metadata parsed: ${JSON.stringify(metadata, null, 2)}`);
 } catch (err) {
-  process.stderr.write(`Error reading metadata: ${err}\n`);
+  logError('ERROR   ', 'FP:007', `Error reading metadata:`, err);
   statusManager.updateStatus('error', 'Invalid metadata format');
   process.exit(1);
 }
@@ -80,7 +83,7 @@ const normalizedBase = `${metadata.broadcastDate}_${metadata.djName.replace(/\s+
 const audioFile = path.join(fileDir, `${normalizedBase}.mp3`);
 
 // Find the songlist file by checking for all supported extensions
-process.stdout.write(`Using files directory: ${fileDir}\n`);
+log('D:FILE  ', 'FP:030', `Using files directory: ${fileDir}`);
 const possibleExtensions = ['.txt', '.rtf', '.docx', '.nml', '.m3u8'];
 let songlistFile = '';
 
@@ -88,20 +91,20 @@ for (const ext of possibleExtensions) {
   const testPath = path.join(fileDir, `${normalizedBase}${ext}`);
   if (fs.existsSync(testPath)) {
     songlistFile = testPath;
-    process.stdout.write(`Found songlist file: ${songlistFile}\n`);
+    log('D:FILE  ', 'FP:031', `Found songlist file: ${songlistFile}`);
     break;
   }
 }
 
 // Check if required files exist with normalized names
 if (!fs.existsSync(audioFile)) {
-  process.stderr.write(`Audio file not found: ${audioFile}\n`);
+  logError('ERROR   ', 'FP:033', `Audio file not found: ${audioFile}`);
   statusManager.updateStatus('error', 'Audio file not found');
   process.exit(1);
 }
 
 if (!songlistFile) {
-  process.stderr.write(`Songlist file not found for base: ${normalizedBase}\n`);
+  logError('ERROR   ', 'FP:034', `Songlist file not found for base: ${normalizedBase}`);
   statusManager.updateStatus('error', 'Songlist file not found');
   process.exit(1);
 }
@@ -117,8 +120,8 @@ export async function processFile(fileId: string) {
     statusManager.updateStatus('processing', 'Processing started');
     
     // Log the start of processing
-    process.stdout.write(`Processing files for ${fileId}\n`);
-    process.stdout.write(`Metadata: ${JSON.stringify(metadata, null, 2)}\n`);
+    log('D:WORKER', 'FP:008', `Processing files for ${fileId}`);
+    log('D:WORKDB', 'FP:009', `Metadata: ${JSON.stringify(metadata, null, 2)}`);
     
     // Get user role from metadata or default to DJ
     let userRole: UserRole = USER_ROLES.DJ;
@@ -131,7 +134,7 @@ export async function processFile(fileId: string) {
     const isDjUser = userRole === USER_ROLES.DJ;
     
     // Step 1: Parse and normalize songlist
-    process.stdout.write('Parsing songlist...\n');
+    log('D:WORKER', 'FP:010', 'Parsing songlist...');
     
     let songlist: SonglistData;
     
@@ -140,11 +143,12 @@ export async function processFile(fileId: string) {
       const parseResult: ParseResult = await parseSonglist(songlistFile);
       
       if (parseResult.error !== ParseError.NONE) {
+        logError('ERROR   ', 'FP:011', `Failed to parse songlist: ${parseResult.error}`);
         throw new Error(`Failed to parse songlist: ${parseResult.error}`);
       }
       
       if (!parseResult.songs || parseResult.songs.length === 0) {
-        process.stdout.write('No valid songs found in songlist, creating minimal songlist from metadata\n');
+        log('D:WORKER', 'FP:012', 'No valid songs found in songlist, creating minimal songlist from metadata');
         songlist = createMinimalSonglist(metadata);
       } else {
       // Convert parsed songs to SonglistData format
@@ -178,12 +182,12 @@ export async function processFile(fileId: string) {
         
         // Use type assertion to tell TypeScript that storeSonglist always returns a string
         const storedPath: string = storeSonglist(fileId, songlist) as string;
-        process.stdout.write(`Songlist stored at: ${storedPath}\n`);
+        log('D:WORKER', 'FP:013', `Songlist stored at: ${storedPath}`);
         
         // For DJ users, we'll continue processing in the background without updating status again
         // The client already received a 'received' status when the files were validated
         if (isDjUser) {
-          process.stdout.write('DJ user processing continuing in background...\n');
+          log('D:WORKER', 'FP:032', 'DJ user processing continuing in background...');
           // We don't update the status here, as the client doesn't need to know about the background processing
         }
       } else {
@@ -191,13 +195,13 @@ export async function processFile(fileId: string) {
       }
       
     } catch (err) {
-      process.stderr.write(`Error processing songlist: ${err}\n`);
+      logError('ERROR   ', 'FP:014', `Error processing songlist:`, err);
       statusManager.updateStatus('error', `Songlist processing error: ${(err as Error).message}`);
       process.exit(1);
     }
     
     // Step 2: Upload to destinations
-    process.stdout.write('Uploading to destinations...\n');
+    log('D:WORKER', 'FP:015', 'Uploading to destinations...');
     
     // For now, only use AzuraCast as the destination
     const defaultDestinations = ['azuracast'];
@@ -213,7 +217,7 @@ export async function processFile(fileId: string) {
       }
     }
     
-    process.stdout.write(`Uploading to destination: ${selectedDestinations[0]}\n`);
+    log('D:WORKER', 'FP:016', `Uploading to destination: ${selectedDestinations[0]}`);
     
     // Convert UTC timestamps to CET for each destination
     const broadcastDate = songlist.broadcast_data.broadcast_date;
@@ -228,7 +232,7 @@ export async function processFile(fileId: string) {
     
     // Verify artwork file exists
     if (!fs.existsSync(artworkFile)) {
-      process.stderr.write(`Artwork file not found: ${artworkFile}\n`);
+      logError('ERROR   ', 'FP:017', `Artwork file not found: ${artworkFile}`);
       statusManager.updateStatus('error', 'Artwork file not found');
       process.exit(1);
     }
@@ -243,15 +247,15 @@ export async function processFile(fileId: string) {
     
     // Step 2a: Upload to AzuraCast (if selected)
     if (selectedDestinations.includes('azuracast')) {
-      process.stdout.write('Starting upload to AzuraCast...\n');
+      log('D:WORKER', 'FP:018', 'Starting upload to AzuraCast...');
       statusManager.updateStatus('processing', 'Uploading to AzuraCast', { current_platform: 'azuracast' });
       
       try {
         const azuraCastResult = await azuraCastService.uploadFile(audioFile, azuraCastMetadata);
         destinations.azuracast = azuraCastResult;
-        process.stdout.write(`AzuraCast upload ${azuraCastResult.success ? 'completed successfully' : 'failed'}\n`);
+        log('D:WORKER', 'FP:019', `AzuraCast upload ${azuraCastResult.success ? 'completed successfully' : 'failed'}`);
       } catch (err) {
-        process.stderr.write(`AzuraCast upload failed: ${err}\n`);
+        logError('ERROR   ', 'FP:020', `AzuraCast upload failed:`, err);
         destinations.azuracast = {
           success: false,
           error: (err as Error).message,
@@ -278,13 +282,13 @@ export async function processFile(fileId: string) {
     }
     
     // Step 3: Move files to archive directory AFTER updating status to completed
-    process.stdout.write('Moving files to archive directory...\n');
+    log('D:WORKER', 'FP:021', 'Moving files to archive directory...');
     
     try {
       // Move files to archive directory
       const { archivePath, fileMap } = fileManager.moveToArchive(fileId, songlist);
-      process.stdout.write(`Files moved to archive: ${archivePath}\n`);
-      process.stdout.write(`File mapping: ${JSON.stringify(fileMap, null, 2)}\n`);
+      log('D:WORKER', 'FP:022', `Files moved to archive: ${archivePath}`);
+      log('D:WORKDB', 'FP:023', `File mapping: ${JSON.stringify(fileMap, null, 2)}`);
       
       // Add archive path to destinations
       destinations.archive = {
@@ -293,15 +297,14 @@ export async function processFile(fileId: string) {
         files: fileMap
       };
     } catch (err) {
-      process.stderr.write(`Error moving files to archive: ${err}\n`);
+      logError('ERROR   ', 'FP:024', `Error moving files to archive:`, err);
       destinations.archive = {
         success: false,
         error: (err as Error).message
       };
     }
-    process.stdout.write(`Files for ${fileId} processed successfully\n`);
-    // Simplified logging - just show AzuraCast result
-    process.stdout.write(`AzuraCast upload result: ${destinations.azuracast.success ? 'Success' : 'Failed'}\n`);
+    log('D:WORKER', 'FP:025', `Files for ${fileId} processed successfully`);
+    log('D:WORKER', 'FP:026', `AzuraCast upload result: ${destinations.azuracast.success ? 'Success' : 'Failed'}`);
     
     // Add a small delay before exiting to ensure the status file is written
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -309,7 +312,7 @@ export async function processFile(fileId: string) {
     // Exit the process
     process.exit(0);
   } catch (err) {
-    process.stderr.write(`Error processing files: ${err}\n`);
+    logError('ERROR   ', 'FP:027', `Error processing files:`, err);
     statusManager.updateStatus('error', `Processing error: ${(err as Error).message}`);
     process.exit(1);
   }
@@ -350,13 +353,13 @@ function createMinimalSonglist(metadata: any): SonglistData {
 
 // Handle unexpected errors
 process.on('uncaughtException', (err) => {
-  process.stderr.write(`Uncaught exception: ${err}\n`);
+  logError('ERROR   ', 'FP:028', `Uncaught exception:`, err);
   statusManager.updateStatus('error', `Uncaught exception: ${(err as Error).message}`);
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason) => {
-  process.stderr.write(`Unhandled rejection: ${reason}\n`);
+  logError('ERROR   ', 'FP:029', `Unhandled rejection:`, reason);
   const errorMessage = reason instanceof Error ? reason.message : String(reason);
   statusManager.updateStatus('error', `Unhandled rejection: ${errorMessage}`);
   process.exit(1);

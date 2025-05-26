@@ -9,10 +9,11 @@
 export const LogConfig = {
   // Daemon categories
   'D:AUTH  ': true,  // Authentication-related logs
-  'D:AUTHDB': false, // Authentication-related logs - deeper debugging
+  'D:AUTHDB': true, // Authentication-related logs - deeper debugging
   'D:FILE  ': true,  // File operations
   'D:FILEDB': false, // File operations - deeper debugging
   'D:API   ': true,  // External API interactions
+  'D:APIDB ': false,  // External API interactions - deeper debugging
   'D:ROUTE ': true,  // HTTP route handling
   'D:RTEDB ': false, // HTTP route handling - deeper debugging
   'D:PARSER': true,  // Songlist parsing operations
@@ -22,6 +23,8 @@ export const LogConfig = {
   'D:SYSTEM': true,  // System-level operations
   'D:STATUS': true,  // Status updates and tracking
   'D:STATDB': false, // Status updates and tracking - deeper debugging
+  'D:EMAIL ': true,  // Email authentication logs
+  'D:EMAILD': false, // Email authentication logs - deeper debugging
   
   // Client categories
   'C:AUTH  ': true,  // Authentication flows
@@ -66,6 +69,8 @@ export const logError = (category: keyof typeof LogConfig, id: string, message: 
   // Always log errors regardless of category configuration
   originalConsoleError(`[${category}][${id}] - ${message}`, ...args);
 };
+
+// No enums needed anymore - using string literals directly in the code
 
 // Export default for convenience
 export default {

@@ -15,9 +15,9 @@
  */
 
 import { AzuraCastApi } from '../apis/AzuraCastApi.js';
-import { ErrorType, logDetailedError, logParserEvent, ParserLogType } from '../utils/LoggingUtils.js';
 import EmailService from './EmailService.js';
 import jwt from 'jsonwebtoken';
+import { log, logError } from '@uploadDistributor/logging';
 
 // Define user roles as constants for easy modification
 export const USER_ROLES = {
@@ -88,7 +88,7 @@ export class AuthService {
    * Sends a magic link to the user's email if the email exists in AzuraCast
    */
   public async authenticateWithEmail(email: string): Promise<AuthResponse> {
-    logParserEvent('AuthService', ParserLogType.INFO, `Authentication requested for email: ${email}`);
+    log('D:AUTH  ', 'AS:001', `Authentication requested for email: ${email}`);
     
     try {
       // Create AzuraCast API client
@@ -98,7 +98,7 @@ export class AuthService {
       const user = await api.findUserByEmail(email);
       
       if (!user) {
-        logParserEvent('AuthService', ParserLogType.WARNING, `No such email address found: ${email}`);
+        log('D:AUTH  ', 'AS:002', `No such email address found: ${email}`);
         return {
           success: false,
           error: 'No such email address found. Please check your spelling or contact your station administrator.'
@@ -110,19 +110,19 @@ export class AuthService {
       const sent = await emailService.sendMagicLinkEmail(email);
       
       if (!sent) {
-        logParserEvent('AuthService', ParserLogType.ERROR, `Failed to send login email to ${email}`);
+        logError('ERROR   ', 'AS:003', `Failed to send login email to ${email}`);
         return {
           success: false,
           error: 'Failed to send login email. Please try again or contact your administrator.'
         };
       }
       
-      logParserEvent('AuthService', ParserLogType.INFO, `Magic link email sent to ${email}`);
+      log('D:AUTH  ', 'AS:004', `Magic link email sent to ${email}`);
       return {
         success: true
       };
     } catch (error) {
-      logParserEvent('AuthService', ParserLogType.ERROR, `Error in authenticateWithEmail:`, error);
+      logError('ERROR   ', 'AS:005', `Error in authenticateWithEmail:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -134,7 +134,7 @@ export class AuthService {
    * Verify a magic link token and authenticate the user
    */
   public async verifyMagicLinkToken(token: string): Promise<AuthResponse> {
-    logParserEvent('AuthService', ParserLogType.INFO, `Verifying magic link token`);
+    log('D:AUTH  ', 'AS:006', `Verifying magic link token`);
     
     try {
       // Verify the token
@@ -142,7 +142,7 @@ export class AuthService {
       const { valid, email } = emailService.verifyToken(token);
       
       if (!valid || !email) {
-        logParserEvent('AuthService', ParserLogType.WARNING, `Invalid or expired token`);
+        log('D:AUTH  ', 'AS:007', `Invalid or expired token`);
         return {
           success: false,
           error: 'Invalid or expired token. Please request a new login link.'
@@ -156,7 +156,7 @@ export class AuthService {
       const userResult = await api.findUserByEmail(email);
       
       if (!userResult || !userResult.success || !userResult.user) {
-        logParserEvent('AuthService', ParserLogType.WARNING, `User not found for email: ${email}`);
+        log('D:AUTH  ', 'AS:008', `User not found for email: ${email}`);
         return {
           success: false,
           error: 'User not found. Please contact your administrator.'
@@ -184,14 +184,14 @@ export class AuthService {
       // Generate a JWT token
       const jwtToken = this.generateToken(userProfile);
       
-      logParserEvent('AuthService', ParserLogType.INFO, `Magic link token verified successfully for ${email}`);
+      log('D:AUTH  ', 'AS:009', `Magic link token verified successfully for ${email}`);
       return {
         success: true,
         user: userProfile,
         token: jwtToken
       };
     } catch (error) {
-      logParserEvent('AuthService', ParserLogType.ERROR, `Error in verifyMagicLinkToken:`, error);
+      logError('ERROR   ', 'AS:010', `Error in verifyMagicLinkToken:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -221,6 +221,7 @@ export class AuthService {
    */
   public async validateToken(token: string): Promise<AuthResponse> {
     try {
+      log('D:AUTHDB', 'AS:011', `Validating JWT token`);
       // Verify the JWT token
       const decoded = jwt.verify(token, this.jwtSecret) as any;
       
@@ -232,8 +233,11 @@ export class AuthService {
         role: decoded.role
       };
       
+      log('D:AUTHDB', 'AS:012', `Token validated for user: ${user.displayName}`);
+      
       // For DJ users, verify that their directory exists in AzuraCast
       if (user.role === USER_ROLES.DJ) {
+        log('D:AUTHDB', 'AS:013', `Verifying DJ directory for ${user.displayName}`);
         const directoryResult = await this.verifyDjDirectory(user.displayName);
         if (!directoryResult.success) {
           return directoryResult;
@@ -245,7 +249,7 @@ export class AuthService {
         token
       };
     } catch (error) {
-      logParserEvent('AuthService', ParserLogType.ERROR, `Error validating token:`, error);
+      logError('ERROR   ', 'AS:014', `Error validating token:`, error);
       return {
         success: false,
         error: 'Invalid or expired token'
@@ -295,6 +299,7 @@ export class AuthService {
    */
   public async getUserById(userId: string): Promise<AuthResponse> {
     try {
+      log('D:AUTH  ', 'AS:015', `Getting user by ID: ${userId}`);
       // Create AzuraCast API client
       const api = new AzuraCastApi();
       
@@ -302,7 +307,7 @@ export class AuthService {
       const userResult = await api.getUserById(userId);
       
       if (!userResult.success || !userResult.user) {
-        logParserEvent('AuthService', ParserLogType.WARNING, `User not found with ID: ${userId}`);
+        log('D:AUTH  ', 'AS:016', `User not found with ID: ${userId}`);
         return {
           success: false,
           error: 'User not found'
@@ -323,7 +328,7 @@ export class AuthService {
         user: userProfile
       };
     } catch (error) {
-      logParserEvent('AuthService', ParserLogType.ERROR, `Error in getUserById:`, error);
+      logError('ERROR   ', 'AS:017', `Error in getUserById:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -332,6 +337,7 @@ export class AuthService {
   }
 
   private async verifyDjDirectory(djName: string): Promise<AuthResponse> {
+    log('D:AUTH  ', 'AS:018', `Verifying DJ directory for ${djName}`);
     // Create AzuraCast API client
     const api = new AzuraCastApi();
     
@@ -344,14 +350,13 @@ export class AuthService {
       
       if (!directoryResult.success) {
         // Log the error
-        logDetailedError(
-          'azuracast',
-          `Directory check for ${djName}`,
-          ErrorType.VALIDATION,
-          directoryResult.error || 'Failed to check directory',
-          { stationId, djName },
-          1
-        );
+        logError('ERROR   ', 'AS:019', `Failed to check directory for DJ ${djName}: ${directoryResult.error || 'Unknown error'}`, {
+          service: 'azuracast',
+          title: `Directory check for ${djName}`,
+          errorType: 'VALIDATION',
+          details: { stationId, djName },
+          attempt: 1
+        });
         
         return {
           success: false,
@@ -361,14 +366,13 @@ export class AuthService {
       
       if (!directoryResult.exists) {
         // Log the error
-        logDetailedError(
-          'azuracast',
-          `Directory check for ${djName}`,
-          ErrorType.VALIDATION,
-          'Directory does not exist',
-          { stationId, djName },
-          1
-        );
+        logError('ERROR   ', 'AS:020', `Directory does not exist for DJ ${djName}`, {
+          service: 'azuracast',
+          title: `Directory check for ${djName}`,
+          errorType: 'VALIDATION',
+          details: { stationId, djName },
+          attempt: 1
+        });
         
         return {
           success: false,
@@ -377,17 +381,17 @@ export class AuthService {
       }
       
       // Directory exists, return success
+      log('D:AUTHDB', 'AS:021', `Directory exists for DJ ${djName}`);
       return { success: true };
     } catch (error) {
       // Log the error
-      logDetailedError(
-        'azuracast',
-        `Directory check for ${djName}`,
-        ErrorType.UNKNOWN,
-        error instanceof Error ? error.message : 'Unknown error',
-        { djName },
-        1
-      );
+      logError('ERROR   ', 'AS:022', `Error verifying directory for DJ ${djName}:`, error, {
+        service: 'azuracast',
+        title: `Directory check for ${djName}`,
+        errorType: 'UNKNOWN',
+        details: { djName },
+        attempt: 1
+      });
       
       return {
         success: false,

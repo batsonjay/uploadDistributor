@@ -9,10 +9,10 @@
 
 import { SoundCloudApiMock, SoundCloudMetadata, SoundCloudUploadResponse } from '../mocks/SoundCloudApiMock.js';
 import { StatusManager } from './StatusManager.js';
-import { ErrorType } from '../utils/LoggingUtils.js';
 import { retry, RetryOptions } from '../utils/RetryUtils.js';
 import { SonglistData } from '../storage/SonglistStorage.js';
 import { utcToCet } from '../utils/TimezoneUtils.js';
+import { log, logError } from '@uploadDistributor/logging';
 
 export class SoundCloudService {
   private api: SoundCloudApiMock;
@@ -70,7 +70,7 @@ export class SoundCloudService {
     audioFilePath: string, 
     metadata: SoundCloudMetadata
   ): Promise<{ success: boolean; id?: string; url?: string; error?: string; note?: string }> {
-    process.stdout.write('Uploading to SoundCloud...\n');
+    log('D:API   ', 'SC:001', 'Uploading to SoundCloud...');
     
     // Track whether we've already tried with private sharing
     let usedPrivateSharing = false;
@@ -83,7 +83,7 @@ export class SoundCloudService {
       maxRetries: 1, // Only retry once for SoundCloud
       initialDelay: 1000,
       onRetry: (attempt, error, delay) => {
-        process.stdout.write(`SoundCloud upload failed, retrying with modified settings in ${delay/1000}s... (${attempt}/1)\n`);
+        log('D:API   ', 'SC:002', `SoundCloud upload failed, retrying with modified settings in ${delay/1000}s... (${attempt}/1)`);
       },
       // Custom function to determine if an error is retryable and to modify the metadata
       isRetryable: (error: Error) => {
@@ -97,7 +97,7 @@ export class SoundCloudService {
             error.message.includes('permission') || 
             error.message.includes('artwork')) {
           
-          process.stdout.write('SoundCloud upload failed due to quota/permission/artwork issues, retrying with private sharing...\n');
+          log('D:API   ', 'SC:003', 'SoundCloud upload failed due to quota/permission/artwork issues, retrying with private sharing...');
           
           // Create modified metadata with private sharing and dummy artwork
           currentMetadata = { 
@@ -119,7 +119,7 @@ export class SoundCloudService {
     
     try {
       // Step 1: Upload the file with retry logic
-      process.stdout.write('SoundCloud Step 1: Uploading file...\n');
+      log('D:API   ', 'SC:004', 'SoundCloud Step 1: Uploading file...');
       
       uploadResult = await retry(async () => {
         // Attempt to upload with current metadata
@@ -130,7 +130,7 @@ export class SoundCloudService {
             'soundcloud',
             metadata.title,
             result.error || 'Unknown error',
-            ErrorType.UNKNOWN,
+            'UNKNOWN',
             { audioFilePath, metadata: currentMetadata }
           );
           
@@ -142,7 +142,7 @@ export class SoundCloudService {
       
       // Step 2: Update metadata if Step 1 was successful
       if (uploadResult && uploadResult.success) {
-        process.stdout.write(`SoundCloud Step 2: Updating metadata for track ${uploadResult.id}...\n`);
+        log('D:API   ', 'SC:005', `SoundCloud Step 2: Updating metadata for track ${uploadResult.id}...`);
         
         try {
           // No retry for metadata update - if it fails, we still consider the upload successful
@@ -153,11 +153,11 @@ export class SoundCloudService {
               'soundcloud',
               metadata.title,
               metadataResult.error || 'Failed to update metadata',
-              ErrorType.UNKNOWN,
+              'UNKNOWN',
               { trackId: uploadResult.id, metadata }
             );
             
-            process.stdout.write(`SoundCloud metadata update failed: ${metadataResult.error}\n`);
+            log('D:API   ', 'SC:006', `SoundCloud metadata update failed: ${metadataResult.error}`);
             
             // The file was uploaded successfully, but metadata update failed
             if (!note) {
@@ -175,7 +175,7 @@ export class SoundCloudService {
             'soundcloud',
             metadata.title,
             (err as Error).message,
-            ErrorType.UNKNOWN,
+            'UNKNOWN',
             { trackId: uploadResult.id, metadata }
           );
           
@@ -210,13 +210,13 @@ export class SoundCloudService {
       }
     } catch (err) {
       // Final error after all retries
-      process.stderr.write(`SoundCloud upload error: ${err}\n`);
+      logError('ERROR   ', 'SC:007', `SoundCloud upload error: ${err}`);
       
       this.statusManager.logError(
         'soundcloud',
         metadata.title,
         (err as Error).message,
-        ErrorType.UNKNOWN,
+        'UNKNOWN',
         { audioFilePath, metadata: currentMetadata }
       );
       

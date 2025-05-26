@@ -12,6 +12,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { SonglistData } from '../storage/SonglistStorage.js';
+import { log, logError } from '@uploadDistributor/logging';
 
 export class FileManager {
   private receivedFilesDir: string;
@@ -27,8 +28,12 @@ export class FileManager {
       '../../archive'
     );
     
+    log('D:FILE  ', 'FM:001', `Files directory: ${this.receivedFilesDir}`);
+    log('D:FILEDB', 'FM:002', `Archive directory: ${this.archiveDir}`);
+    
     // Ensure archive directory exists
     if (!fs.existsSync(this.archiveDir)) {
+      log('D:FILE  ', 'FM:003', `Creating archive directory: ${this.archiveDir}`);
       fs.mkdirSync(this.archiveDir, { recursive: true });
     }
   }
@@ -41,6 +46,7 @@ export class FileManager {
    */
   public moveToArchive(fileId: string, songlist: SonglistData): { archivePath: string, fileMap: Record<string, string> } {
     const tempDir = path.join(this.receivedFilesDir, fileId);
+    log('D:FILE  ', 'FM:004', `Moving files from ${tempDir} to archive`);
     
     // Get current date for fallbacks
     const now = new Date();
@@ -67,6 +73,7 @@ export class FileManager {
     // Create directory structure: yyyy/
     const yearDir = path.join(this.archiveDir, year as string);
     if (!fs.existsSync(yearDir)) {
+      log('D:FILEDB', 'FM:005', `Creating year directory: ${yearDir}`);
       fs.mkdirSync(yearDir, { recursive: true });
     }
     
@@ -87,6 +94,7 @@ export class FileManager {
     
     // Move all files from temp directory to final directory with descriptive names
     const files = fs.readdirSync(tempDir);
+    log('D:FILEDB', 'FM:006', `Found ${files.length} files to move`);
     for (const file of files) {
       const sourcePath = path.join(tempDir, file);
       
@@ -119,18 +127,20 @@ export class FileManager {
           
           // Add fileId to status data if it doesn't exist
           if (!statusData.fileId) {
+            log('D:FILEDB', 'FM:007', `Adding fileId ${fileId} to status.json`);
             statusData.fileId = fileId;
           }
           
           // Write the updated status file
           fs.writeFileSync(destPath, JSON.stringify(statusData, null, 2));
         } catch (err) {
-          console.error(`Error updating status file with fileId: ${err}`);
+          logError('ERROR   ', 'FM:008', `Error updating status file with fileId:`, err);
           // Fall back to copying the original file
           fs.copyFileSync(sourcePath, destPath);
         }
       } else {
         // Copy the file normally
+        log('D:FILEDB', 'FM:009', `Copying ${file} to ${destFilename}`);
         fs.copyFileSync(sourcePath, destPath);
       }
       
@@ -139,6 +149,8 @@ export class FileManager {
     }
     
     // Delete the temporary directory after successful move
+    log('D:FILE  ', 'FM:010', `Files moved to archive: ${finalDir}`);
+    log('D:FILEDB', 'FM:011', `File mapping: ${JSON.stringify(fileMap, null, 2)}`);
     this.deleteDirectory(tempDir);
     
     return {
@@ -153,6 +165,7 @@ export class FileManager {
    */
   private deleteDirectory(dirPath: string): void {
     if (fs.existsSync(dirPath)) {
+      log('D:FILE  ', 'FM:012', `Deleting directory: ${dirPath}`);
       const files = fs.readdirSync(dirPath);
       
       for (const file of files) {
@@ -168,6 +181,7 @@ export class FileManager {
       }
       
       // Delete the empty directory
+      log('D:FILEDB', 'FM:013', `Removing empty directory: ${dirPath}`);
       fs.rmdirSync(dirPath);
     }
   }

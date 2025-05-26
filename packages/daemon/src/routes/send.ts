@@ -12,7 +12,6 @@ import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { anyAuthenticated } from '../middleware/roleVerification.js';
 import { AuthService, USER_ROLES } from '../services/AuthService.js';
-import { logParserEvent, ParserLogType } from '../utils/LoggingUtils.js';
 import { log, logError } from '@uploadDistributor/logging';
 import { FileManager } from '../services/FileManager.js';
 
@@ -133,19 +132,17 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
     bb.on('finish', async () => {
       // Process DJ selection if applicable
       if (authUser.role === USER_ROLES.ADMIN && selectedDjId) {
-        logParserEvent('SendRoutes', ParserLogType.INFO, 
-          `Admin ${authUser.displayName} attempting to upload as DJ ID: ${selectedDjId}`);
+        log('D:ROUTE ', 'SE:001', `Admin ${authUser.displayName} attempting to upload as DJ ID: ${selectedDjId}`);
         
         // Get the selected DJ's information
         const selectedDj = await authService.getUserById(selectedDjId);
         if (selectedDj.success && selectedDj.user) {
           // Use the selected DJ as the effective user for this upload
           effectiveUser = selectedDj.user;
-          logParserEvent('SendRoutes', ParserLogType.INFO,
-            `Admin ${authUser.displayName} uploading on behalf of DJ ${effectiveUser.displayName}`);
+          log('D:ROUTE ', 'SE:002', `Admin ${authUser.displayName} uploading on behalf of DJ ${effectiveUser.displayName}`);
         } else {
-          logParserEvent('SendRoutes', ParserLogType.WARNING,
-            `Admin ${authUser.displayName} attempted to upload as invalid DJ ID: ${selectedDjId}`);
+          log('D:ROUTE ', 'SE:003', `Admin ${authUser.displayName} attempted to upload as invalid DJ ID: ${selectedDjId}`);
+          logError('ERROR   ', 'SE:003', `Admin ${authUser.displayName} attempted to upload as invalid DJ ID: ${selectedDjId}`);
           return res.status(400).json({
             success: false,
             error: 'Invalid DJ selected'
@@ -155,6 +152,7 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
       
       // Check if we have all required metadata
       if (!metadata.broadcastDate || !metadata.title) {
+        log('D:ROUTE ', 'SE:004', `Missing required metadata fields: broadcastDate=${metadata.broadcastDate}, title=${metadata.title}`);
         return res.status(400).json({
           success: false,
           error: 'Invalid metadata',
@@ -164,6 +162,7 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
       
       // Check if we have all required files
       if (!fileBuffers.audio || !fileBuffers.artwork || !fileBuffers.songlist) {
+        log('D:ROUTE ', 'SE:005', `Missing required files: audio=${!!fileBuffers.audio}, artwork=${!!fileBuffers.artwork}, songlist=${!!fileBuffers.songlist}`);
         return res.status(400).json({
           success: false,
           error: 'Missing required files',
@@ -180,7 +179,7 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
       // Save each buffered file
       for (const [name, fileData] of Object.entries(fileBuffers)) {
         if (!fileData.buffer || !fileData.info) {
-          logParserEvent('SendRoutes', ParserLogType.WARNING, `Missing buffer or info for file: ${name}`);
+          log('D:ROUTE ', 'SE:006', `Missing buffer or info for file: ${name}`);
           continue;
         }
         let saveTo;
@@ -195,7 +194,7 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
           saveTo = path.join(fileDir, `${normalizedBase}${ext}`);
           metadata.artworkFilename = `${normalizedBase}${ext}`;
         } else {
-          logParserEvent('SendRoutes', ParserLogType.WARNING, `Skipping unknown file type: ${name}`);
+          log('D:ROUTE ', 'SE:007', `Skipping unknown file type: ${name}`);
           continue;
         }
         
@@ -226,12 +225,13 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
           timestamp: new Date().toISOString()
         }, null, 2)
       );
+      log('D:ROUTE ', 'SE:008', `Created status file for ${fileId}`);
       
       // Start worker thread to process the file
       const { Worker } = await import('node:worker_threads');
       const workerPath = new URL('../processors/file-processor-worker.js', import.meta.url).pathname;
       
-      logParserEvent('SendRoutes', ParserLogType.INFO, fileId as string, `Starting file processing`);
+      log('D:ROUTE ', 'SE:009', `Starting file processing for ${fileId}`);
       
       try {
         const worker = new Worker(workerPath, {
@@ -239,10 +239,10 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
         });
 
         worker.on('error', (err) => {
-          logParserEvent('SendRoutes', ParserLogType.ERROR, fileId as string, `Worker error: ${err}`);
+          logError('ERROR   ', 'SE:010', `Worker error for ${fileId}:`, err);
         });
       } catch (workerErr) {
-        logParserEvent('SendRoutes', ParserLogType.ERROR, fileId as string, `Failed to start worker thread: ${workerErr}`);
+        logError('ERROR   ', 'SE:011', `Failed to start worker thread for ${fileId}:`, workerErr);
         return res.status(500).json({
           success: false,
           error: 'Worker thread error',
@@ -251,6 +251,7 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
       }
       
       // Return file ID to client with 'received' status
+      log('D:ROUTE ', 'SE:012', `File ${fileId} successfully received and validated`);
       res.json({
         success: true,
         fileId: fileId,
@@ -261,7 +262,7 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
     
     // Handle errors
     bb.on('error', (err: Error) => {
-      logParserEvent('SendRoutes', ParserLogType.ERROR, `File receiving error:`, err);
+      logError('ERROR   ', 'SE:013', `File receiving error:`, err);
       res.status(500).json({
         success: false,
         error: 'File receiving failed',
@@ -272,7 +273,7 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
     // Pipe request to busboy
     req.pipe(bb);
   } catch (err) {
-    logParserEvent('SendRoutes', ParserLogType.ERROR, `Error in send process:`, err);
+    logError('ERROR   ', 'SE:014', `Error in send process:`, err);
     return res.status(500).json({
       success: false,
       error: 'Internal server error',
@@ -297,8 +298,10 @@ router.get('/status/:fileId', anyAuthenticated, async (req: express.Request, res
   const fileDir = path.join(receivedFilesDir, fileId);
 
   try {
+    log('D:RTEDB ', 'SE:015', `Getting status for file ID: ${fileId}`);
     // Check if directory exists
     if (!fs.existsSync(fileDir)) {
+      log('D:ROUTE ', 'SE:016', `File ID not found: ${fileId}`);
       return res.status(404).json({
         error: 'Not found',
         message: 'File ID not found'
@@ -317,10 +320,11 @@ router.get('/status/:fileId', anyAuthenticated, async (req: express.Request, res
     // Read status file
     const status = JSON.parse(fs.readFileSync(statusPath, 'utf8'));
     
+    log('D:RTEDB ', 'SE:017', `Status for ${fileId}: ${JSON.stringify(status)}`);
     // Return status information
     res.json(status);
   } catch (err) {
-    logParserEvent('SendRoutes', ParserLogType.ERROR, fileId, `Error getting status: ${err}`);
+    logError('ERROR   ', 'SE:018', `Error getting status for ${fileId}:`, err);
     res.status(500).json({
       error: 'Status retrieval failed',
       message: err instanceof Error ? err.message : 'Failed to get status'
@@ -343,6 +347,7 @@ router.get('/archive-status/:fileId', anyAuthenticated, async (req: express.Requ
   }
 
   try {
+    log('D:RTEDB ', 'SE:019', `Checking archive status for file ID: ${fileId}`);
     // Create FileManager instance
     const fileManager = new FileManager();
     
@@ -385,19 +390,21 @@ router.get('/archive-status/:fileId', anyAuthenticated, async (req: express.Requ
     }
     
     if (found && archiveStatus) {
+      log('D:ROUTE ', 'SE:020', `File ${fileId} found in archive`);
       return res.json({
         success: true,
         archived: true,
         status: archiveStatus
       });
     } else {
+      log('D:ROUTE ', 'SE:021', `File ${fileId} not found in archive`);
       return res.json({
         success: true,
         archived: false
       });
     }
   } catch (err) {
-    logParserEvent('SendRoutes', ParserLogType.ERROR, fileId, `Error checking archive status: ${err}`);
+    logError('ERROR   ', 'SE:022', `Error checking archive status for ${fileId}:`, err);
     return res.status(500).json({
       error: 'Archive status check failed',
       message: err instanceof Error ? err.message : 'Failed to check archive status'

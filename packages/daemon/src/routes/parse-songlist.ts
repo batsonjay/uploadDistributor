@@ -5,7 +5,6 @@ import busboy from 'busboy';
 import { v4 as uuidv4 } from 'uuid';
 import { anyAuthenticated } from '../middleware/roleVerification.js';
 import { SonglistParserService } from '../services/SonglistParserService.js';
-import { logDestinationStatus, LogType } from '../utils/LoggingUtils.js';
 import { log, logError } from '@uploadDistributor/logging';
 
 const router = express.Router();
@@ -68,7 +67,7 @@ router.post('/validate', anyAuthenticated, async (req: express.Request, res: exp
           metadata = JSON.parse(val);
         }
       } catch (err) {
-        logDestinationStatus('ParseSonglist', LogType.ERROR, tempFileId, `Error parsing metadata: ${err}`);
+        logError('ERROR   ', 'PS:101', `Error parsing metadata for ${tempFileId}:`, err);
       }
     });
     
@@ -107,7 +106,7 @@ router.post('/validate', anyAuthenticated, async (req: express.Request, res: exp
           fs.rmSync(tempDir, { recursive: true, force: true });
         }
         
-        logDestinationStatus('ParseSonglist', LogType.ERROR, tempFileId, `Error parsing songlist: ${err}`);
+        logError('ERROR   ', 'PS:102', `Error parsing songlist for ${tempFileId}:`, err);
         res.status(500).json({
           success: false,
           error: 'Parse failed',
@@ -123,7 +122,7 @@ router.post('/validate', anyAuthenticated, async (req: express.Request, res: exp
         fs.rmSync(tempDir, { recursive: true, force: true });
       }
       
-      logDestinationStatus('ParseSonglist', LogType.ERROR, tempFileId, `File receiving error: ${err}`);
+      logError('ERROR   ', 'PS:103', `File receiving error for ${tempFileId}:`, err);
       res.status(500).json({
         success: false,
         error: 'File receiving failed',
@@ -134,7 +133,7 @@ router.post('/validate', anyAuthenticated, async (req: express.Request, res: exp
     // Pipe request to busboy
     req.pipe(bb);
   } catch (err) {
-    logDestinationStatus('ParseSonglist', LogType.ERROR, 'validate', `Error in validate endpoint: ${err}`);
+    logError('ERROR   ', 'PS:104', `Error in validate endpoint:`, err);
     return res.status(500).json({
       success: false,
       error: 'Internal server error',
@@ -203,7 +202,7 @@ router.get('/:fileId', anyAuthenticated, async (req: express.Request, res: expre
 
     res.json({ songs });
   } catch (err) {
-    logDestinationStatus('ParseSonglist', LogType.ERROR, fileId, `Error parsing songlist: ${err}`);
+    logError('ERROR   ', 'PS:105', `Error parsing songlist for ${fileId}:`, err);
     res.status(500).json({
       error: 'Parse failed',
       message: err instanceof Error ? err.message : 'Failed to parse songlist'
@@ -272,7 +271,7 @@ router.post('/:fileId/confirm', anyAuthenticated, async (req: express.Request, r
     const workerPath = new URL('../processors/file-processor-worker.js', import.meta.url).pathname;
     log('D:WORKDB', 'PS:010', `Worker path: ${workerPath}`);
 
-    logDestinationStatus('ParseSonglist', LogType.INFO, fileId, `Launching worker thread`);
+    log('D:PARSER', 'PS:106', `Launching worker thread for ${fileId}`);
     log('D:WORKER', 'PS:011', `Launching worker thread for file ID: ${fileId}`);
     
     try {
@@ -282,23 +281,20 @@ router.post('/:fileId/confirm', anyAuthenticated, async (req: express.Request, r
 
       worker.on('message', (msg) => {
         log('D:WORKDB', 'PS:012', `Worker message received: ${JSON.stringify(msg)}`);
-        logDestinationStatus('ParseSonglist', LogType.INFO, fileId, `Worker completed: ${JSON.stringify(msg)}`);
+        log('D:PARSER', 'PS:107', `Worker completed for ${fileId}: ${JSON.stringify(msg)}`);
       });
 
       worker.on('error', (err) => {
-        logError('ERROR   ', 'PS:013', `Worker error: ${err}`);
-        logDestinationStatus('ParseSonglist', LogType.ERROR, fileId, `Worker error: ${err}`);
+        logError('ERROR   ', 'PS:013', `Worker error for ${fileId}:`, err);
       });
 
       worker.on('exit', (code) => {
-        log('D:WORKER', 'PS:014', `Worker exited with code ${code}`);
-        logDestinationStatus('ParseSonglist', LogType.INFO, fileId, `Worker exited with code ${code}`);
+        log('D:WORKER', 'PS:014', `Worker exited with code ${code} for ${fileId}`);
       });
       
       log('D:WORKER', 'PS:015', 'Worker thread started successfully');
     } catch (workerErr) {
-      logError('ERROR   ', 'PS:016', `Failed to start worker thread: ${workerErr}`);
-      logDestinationStatus('ParseSonglist', LogType.ERROR, fileId, `Failed to start worker thread: ${workerErr}`);
+      logError('ERROR   ', 'PS:016', `Failed to start worker thread for ${fileId}:`, workerErr);
       return res.status(500).json({
         error: 'Worker thread error',
         message: `Failed to start worker thread: ${workerErr instanceof Error ? workerErr.message : String(workerErr)}`
@@ -310,8 +306,7 @@ router.post('/:fileId/confirm', anyAuthenticated, async (req: express.Request, r
       message: 'Songs confirmed successfully'
     });
   } catch (err) {
-    logError('ERROR   ', 'PS:017', `Error in confirm endpoint: ${err}`);
-    logDestinationStatus('ParseSonglist', LogType.ERROR, fileId, `Error confirming songs: ${err}`);
+    logError('ERROR   ', 'PS:017', `Error confirming songs for ${fileId}:`, err);
     res.status(500).json({
       error: 'Confirmation failed',
       message: err instanceof Error ? err.message : 'Failed to confirm songs'
