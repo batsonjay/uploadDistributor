@@ -176,6 +176,9 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
       // Now that we have metadata, save the buffered files
       const normalizedBase = `${metadata.broadcastDate}_${userDisplayName.replace(/\s+/g, '_')}_${metadata.title.replace(/\s+/g, '_')}`;
       
+      // Variable to store pre-validated songs if present
+      let preValidatedSongs = null;
+      
       // Save each buffered file
       for (const [name, fileData] of Object.entries(fileBuffers)) {
         if (!fileData.buffer || !fileData.info) {
@@ -189,6 +192,40 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
         } else if (name === 'songlist') {
           const ext = path.extname(fileData.info.filename);
           saveTo = path.join(fileDir, `${normalizedBase}${ext}`);
+          
+          // Check if this is a JSON songlist with pre-validated songs
+          if (ext.toLowerCase() === '.json') {
+            log('D:RTEDB ', 'SE:025', `Detected JSON file extension for songlist: ${fileData.info.filename}`);
+            try {
+              const fileContent = Buffer.concat(fileData.buffer).toString('utf8');
+              log('D:RTEDB ', 'SE:026', `JSON songlist content length: ${fileContent.length} bytes`);
+              const jsonData = JSON.parse(fileContent);
+              log('D:RTEDB ', 'SE:027', `Parsed JSON songlist data: ${JSON.stringify(jsonData, null, 2)}`);
+              
+              // Check if this is our special format with pre-validated songs
+              if (jsonData.format === 'json' && Array.isArray(jsonData.songs)) {
+                log('D:ROUTE ', 'SE:023', `Detected pre-validated JSON songlist with ${jsonData.songs.length} songs`);
+                log('D:RTEDB ', 'SE:028', `First song in pre-validated list: ${JSON.stringify(jsonData.songs[0])}`);
+                preValidatedSongs = jsonData.songs;
+                
+                // Also save the pre-validated songs to a special file for the processor to use
+                const preValidatedPath = path.join(fileDir, `${normalizedBase}_prevalidated.json`);
+                fs.writeFileSync(preValidatedPath, JSON.stringify({ songs: preValidatedSongs }, null, 2));
+                log('D:RTEDB ', 'SE:029', `Saved pre-validated songs to: ${preValidatedPath}`);
+                
+                // Add a flag to metadata to indicate we have pre-validated songs
+                metadata.hasPreValidatedSongs = 'true';
+                log('D:RTEDB ', 'SE:030', `Set hasPreValidatedSongs flag in metadata to true`);
+              } else {
+                log('D:RTEDB ', 'SE:031', `JSON file does not contain pre-validated songs format`);
+              }
+            } catch (err) {
+              // If there's an error parsing the JSON, just treat it as a regular songlist file
+              logError('ERROR   ', 'SE:024', `Error parsing JSON songlist:`, err);
+            }
+          } else {
+            log('D:RTEDB ', 'SE:032', `Non-JSON songlist file extension: ${ext}`);
+          }
         } else if (name === 'artwork') {
           const ext = path.extname(fileData.info.filename) || '.jpg';
           saveTo = path.join(fileDir, `${normalizedBase}${ext}`);

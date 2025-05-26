@@ -145,11 +145,14 @@ export default function ValidatePage() {
       formData.append("artwork", artworkFile);
       console.log("Added artwork file to form data");
       
-      // Create a new songlist file from the validated songs
-      // Use .txt extension to ensure it's recognized as a valid songlist format
-      const songsText = songs.map((song, index) => `${index + 1}. ${song.title} - ${song.artist}`).join('\n');
-      const songsBlob = new Blob([songsText], { type: 'text/plain' });
-      formData.append("songlist", songsBlob, "songlist.txt");
+      // Create a new songlist file from the validated songs as JSON
+      // This avoids the need for re-parsing on the daemon side
+      const songsData = {
+        format: "json",
+        songs: songs
+      };
+      const songsBlob = new Blob([JSON.stringify(songsData)], { type: 'application/json' });
+      formData.append("songlist", songsBlob, "songlist.json");
       
       // Add metadata as a single JSON object
       const metadata = {

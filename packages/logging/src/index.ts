@@ -11,11 +11,11 @@ export const LogConfig = {
   'D:AUTH  ': true,  // Authentication-related logs
   'D:AUTHDB': false, // Authentication-related logs - deeper debugging
   'D:FILE  ': true,  // File operations
-  'D:FILEDB': false, // File operations - deeper debugging
+  'D:FILEDB': true,  // File operations - deeper debugging
   'D:API   ': true,  // External API interactions
   'D:APIDB ': false,  // External API interactions - deeper debugging
   'D:ROUTE ': true,  // HTTP route handling
-  'D:RTEDB ': false, // HTTP route handling - deeper debugging
+  'D:RTEDB ': true,  // HTTP route handling - deeper debugging
   'D:PARSER': true,  // Songlist parsing operations
   'D:PARSDB': false, // Songlist parsing operations - deeper debugging
   'D:WORKER': true,  // Worker thread operations
