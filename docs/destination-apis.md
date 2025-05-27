@@ -10,6 +10,8 @@ Each destination has its own authentication, upload, and metadata requirements. 
 
 ## AzuraCast
 
+> ⚠️ **Note**: The AzuraCast upload integration is currently non-functional. The following describes the intended design, not the current working state.
+
 ### API documentation
 - `https://www.azuracast.com/docs/developers/apis/`
 - `https://www.azuracast.com/api/`

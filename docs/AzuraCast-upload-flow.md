@@ -1,5 +1,7 @@
 # AzuraCast Upload Flow
 
+> ⚠️ **Note**: The AzuraCast upload integration is currently non-functional. This document describes the intended behavior, not the current working implementation.
+
 This document outlines the flow of data and processes involved in uploading files to AzuraCast from the Upload Distributor daemon, from the point where "Starting upload to AzuraCast..." is logged to "AzuraCast upload completed successfully".
 
 ## Upload Process Flow
