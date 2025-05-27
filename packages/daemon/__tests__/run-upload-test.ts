@@ -19,7 +19,7 @@ async function runUploadTest() {
     // 1. Check if test files exist
     const audioFile = path.join(TEST_FILES_DIR, 'TEST-VALID-MP3.mp3');
     const artworkFile = path.join(TEST_FILES_DIR, 'TEST-VALID-ARTWORK.jpg');
-    const songlistFile = path.join(TEST_FILES_DIR, 'TEST-VALID-SONGLIST.nml');
+    const songlistFile = path.join(TEST_FILES_DIR, 'TEST-VALID-SONGLIST.json');
     
     if (!fs.existsSync(audioFile)) {
       console.error(`Error: Audio file not found: ${audioFile}`);
@@ -45,6 +45,7 @@ async function runUploadTest() {
     formData.append('audio', fs.createReadStream(audioFile));
     formData.append('artwork', fs.createReadStream(artworkFile));
     formData.append('songlist', fs.createReadStream(songlistFile));
+    console.log('Added pre-validated JSON songlist to form data');
     
     // Get current date and time for broadcast info
     const now = new Date();
