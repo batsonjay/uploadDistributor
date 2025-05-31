@@ -300,6 +300,20 @@ To support this, we recommend implementing a standalone utility function (e.g., 
 - Optionally validate playlist availability for known DJ names
 - Be run manually during environment setup or testing
 
+### Setup Scripts
+
+Two setup scripts are available for development:
+
+1. **JavaScript (Standalone)**: `run-azuracast-setup.js` in project root
+   - Run with: `node run-azuracast-setup.js`
+   - No TypeScript compilation required
+   - Suitable for quick testing
+
+2. **TypeScript (Integrated)**: `packages/daemon/run-azuracast-setup.ts`
+   - Run with: `npx ts-node packages/daemon/run-azuracast-setup.ts`
+   - Uses project logging system and API classes
+   - Suitable for development integration
+
 ## Key Data Structures
 
 * **Source File Path**
