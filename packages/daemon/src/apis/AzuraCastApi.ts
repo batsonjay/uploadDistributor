@@ -281,4 +281,292 @@ export class AzuraCastApi {
       };
     }
   }
+
+  /**
+   * Get all playlists for a station
+   * 
+   * @param stationId The station ID
+   * @returns Promise with playlists or error
+   */
+  public async getPlaylists(stationId: string): Promise<{ success: boolean; playlists?: any[]; error?: string }> {
+    try {
+      const response = await axios.get(
+        `${this.baseUrl}/api/station/${stationId}/playlists`,
+        {
+          headers: {
+            'X-API-Key': this.superAdminApiKey,
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      return {
+        success: true,
+        playlists: response.data
+      };
+    } catch (error) {
+      logError('ERROR   ', 'AZ:007', `Get playlists error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      if (axios.isAxiosError(error) && error.response) {
+        return {
+          success: false,
+          error: error.response.data.message || 'Failed to get playlists'
+        };
+      }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Get all podcasts for a station
+   * 
+   * @param stationId The station ID
+   * @returns Promise with podcasts or error
+   */
+  public async getPodcasts(stationId: string): Promise<{ success: boolean; podcasts?: any[]; error?: string }> {
+    try {
+      const response = await axios.get(
+        `${this.baseUrl}/api/station/${stationId}/podcasts`,
+        {
+          headers: {
+            'X-API-Key': this.superAdminApiKey,
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      return {
+        success: true,
+        podcasts: response.data
+      };
+    } catch (error) {
+      logError('ERROR   ', 'AZ:008', `Get podcasts error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      if (axios.isAxiosError(error) && error.response) {
+        return {
+          success: false,
+          error: error.response.data.message || 'Failed to get podcasts'
+        };
+      }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Upload a file to AzuraCast
+   * 
+   * @param filePath The path to the file to upload
+   * @param destinationPath The destination path on AzuraCast (e.g., "uploads/djname/file.mp3")
+   * @param stationId The station ID
+   * @returns Promise with upload result
+   */
+  public async uploadFile(
+    filePath: string, 
+    destinationPath: string, 
+    stationId: string
+  ): Promise<{ success: boolean; id?: string; path?: string; error?: string }> {
+    try {
+      const FormData = require('form-data');
+      const fs = require('fs');
+      
+      const formData = new FormData();
+      formData.append('file', fs.createReadStream(filePath));
+      formData.append('path', destinationPath);
+      
+      const response = await axios.post(
+        `${this.baseUrl}/api/station/${stationId}/files`,
+        formData,
+        {
+          headers: {
+            'X-API-Key': this.superAdminApiKey,
+            'Accept': 'application/json',
+            ...formData.getHeaders()
+          }
+        }
+      );
+      
+      return {
+        success: true,
+        id: response.data.id,
+        path: response.data.path
+      };
+    } catch (error) {
+      logError('ERROR   ', 'AZ:009', `Upload file error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      if (axios.isAxiosError(error) && error.response) {
+        return {
+          success: false,
+          error: error.response.data.message || 'Failed to upload file'
+        };
+      }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Set metadata and playlist association for a file (combined call as per AzuraCast API)
+   * 
+   * @param fileId The file ID returned from upload
+   * @param metadata The metadata to set
+   * @param playlistIds Array of playlist IDs to associate with
+   * @param stationId The station ID
+   * @returns Promise with result
+   */
+  public async setMetadataAndPlaylist(
+    fileId: string, 
+    metadata: any, 
+    playlistIds: string[],
+    stationId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const requestData = {
+        ...metadata,
+        playlist: playlistIds
+      };
+      
+      const response = await axios.post(
+        `${this.baseUrl}/api/station/${stationId}/file/${fileId}`,
+        requestData,
+        {
+          headers: {
+            'X-API-Key': this.superAdminApiKey,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      return {
+        success: true
+      };
+    } catch (error) {
+      logError('ERROR   ', 'AZ:010', `Set metadata and playlist error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      if (axios.isAxiosError(error) && error.response) {
+        return {
+          success: false,
+          error: error.response.data.message || 'Failed to set metadata and playlist'
+        };
+      }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Set metadata for a file (legacy method for backward compatibility)
+   * 
+   * @param fileId The file ID returned from upload
+   * @param metadata The metadata to set
+   * @param stationId The station ID
+   * @returns Promise with result
+   */
+  public async setMetadata(
+    fileId: string, 
+    metadata: any, 
+    stationId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    return this.setMetadataAndPlaylist(fileId, metadata, [], stationId);
+  }
+
+  /**
+   * Add a file to a playlist
+   * 
+   * @param stationId The station ID
+   * @param playlistId The playlist ID
+   * @param mediaId The media ID
+   * @returns Promise with result
+   */
+  public async addToPlaylist(
+    stationId: string, 
+    playlistId: string, 
+    mediaId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/api/station/${stationId}/playlist/${playlistId}/media`,
+        { media_id: mediaId },
+        {
+          headers: {
+            'X-API-Key': this.superAdminApiKey,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      return {
+        success: true
+      };
+    } catch (error) {
+      logError('ERROR   ', 'AZ:011', `Add to playlist error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      if (axios.isAxiosError(error) && error.response) {
+        return {
+          success: false,
+          error: error.response.data.message || 'Failed to add to playlist'
+        };
+      }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Schedule a playlist
+   * 
+   * @param stationId The station ID
+   * @param playlistId The playlist ID
+   * @param scheduleItems The schedule items
+   * @returns Promise with result
+   */
+  public async schedulePlaylist(
+    stationId: string, 
+    playlistId: string, 
+    scheduleItems: any[]
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await axios.put(
+        `${this.baseUrl}/api/station/${stationId}/playlist/${playlistId}`,
+        { schedule_items: scheduleItems },
+        {
+          headers: {
+            'X-API-Key': this.superAdminApiKey,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      return {
+        success: true
+      };
+    } catch (error) {
+      logError('ERROR   ', 'AZ:012', `Schedule playlist error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      if (axios.isAxiosError(error) && error.response) {
+        return {
+          success: false,
+          error: error.response.data.message || 'Failed to schedule playlist'
+        };
+      }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
 }

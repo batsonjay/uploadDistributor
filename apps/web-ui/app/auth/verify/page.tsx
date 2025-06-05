@@ -1,18 +1,14 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../auth/AuthContext';
 import styles from './page.module.css';
 
 /**
- * Verification page for magic link authentication
- * 
- * This page is accessed when a user clicks on a magic link in their email.
- * It extracts the token from the URL, verifies it with the server,
- * and redirects to the upload page on success.
+ * Inner component that uses useSearchParams
  */
-export default function VerifyLogin() {
+function VerifyLoginInner() {
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMessage, setErrorMessage] = useState('');
   const router = useRouter();
@@ -103,5 +99,28 @@ export default function VerifyLogin() {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Verification page for magic link authentication
+ * 
+ * This page is accessed when a user clicks on a magic link in their email.
+ * It extracts the token from the URL, verifies it with the server,
+ * and redirects to the upload page on success.
+ */
+export default function VerifyLogin() {
+  return (
+    <Suspense fallback={
+      <div className={styles.container}>
+        <h1>Verifying Login</h1>
+        <div className={styles.verifying}>
+          <p>Loading...</p>
+          <div className={styles.spinner}></div>
+        </div>
+      </div>
+    }>
+      <VerifyLoginInner />
+    </Suspense>
   );
 }

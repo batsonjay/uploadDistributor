@@ -208,10 +208,10 @@ router.post('/process', anyAuthenticated, async (req: express.Request, res: expr
                 log('D:RTEDB ', 'SE:028', `First song in pre-validated list: ${JSON.stringify(jsonData.songs[0])}`);
                 preValidatedSongs = jsonData.songs;
                 
-                // Also save the pre-validated songs to a special file for the processor to use
-                const preValidatedPath = path.join(fileDir, `${normalizedBase}_prevalidated.json`);
-                fs.writeFileSync(preValidatedPath, JSON.stringify({ songs: preValidatedSongs }, null, 2));
-                log('D:RTEDB ', 'SE:029', `Saved pre-validated songs to: ${preValidatedPath}`);
+                // Save the pre-validated songs to the standard _Songs.json format for consistency
+                const songsPath = path.join(fileDir, `${normalizedBase}_Songs.json`);
+                fs.writeFileSync(songsPath, JSON.stringify(preValidatedSongs, null, 2));
+                log('D:RTEDB ', 'SE:029', `Saved pre-validated songs to: ${songsPath}`);
                 
                 // Add a flag to metadata to indicate we have pre-validated songs
                 metadata.hasPreValidatedSongs = 'true';

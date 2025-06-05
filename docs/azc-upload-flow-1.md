@@ -1,6 +1,6 @@
 # AzuraCast Upload Flow Diagram
 
-This diagram illustrates the flow of data and processes involved in uploading files to AzuraCast from the Upload Distributor daemon, from the point where "Starting upload to AzuraCast..." is logged to "AzuraCast upload completed successfully".
+This diagram illustrates the flow of data and processes involved in uploading files to AzuraCast from the Upload Distributor daemon, from the point where "Starting upload to AzuraCast..." is logged to "AzuraCast upload completed successfully". It is generated to identify why the flow was NOT working as of June 1, 2025. It is not authoritative as the target flow; this is a debugging document.
 
 ## Flow Diagram
 

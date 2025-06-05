@@ -8,30 +8,30 @@
 // Log categories configuration - only these categories will be shown in the console
 export const LogConfig = {
   // Daemon categories
-  'D:AUTH  ': true,  // Authentication-related logs
-  'D:AUTHDB': false, // Authentication-related logs - deeper debugging
-  'D:FILE  ': true,  // File operations
-  'D:FILEDB': true,  // File operations - deeper debugging
   'D:API   ': true,  // External API interactions
-  'D:APIDB ': true,  // External API interactions - deeper debugging
-  'D:ROUTE ': true,  // HTTP route handling
-  'D:RTEDB ': false,  // HTTP route handling - deeper debugging
-  'D:PARSER': true,  // Songlist parsing operations
+  'D:APIDB ': false, // External API interactions - deeper debugging
+  'D:AUTH  ': false, // Authentication-related logs
+  'D:AUTHDB': false, // Authentication-related logs - deeper debugging
+  'D:EMAIL ': false, // Email authentication logs
+  'D:EMAILD': false, // Email authentication logs - deeper debugging
+  'D:FILE  ': false, // File operations
+  'D:FILEDB': false, // File operations - deeper debugging
+  'D:PARSER': false, // Songlist parsing operations
   'D:PARSDB': false, // Songlist parsing operations - deeper debugging
-  'D:WORKER': true,  // Worker thread operations
-  'D:WORKDB': false, // Worker thread operations - deeper debugging
-  'D:SYSTEM': true,  // System-level operations
+  'D:ROUTE ': false, // HTTP route handling
+  'D:RTEDB ': false, // HTTP route handling - deeper debugging
   'D:STATUS': true,  // Status updates and tracking
   'D:STATDB': false, // Status updates and tracking - deeper debugging
-  'D:EMAIL ': true,  // Email authentication logs
-  'D:EMAILD': false, // Email authentication logs - deeper debugging
+  'D:SYSTEM': false, // System-level operations
+  'D:WORKER': true,  // Worker thread operations
+  'D:WORKDB': false, // Worker thread operations - deeper debugging
   
   // Client categories
-  'C:AUTH  ': true,  // Authentication flows
-  'C:FORM  ': true,  // Form submissions and validations
-  'C:API   ': true,  // API requests to the daemon
-  'C:NAV   ': true,  // Navigation and routing
-  'C:STATE ': true,  // State management
+  'C:API   ': false, // API requests to the daemon
+  'C:AUTH  ': false, // Authentication flows
+  'C:FORM  ': false, // Form submissions and validations
+  'C:NAV   ': false, // Navigation and routing
+  'C:STATE ': false, // State management
   
   // Shared categories
   'SECURITY': true,  // Security-related events (always enabled)

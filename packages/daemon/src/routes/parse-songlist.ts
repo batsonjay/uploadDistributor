@@ -172,7 +172,7 @@ router.get('/:fileId', anyAuthenticated, async (req: express.Request, res: expre
     
     // Find the songlist file by checking for all supported extensions
     let songlistPath = '';
-    const possibleExtensions = ['.txt', '.rtf', '.docx', '.nml', '.m3u8'];
+    const possibleExtensions = ['.txt', '.rtf', '.docx', '.nml', '.m3u8', '.json'];
     for (const ext of possibleExtensions) {
       const testPath = path.join(fileDir, `${normalizedBase}${ext}`);
       if (fs.existsSync(testPath)) {

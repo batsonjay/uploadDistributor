@@ -82,9 +82,9 @@ try {
 const normalizedBase = `${metadata.broadcastDate}_${metadata.djName.replace(/\s+/g, '_')}_${metadata.title.replace(/\s+/g, '_')}`;
 const audioFile = path.join(fileDir, `${normalizedBase}.mp3`);
 
-// Check for pre-validated songs file
+// Check for validated songs file
 log('D:FILE  ', 'FP:030', `Using files directory: ${fileDir}`);
-const preValidatedPath = path.join(fileDir, `${normalizedBase}_prevalidated.json`);
+const songsPath = path.join(fileDir, `${normalizedBase}_Songs.json`);
 
 // Check if required files exist with normalized names
 if (!fs.existsSync(audioFile)) {
@@ -93,16 +93,32 @@ if (!fs.existsSync(audioFile)) {
   process.exit(1);
 }
 
-// In the new flow, we should always have a pre-validated JSON file
-// If it's missing, that's a code error that should be fixed
-if (!fs.existsSync(preValidatedPath)) {
-  logError('ERROR   ', 'FP:034', `Pre-validated songs file not found: ${preValidatedPath}`);
-  logError('ERROR   ', 'FP:035', `This indicates a code error in the upload flow - the web-ui should always send pre-validated songs`);
-  statusManager.updateStatus('error', 'Pre-validated songs file not found');
+// Look for songlist file with various extensions
+let songlistFile = '';
+const possibleExtensions = ['.nml', '.txt', '.rtf', '.docx', '.m3u8', '.json'];
+for (const ext of possibleExtensions) {
+  const testPath = path.join(fileDir, `${normalizedBase}${ext}`);
+  if (fs.existsSync(testPath)) {
+    songlistFile = testPath;
+    log('D:FILE  ', 'FP:031', `Found songlist file: ${songlistFile}`);
+    break;
+  }
+}
+
+if (!songlistFile) {
+  logError('ERROR   ', 'FP:032', `Songlist file not found for base: ${normalizedBase}`);
+  statusManager.updateStatus('error', 'Songlist file not found');
   process.exit(1);
 }
 
-log('D:FILE  ', 'FP:031', `Found pre-validated songs file: ${preValidatedPath}`);
+// Check for validated songs file, but don't fail if it doesn't exist
+let hasValidatedSongs = false;
+if (fs.existsSync(songsPath)) {
+  log('D:FILE  ', 'FP:033', `Found validated songs file: ${songsPath}`);
+  hasValidatedSongs = true;
+} else {
+  log('D:FILE  ', 'FP:034', `No validated songs file found, will parse songlist directly`);
+}
 
 // Initialize platform services
 const azuraCastService = new AzuraCastService(statusManager);
@@ -134,51 +150,48 @@ export async function processFile(fileId: string) {
     let songlist: SonglistData;
     
     try {
-      // Check if we have pre-validated songs from a JSON songlist
-      const preValidatedPath = path.join(fileDir, `${normalizedBase}_prevalidated.json`);
+      // Check if we have validated songs from the web UI or pre-validated JSON songlist
+      const songsPath = path.join(fileDir, `${normalizedBase}_Songs.json`);
       let parseResult: ParseResult;
       
-      log('D:FILEDB', 'FP:040', `Checking for pre-validated songs at: ${preValidatedPath}`);
-      log('D:FILEDB', 'FP:041', `hasPreValidatedSongs flag in metadata: ${metadata.hasPreValidatedSongs}`);
+      log('D:FILEDB', 'FP:040', `Checking for validated songs at: ${songsPath}`);
       
-      if (metadata.hasPreValidatedSongs === 'true' && fs.existsSync(preValidatedPath)) {
-        // Use the pre-validated songs directly
-        log('D:WORKER', 'FP:035', `Using pre-validated songs from ${preValidatedPath}`);
-        log('D:FILEDB', 'FP:042', `Pre-validated file exists: ${fs.existsSync(preValidatedPath)}`);
+      if (hasValidatedSongs && fs.existsSync(songsPath)) {
+        // Use the validated songs directly
+        log('D:WORKER', 'FP:035', `Using validated songs from ${songsPath}`);
+        log('D:FILEDB', 'FP:042', `Validated songs file exists: ${fs.existsSync(songsPath)}`);
         
         try {
-          const preValidatedContent = fs.readFileSync(preValidatedPath, 'utf8');
-          log('D:FILEDB', 'FP:043', `Pre-validated content length: ${preValidatedContent.length} bytes`);
+          const songsContent = fs.readFileSync(songsPath, 'utf8');
+          log('D:FILEDB', 'FP:043', `Validated songs content length: ${songsContent.length} bytes`);
           
-          const preValidatedData = JSON.parse(preValidatedContent);
-          log('D:FILEDB', 'FP:044', `Parsed pre-validated data: ${JSON.stringify(preValidatedData, null, 2)}`);
+          const songsData = JSON.parse(songsContent);
           
-          if (preValidatedData.songs && Array.isArray(preValidatedData.songs)) {
+          // Handle both formats: array of songs directly or {songs: [...]} format
+          const songs = Array.isArray(songsData) ? songsData : (songsData.songs && Array.isArray(songsData.songs) ? songsData.songs : null);
+          
+          if (songs) {
             parseResult = {
-              songs: preValidatedData.songs,
+              songs: songs,
               error: ParseError.NONE
             };
-            log('D:WORKER', 'FP:036', `Loaded ${parseResult.songs.length} pre-validated songs`);
-            log('D:FILEDB', 'FP:045', `First pre-validated song: ${JSON.stringify(parseResult.songs[0])}`);
+            log('D:WORKER', 'FP:036', `Loaded ${parseResult.songs.length} validated songs`);
+            log('D:FILEDB', 'FP:045', `First validated song: ${JSON.stringify(parseResult.songs[0])}`);
           } else {
-            // This should never happen in the new flow, but handle it gracefully
-            logError('ERROR   ', 'FP:037', `Pre-validated songs data is invalid, this indicates a code error`);
-            log('D:FILEDB', 'FP:046', `Invalid pre-validated data structure: ${JSON.stringify(preValidatedData)}`);
-            statusManager.updateStatus('error', 'Invalid pre-validated songs data');
-            process.exit(1);
+            // Invalid validated data, fall back to parsing the songlist file
+            logError('ERROR   ', 'FP:037', `Validated songs data is invalid, falling back to direct parsing`);
+            parseResult = await parseSonglist(songlistFile);
           }
         } catch (err) {
-          // This should never happen in the new flow, but handle it gracefully
-          logError('ERROR   ', 'FP:038', `Error reading pre-validated songs:`, err);
-          log('D:FILEDB', 'FP:047', `Error details: ${err instanceof Error ? err.message : String(err)}`);
-          statusManager.updateStatus('error', 'Error reading pre-validated songs');
-          process.exit(1);
+          // Error reading validated songs, fall back to parsing the songlist file
+          logError('ERROR   ', 'FP:038', `Error reading validated songs, falling back to direct parsing:`, err);
+          parseResult = await parseSonglist(songlistFile);
         }
       } else {
-        // This should never happen in the new flow, but handle it gracefully
-        logError('ERROR   ', 'FP:048', `No pre-validated songs found, this indicates a code error`);
-        statusManager.updateStatus('error', 'Pre-validated songs not found');
-        process.exit(1);
+        // No validated songs found, parse the songlist file directly
+        log('D:WORKER', 'FP:048', `No validated songs found, parsing songlist file directly: ${songlistFile}`);
+        parseResult = await parseSonglist(songlistFile);
+        log('D:WORKER', 'FP:049', `Direct parsing complete, found ${parseResult.songs?.length || 0} songs`);
       }
       
       if (parseResult.error !== ParseError.NONE) {
@@ -290,7 +303,7 @@ export async function processFile(fileId: string) {
       statusManager.updateStatus('processing', 'Uploading to AzuraCast', { current_platform: 'azuracast' });
       
       try {
-        const azuraCastResult = await azuraCastService.uploadFile(audioFile, azuraCastMetadata);
+        const azuraCastResult = await azuraCastService.uploadFile(audioFile, azuraCastMetadata, songlist);
         destinations.azuracast = azuraCastResult;
         log('D:WORKER', 'FP:019', `AzuraCast upload ${azuraCastResult.success ? 'completed successfully' : 'failed'}`);
       } catch (err) {

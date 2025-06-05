@@ -69,27 +69,13 @@ This document was created early in the process of building the app. It may still
     * If successful, returns `{success: true, id: fileId, path: destinationPath}`
     * If unsuccessful, logs error and throws exception to trigger retry
 
-  * **Step 2: Set metadata**
+  * **Step 2: Send metadata and playlist association**
     * Only proceeds if Step 1 was successful
-    * Calls `api.setMetadata(uploadResult.id, metadata)`
+    * Calls `POST /station/{station_id}/file/{id}` with metadata and playlist IDs
     * Associates the metadata with the uploaded file using the fileId returned in Step 1
+    * Includes playlist ID for DJ-specific playlist
+    * Podcast playlist association is deferred until AzuraCast supports explicit podcast sync
     * If unsuccessful, logs error and throws exception to trigger retry
-
-  * **Step 3: Add to DJ playlist**
-    * Only proceeds if Step 2 was successful
-    * Calls `api.xxx`
-    * Obtain the Playlist ID for the DJ
-    * (ALERT: THIS SEEMS INCOMPLETE. HAVE AI AGENT FIX.) Calls `api.addToPlaylist(uploadResult.id)`to associate the uploaded file with the DJ's playlist.
-    * Adds the file to playlist associated with the DJ
-    * Uses the metadata to set up the playlist with the date & time for play
-    * If unsuccessful, logs error and throws exception to trigger retry
-
-
-  * **Step 4: Add to podast**
-    * Calls `api.yyy`
-    * Sends relevant metadata to set episode description text and the date and time on which the episode will be published (which is the "end" date / time as play is set in the prior step)
-    * If unsuccessful, logs error and throws exception to trigger retry
-    * NOTE: This Step was manually edited, not automatically generated. Some bullets in this describe things that should be done, but which are not implemented in the mock as of the time of editing.
 
 * **Success Handling**
   * If all three steps succeed, the status manager logs success
@@ -111,7 +97,7 @@ Implementation will be done using a hybrid plan, initially making GET calls dire
 
 ---
 
-### Required End-to-End Flow
+#### Required End-to-End Flow
 
 The full flow that must be mocked includes:
 
@@ -124,9 +110,9 @@ Each of these steps requires interaction with a specific AzuraCast API endpoint 
 
 ---
 
-### Step-by-Step Responsibilities
+#### Step-by-Step Responsibilities
 
-#### 1. Receive a Media File
+##### 1. Receive a Media File
 
 **API Path**:  
 `POST /station/{station_id}/files`
@@ -154,7 +140,7 @@ Multipart form-data with headers:
 
 ---
 
-#### 2. Receive Metadata Update
+##### 2. Receive Metadata Update
 
 **API Path**:  
 `POST /station/{station_id}/file/{id}`
@@ -168,7 +154,7 @@ Multipart form-data with headers:
   "genre": "{{songlist.broadcast_data.genre}}",
   "playlist": [
     "{{DJ-playlist-id}}", // Presumes AzuraCast Service has obtained the playlist ID for the specific DJ
-    "{{Podcast-playlist-ID}}" // Presumes AzuraCast Servive has obtained the playlist ID for the (one) Podcast
+    // Podcast playlist association deferred until AzuraCast supports explicit sync
   ]
 }
 ```
@@ -185,7 +171,7 @@ Multipart form-data with headers:
 
 ---
 
-#### 3. Set Playback Time for Playlist
+##### 3. Set Playback Time for Playlist
 
 **API Path**:  
 `PUT /station/{station_id}/playlist/{playlist_id}`
@@ -216,7 +202,7 @@ Multipart form-data with headers:
 
 ---
 
-#### 4. Add Media to Podcast Feed
+##### 4. Add Media to Podcast Feed
 
 The podcast episode feed on AzuraCast is automatically generated from the the contents of the playlist called "podcast". However, AzuraCast only synchronizes the podcast with this playlist either periodically, or on an explicit action to update the podcast. It's possible that no API endpoint exists for this as of the writing of this document.
 
@@ -245,10 +231,9 @@ This plan outlines a two-step approach to transition from mock-based development
 - [ ] Introduce a configuration flag (e.g., `USE_AZURACAST_MOCKS`) to toggle mock behavior.
 - [ ] Implement real API calls for:
   - `GET /station/{station_id}/playlists`
-  - `GET /station/{station_id}/podcasts` (deferred until AzuraCast podcast )
+  - `GET /station/{station_id}/podcasts` (deferred until AzuraCast podcast API is complete)
 - [ ] Use mock for:
   - `POST /station/{station_id}/files`
-  - `POST /station/{station_id}/playlist/{playlist_id}/media`
   - `PUT /station/{station_id}/playlist/{playlist_id}`
 - [ ] Validate that metadata transformation (title, artist, album, genre) matches AzuraCast expectations.
 

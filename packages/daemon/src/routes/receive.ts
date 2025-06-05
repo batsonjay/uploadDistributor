@@ -150,7 +150,7 @@ router.post('/', anyAuthenticated, (req: any, res: any) => {
     const audioFilePath = path.join(fileDir, `${normalizedBase}.mp3`);
     // Find the songlist file by checking for all supported extensions
     let songlistFilePath = '';
-    const possibleExtensions = ['.txt', '.rtf', '.docx', '.nml', '.m3u8'];
+    const possibleExtensions = ['.txt', '.rtf', '.docx', '.nml', '.m3u8', '.json'];
     for (const ext of possibleExtensions) {
       const testPath = path.join(fileDir, `${normalizedBase}${ext}`);
       if (fs.existsSync(testPath)) {
