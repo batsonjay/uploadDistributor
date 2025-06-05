@@ -14,10 +14,11 @@ The system is composed of three main components:
 
 ## Upload Flow
 
-1. User uploads an `.mp3` file and a songlist file via a client.
+1. User uploads an `.mp3` file and associated metadata (collected into a songlist file) via a client.
 2. The client sends the files and metadata to the daemon via its API.
-3. The daemon creates a worker thread to handle the upload.
-4. The worker thread:
+3. The daemon parses the songlist, returning the parsed results to the client for validation or correction
+4. After receiving the validated songlist data, the daemon creates a worker thread to handle the upload.
+5. The worker thread:
    - Stores the media file transiently.
    - Normalizes and stores the songlist persistently.
    - Uploads the media to AzuraCast, Mixcloud, and SoundCloud.
@@ -38,6 +39,7 @@ The system is composed of three main components:
 
 - Metadata is entered per-upload by the user.
 - Each user is associated with:
+  - A Dj account on AzuraCast (validated during initial client authentication)
   - A media folder on AzuraCast.
   - A playlist on AzuraCast.
 - This mapping is stored and used during upload.
@@ -56,31 +58,19 @@ The system is composed of three main components:
 - Web client provides a login page with email input.
 - macOS client prompts on first launch and stores authentication tokens securely.
 
-## Logging and Monitoring
+## Logging
 
-- The daemon implements a comprehensive logging system with multiple levels:
-  - ERROR: Always logged
-  - WARNING: Logged if level is warning, info, or debug
-  - INFO: Logged if level is info or debug
-  - DEBUG: Logged only if level is debug
-- Log messages include bracketed labels indicating the source (e.g., `[M3U8Parser]`, `[AzuraCast]`)
-- Timestamps are included in all log entries
+- The daemon implements a comprehensive logging system based on enabled & disabled categories:
+- Log messages include bracketed labels indicating the source (e.g., `[M3U8Parser]`) and a unique ID (e.g., [MP:01])
+- Timestamps are included in selected log entries, predominantly when timing is important
 - Configurable logging via environment variables:
-  - LOG_LEVEL: Controls verbosity (error, warning, info, debug)
-  - LOG_TO_FILE: Enables file-based logging in addition to console output
-- Specialized logging for different components:
-  - Destination status logs (success/error for uploads)
-  - Detailed error logs with request information
-  - Parser event logs with appropriate filtering
-  - Upload progress tracking
-- A simple health check endpoint (`GET /health`) provides basic system status
 
 ## Testing and CI/CD
 
-- Daemon and clients include hooks for testability.
-- Mixcloud and SoundCloud uploads are stubbed/mocked in tests.
+- Daemon and clients are intended to include hooks for testability; support is uneven.
 - AzuraCast uploads can be tested against a staging server.
-- CI/CD pipeline includes linting, unit tests, and integration tests.
+- Mixcloud and SoundCloud uploads are stubbed/mocked pending more complete development
+- CI/CD pipeline should linting, unit tests, and integration tests; it does not currently exist
 
 
 ## Development testing

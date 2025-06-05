@@ -1,6 +1,6 @@
 # Architecture Flow Diagrams
 
-This document provides visual representations of key flows within the Upload Distributor system.
+This document provides visual representations of key flows within the Upload Distributor system as of 21 May 2025.
 
 ## Authentication Flow
 

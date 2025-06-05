@@ -3,18 +3,13 @@
 This document outlines the flow of data and processes involved in uploading files to AzuraCast from the Upload Distributor daemon, from the point where "Starting upload to AzuraCast..." is logged to "AzuraCast upload completed successfully".
 
 ## Update as of 2025-05-27 06:55:00pm
-This document was created early in the process of building the app. It is correct in the sense of *flow*, but there are some steps missing and some data that is incorrect. I'm going to collect some thoughts here, and then we'll work on "fixing" these things one at a time - updating this document as we create a plan to do it.
+This document was created early in the process of building the app. It may still show some vestiages of history, but is largely updated with revised information on how this upload is to be done. Much of the work that must be done is to get rid of code that was placeholder-code & mocks that were done early, but incorrectly, just to get other aspects of the application working correctly. The next task is to make proper code for this section of the application.
 
-* **Edits mean this doc and code don't match** I made some edits to start to capture what needed to be done; but I don't think the things I added are in the flow, or the mocks. SO, warning: The stuff below "Upload Process Flow" in this doc isn't perfectly authoritative as of this time.
+* **Related, but un-described work: Provide upload progress reporting / status**
+  * The web-ui is designed to provide upload progress indication of the .mp3 file. Most will be large. Because the development so far has used small .mp3 files in order to get initial code in place, an upload of a large file has not been tested. This matters because the mock will need to be prepared to receive a large file. In addition, code is needed as part of this work to provide a way for the web-ui to display upload progress.
 
-* **Upload file pathname not complete**
-  * .mp3 media files are all uploaded to individual folders for each DJ. So, the name of the DJ for whom this set is being processed needs added to the end of the .../files path, which is not as it is currently constructed.
-
-* **Need to check upload progress reporting / status**
-  * The web-ui is designed to provide upload progress indication of the .mp3 file. Most will be large. Because the development so far has used small .mp3 files in order to get initial code in place, an upload of a large file has not been tested. This matters because the mock will need to be prepared to receive a large file.
-
-* **Mock likely needs major work**
-  * A review of the code in the mock makes me concerned that it inadequately models the AzuraCast APIs that are necessary to use. Here are the URLs to the API paths I'm certain we need to use. Note that the full API documentation for each API call is at https://radio.balearic-fm.com/docs/api/, including both the syntax for sending as well as all responses, and the schema. A new section is added after description of the 3 upload steps that outlines the mock. It actually provides slightly more information about the implied capabilities that the daemon needs to implement in order to complete the upload.
+* **Mock needs major rework**
+  * A review of the code in the mock suggests that it currently inadequately models the AzuraCast APIs that are necessary to use. The full API documentation for each API call is available at https://radio.balearic-fm.com/docs/api/, including both the syntax for sending as well as all responses, and the schema.
 
 ## Upload Process Flow
 
@@ -55,7 +50,7 @@ This document was created early in the process of building the app. It is correc
     * `genre`: Uses `songlist.broadcast_data.genre` (which comes from metadata.genre) or defaults to 'Radio Show'. (TODO: The genre should get added to the description in the podcast episode.)
 
 * **Upload File Method**
-  * `azuraCastService.uploadFile(audioFile, azuraCastMetadata)` is called with:
+  * Main daemon flow calls `azuraCastService.uploadFile(audioFile, azuraCastMetadata)` with:
     * `audioFile`: Path to the MP3 file in the received-files directory
     * `azuraCastMetadata`: The metadata object created in the previous step
 
@@ -67,26 +62,32 @@ This document was created early in the process of building the app. It is correc
   * Each retry logs information about the attempt number and delay
 
 * **Three-Step Upload Process**
+  AzuraCast service performs upload to AzuraCast station in 4 steps: 
   * **Step 1: Upload the .mp3 media file**
     * Calls `api.uploadFile(audioFilePath, metadata)`
     * Sends the file to `https://radio.balearic-fm.com/api/station/2/files`
-    **QUESTION: Where - if anywhere - are we setting the appropriate DJ subdirectory in the destination path? I don't think we are**
     * If successful, returns `{success: true, id: fileId, path: destinationPath}`
     * If unsuccessful, logs error and throws exception to trigger retry
 
   * **Step 2: Set metadata**
     * Only proceeds if Step 1 was successful
     * Calls `api.setMetadata(uploadResult.id, metadata)`
-    * Associates the metadata with the uploaded file **QUESTION: How is this associated? By referencing the previously uploaded .mp3 file, or ...?**
+    * Associates the metadata with the uploaded file using the fileId returned in Step 1
     * If unsuccessful, logs error and throws exception to trigger retry
 
-  * **Step 3: Add to playlist and the podcast**
+  * **Step 3: Add to DJ playlist**
     * Only proceeds if Step 2 was successful
-    * Calls `api.addToPlaylist(uploadResult.id)`
+    * Calls `api.xxx`
+    * Obtain the Playlist ID for the DJ
+    * (ALERT: THIS SEEMS INCOMPLETE. HAVE AI AGENT FIX.) Calls `api.addToPlaylist(uploadResult.id)`to associate the uploaded file with the DJ's playlist.
     * Adds the file to playlist associated with the DJ
-    * Adds the file to the podcast
     * Uses the metadata to set up the playlist with the date & time for play
-    * Uses the metadata to set episode description text and the date and time on which the episode will be published (which is the same date / time as play is set in the prior step)
+    * If unsuccessful, logs error and throws exception to trigger retry
+
+
+  * **Step 4: Add to podast**
+    * Calls `api.yyy`
+    * Sends relevant metadata to set episode description text and the date and time on which the episode will be published (which is the "end" date / time as play is set in the prior step)
     * If unsuccessful, logs error and throws exception to trigger retry
     * NOTE: This Step was manually edited, not automatically generated. Some bullets in this describe things that should be done, but which are not implemented in the mock as of the time of editing.
 
@@ -100,9 +101,13 @@ This document was created early in the process of building the app. It is correc
     * Title, artist, and genre from the metadata
   * The system logs "AzuraCast upload completed successfully"
 
-## Mock Implementation Plan: AzuraCast Upload + Playlist Association
+## Implementation Plan
 
-This section outlines the responsibilities of a mock implementation for local development and testing of the media upload and playlist scheduling flow using the AzuraCast API. This mock should replicate the behavior and data structure of the real API to allow the front-end React app to simulate the complete flow without calling the live service.
+Implementation will be done using a hybrid plan, initially making GET calls directly to the AzuraCast server but using a Mock for any POST calls. After the PUTs seems appropriate, the service will switch to calling the AzuraCast server instead of the mocks. Note that the AzuraCast server has 2 "stations". Station 1 is the live/production server; station 2 is availale for development / test use. The implementation should declare the station number as a constant, and set it to 2 until ready for use on the live station, when the constant is changed to 1.
+
+### Mock Implementation
+
+ The mock implementation allows for safe local development and testing of the media upload and playlist scheduling flow using the AzuraCast API. This mock should replicate the behavior and data structure of the real API to allow the front-end React app to simulate the complete flow without calling the live service.
 
 ---
 
@@ -110,11 +115,10 @@ This section outlines the responsibilities of a mock implementation for local de
 
 The full flow that must be mocked includes:
 
-1. **Media File Upload**
-2. **Playlist Lookup (by DJ name)**
-3. **Associate Media File with Playlist**
-4. **Set Playback Time on Playlist**
-5. **Add Media to Podcast Feed**
+1. **Receive Media File Upload**
+2. **Receive Metadata Update**
+3. **Set Playback Time on Playlist**
+4. **Add Media to Podcast Feed** (deferred)
 
 Each of these steps requires interaction with a specific AzuraCast API endpoint and returns JSON responses the mock must reproduce accurately.
 
@@ -122,7 +126,7 @@ Each of these steps requires interaction with a specific AzuraCast API endpoint 
 
 ### Step-by-Step Responsibilities
 
-#### 1. Upload a Media File
+#### 1. Receive a Media File
 
 **API Path**:  
 `POST /station/{station_id}/files`
@@ -150,41 +154,38 @@ Multipart form-data with headers:
 
 ---
 
-#### 2. Lookup Playlist ID for a Given DJ
+#### 2. Receive Metadata Update
 
 **API Path**:  
-`GET /station/{station_id}/playlists`
+`POST /station/{station_id}/file/{id}`
 
-**Mock Behavior**:
-- Accept a DJ name (string). This is determined from the active DJ name in the songlist object, as created during the Send from the user to the daemon (via the web-ui).
-
-- Filter a static list of mock playlists by matching DJ name against a metadata field like `playlist.name`.
-- Return the correct `playlist_id`.
-
-*Assumption*: There is exactly one playlist per DJ.
-
----
-
-#### 3. Associate Uploaded Media with Playlist
-
-**API Path**:  
-`POST /station/{station_id}/playlist/{playlist_id}/media`
-
-**Request JSON**:
+**Request JSON**
 ```json
 {
-  "media_id": <media_id from upload>
+  "artist": "{{songlist.broadcast_data.DJ}}",
+  "title": "{{songlist.broadcast_data.setTitle}}",
+  "album": "{{songlist.broadcast_data.setTitle}}",
+  "genre": "{{songlist.broadcast_data.genre}}",
+  "playlist": [
+    "{{DJ-playlist-id}}", // Presumes AzuraCast Service has obtained the playlist ID for the specific DJ
+    "{{Podcast-playlist-ID}}" // Presumes AzuraCast Servive has obtained the playlist ID for the (one) Podcast
+  ]
 }
 ```
-
 **Mock Behavior**:
-- Validate the `playlist_id` and `media_id` obtained from the two above mock calls.
-- Simulate a successful media-to-playlist association.
-- Return status 200 with confirmation JSON.
+- Mock will have been pre-provisioned with valid playlist ID; test if properly received
+- Validate format of all items and print JSON to console as-if being received. 
+- On success return status 200 with confirmation JSON.
+```json
+{
+  "success": true
+}
+```
+- We should mock a failure to receive valid info. AI agent should examine API reference page noted at the top of this and create a proper return for failure.
 
 ---
 
-#### 4. Set Playback Time for Playlist
+#### 3. Set Playback Time for Playlist
 
 **API Path**:  
 `PUT /station/{station_id}/playlist/{playlist_id}`
@@ -194,10 +195,10 @@ Multipart form-data with headers:
 {
   "schedule_items": [
     {
-      "start_time": "2025-06-01T14:00:00+00:00",
-      "end_time": "2025-06-01T15:00:00+00:00",
-      "days": [1],  // Monday
-      "start_date": "2025-06-01"
+      "start_date": Uses `songlist.braodcast_data.broadcast_date`,
+      "start_time": Uses `songlist.broadcast_data.broadcast_time`,
+      "end_time": Add one hour to the start_time and provide it here, 
+      "loop_once": true
     }
   ]
 }
@@ -206,45 +207,32 @@ Multipart form-data with headers:
 **Mock Behavior**:
 - Accept the same playlist_id obtained in prior mock call (this will be the end of use of that id, which can at the point be dropped)
 - Accept a JSON payload with a valid `schedule_items` array.
-- Store this schedule data in memory or mock state for testing assertions.
-- Return updated playlist metadata in response.
-
----
-
-#### 5. Add Media to Podcast Feed
-
-**API Path**:  
-`POST /station/{station_id}/podcast/{podcast_id}/episode`
-
-**Request JSON**:
+- Return status 200 with confirmation JSON.
 ```json
 {
-  "title": "DJ Show Title",
-  "media_id": <media_id from upload>,
-  "publish_at": "2025-06-01T15:00:00+00:00",
-  "description": "Auto-generated from scheduled playlist",
-  "episode_number": 123
+  "success": true
 }
 ```
 
-**Mock Behavior**:
-- Use the `media_id` from step 1. This is the end of that ID which can now be dropped.
-- Use the **end time** from step 4 as the `publish_at` timestamp.
-- Daemon provides fields `title` `description` from current songlist object; accepted by mock
-- Return a success response including a mock `episode_id`.
+---
 
-*Note*: The station has a single podcast. The ID for this needs determined in a brief one-time API call to determine the ID.
+#### 4. Add Media to Podcast Feed
+
+The podcast episode feed on AzuraCast is automatically generated from the the contents of the playlist called "podcast". However, AzuraCast only synchronizes the podcast with this playlist either periodically, or on an explicit action to update the podcast. It's possible that no API endpoint exists for this as of the writing of this document.
+
+ **Ommitted for now**. This action requires an API endpoint that apparently does not exist in AzuraCast. Developer of this app is working with developer of AzruaCast to expose an appropriate endpoint. Until it appears, this section cannot be implemented. 
 
 ---
 
 ### Deliverables for Developer
 
-- A single mock API service supporting all five endpoints.
+- A single mock API service supporting necesary endpoints for POSTs.
+- mainline code that utilizes "live" API endpoints on dev / test AzuraCast server got GETs.
 - Coverage for error handling (e.g., 400 on missing fields, 404 on invalid IDs).
 
 ---
 
-## 🛠 Implementation Plan: Phased Integration with Live AzuraCast Server
+## Implementation Plan: Phased Integration with Live AzuraCast Server
 
 This plan outlines a two-step approach to transition from mock-based development to partial and then full integration with the live AzuraCast server.
 
@@ -257,13 +245,11 @@ This plan outlines a two-step approach to transition from mock-based development
 - [ ] Introduce a configuration flag (e.g., `USE_AZURACAST_MOCKS`) to toggle mock behavior.
 - [ ] Implement real API calls for:
   - `GET /station/{station_id}/playlists`
-  - `GET /station/{station_id}/podcasts`
+  - `GET /station/{station_id}/podcasts` (deferred until AzuraCast podcast )
 - [ ] Use mock for:
   - `POST /station/{station_id}/files`
   - `POST /station/{station_id}/playlist/{playlist_id}/media`
   - `PUT /station/{station_id}/playlist/{playlist_id}`
-  - `POST /station/{station_id}/podcast/{podcast_id}/episode`
-- [ ] Log and store real playlist and podcast IDs for each DJ for future use.
 - [ ] Validate that metadata transformation (title, artist, album, genre) matches AzuraCast expectations.
 
 #### Outcome:
@@ -277,14 +263,14 @@ This plan outlines a two-step approach to transition from mock-based development
 **Goal**: Replace all mock behavior with real API calls to complete the end-to-end upload and scheduling flow.
 
 #### Tasks:
-- [ ] Replace mock `uploadFile`, `setMetadata`, `addToPlaylist`, `schedulePlaylist`, and `addToPodcast` with real implementations.
+- [ ] Replace mock `uploadFile`, `setMetadata`, `addToPlaylist` and `schedulePlaylist` with real implementations.
 - [ ] Ensure file path includes DJ subdirectory (e.g., `uploads/{djName}/filename.mp3`).
 - [ ] Use real `media_id` returned from upload in all subsequent steps.
 - [ ] Implement error handling and retry logic for each real API call.
-- [ ] Confirm that scheduled playback and podcast publishing work as expected on the live server.
+- [ ] Confirm that scheduled playback work as expected on the live server.
 
 #### Outcome:
-- The daemon can fully automate the upload, scheduling, and podcast publishing process using the live AzuraCast server.
+- The daemon can fully automate the upload and playlist scheduling using the live AzuraCast server.
 
 ---
 
@@ -292,27 +278,11 @@ This plan outlines a two-step approach to transition from mock-based development
 
 During development, especially when using a separate dev/test AzuraCast server, some setup steps may need to be performed once per environment:
 
-- **Podcast ID Lookup**: The station has a single podcast. Its ID must be determined once via `GET /station/{station_id}/podcasts` and stored for reuse.
-- **Playlist Discovery**: Playlists are matched dynamically by DJ name, so no static mapping is required.
+- **Podcast ID Lookup**: **Note**: Deferred for above-stated reasons. The station has a single podcast. Its ID must be determined once via `GET /station/{station_id}/podcasts` and stored for reuse. But, it should be used as a runtime variable, since when switching from the dev/test AzuraCast server the podcast ID is likely to be different, and so the code needs to use the appropriate podcast iD for the {station_id} in use.
 
-To support this, we recommend implementing a standalone utility function (e.g., `runAzuraCastSetupTasks()`) that can be toggled on/off via a config flag. This function can:
+To support this, I want a utility function (e.g., `runAzuraCastSetupTasks()`) that can be toggled on/off via a config flag. This function can:
 - Fetch and log the podcast ID
-- Optionally validate playlist availability for known DJ names
 - Be run manually during environment setup or testing
-
-### Setup Scripts
-
-Two setup scripts are available for development:
-
-1. **JavaScript (Standalone)**: `run-azuracast-setup.js` in project root
-   - Run with: `node run-azuracast-setup.js`
-   - No TypeScript compilation required
-   - Suitable for quick testing
-
-2. **TypeScript (Integrated)**: `packages/daemon/run-azuracast-setup.ts`
-   - Run with: `npx ts-node packages/daemon/run-azuracast-setup.ts`
-   - Uses project logging system and API classes
-   - Suitable for development integration
 
 ## Key Data Structures
 
@@ -322,9 +292,8 @@ Two setup scripts are available for development:
   * The `normalizedBase` is constructed from broadcast date, DJ name, and title
 
 * **Destination File Path**
-  * Format: `/var/azuracast/stations/{stationId}/files/{azuracast-file-id}.mp3` **NOTE: NEEDS UPDATED to include DJ-name in path**
-  * Example: `/var/azuracast/stations/2/files/mock-azuracast-1747920290524.mp3`
-  * The original filename is not preserved in the destination
+  * Format: `/var/azuracast/stations/{stationId}/files/{dj_name}/{normalizedBase}.mp3` **NOTE: I updated this manually to include DJ-name in path, so there is no guarantee that there is no error in the psuedobvcode syntax**
+  * Example: `/var/azuracast/stations/2/files/catalyst/2025-05-18_catalyst_m.mp3`
 
 * **AzuraCast Metadata Object**
   ```
@@ -332,14 +301,9 @@ Two setup scripts are available for development:
     title: "m",                    // From songlist.broadcast_data.setTitle
     artist: "catalyst",            // From songlist.broadcast_data.DJ
     album: "2025-05-22 Broadcast", // Constructed from CET date
-    genre: "Electronic"            // From songlist.broadcast_data.genre (which comes from metadata.genre) or default "Radio Show"
+    genre: "Electronic"            // From songlist.broadcast_data.genre (which comes from `metadata.genre`) or default "Radio Show"
   }
   ```
-   **HOTE:** This appears incorrect; We'll need to do more around artist/album/..., setting it in the .mp3 metadata.
-
-* **File ID Types**
-  * Upload session ID: UUID generated when files are received (e.g., "74ce0458-b51b-4783-b721-fdbb23f012fc")
-  * AzuraCast file ID: Generated by AzuraCast API as "mock-azuracast-{timestamp}" (e.g., "mock-azuracast-1747920290524")
 
 ## URL Construction
 
@@ -347,35 +311,31 @@ Two setup scripts are available for development:
 * **API Endpoint**: `/api/station/{stationId}/files`
 * **Station ID**: `2` (hardcoded in AzuraCastApiMock constructor)
 * **Full URL**: `https://radio.balearic-fm.com/api/station/2/files`
+* **Destination File Path**: /{dj_name}/{normalizedBase}.mp3
 
 ## Key Observations
 
 1. **URL Construction**:
    - The base URL is hardcoded in the AzuraCastApi constructor as `https://radio.balearic-fm.com`
    - The station ID is hardcoded in the AzuraCastApiMock constructor as `2` (for dev/test)
-   - The full upload URL becomes: `https://radio.balearic-fm.com/api/station/2/files`
+   - The full upload URL becomes: `https://radio.balearic-fm.com/api/station/2/files/{dj_name}/{normalizedBase}.mp3`
 
-2. **File Path Transformation**:
-   - Source file: `/packages/daemon/received-files/{fileId}/{normalizedBase}.mp3`
-   - Destination path: `/var/azuracast/stations/2/files/{azuracast-file-id}.mp3`
-   - The original filename is not preserved in the destination
-
-3. **Metadata Transformation**:
-   - The genre from the form (`metadata.genre`) is now properly used in the songlist
-   - It's stored in `songlist.broadcast_data.genre` and then passed to AzuraCast
+2. **Metadata Transformation**:
+   - The genre from the form (`metadata.genre`) is stored in `songlist.broadcast_data.genre` and then passed to AzuraCast
    - If no genre is provided in the form, it defaults to an empty string
    - The AzuraCastService uses this value or defaults to 'Radio Show' if empty
 
-4. **File ID Usage**:
+3. **File ID Usage**:
    - The `fileId` in console logs is a UUID for the entire upload session
    - It's used to create a directory for all files related to an upload
    - The AzuraCast file ID is generated by the AzuraCast API when the file is uploaded
    - In the mock implementation, it's generated as `mock-azuracast-{timestamp}`
 
-5. **Upload Process**:
+4. **Upload Process**:
    - The upload is wrapped in a retry mechanism with up to 2 retries
    - The process has three steps: upload file, set metadata, add to playlist
    - Each step must succeed before proceeding to the next
+   - A future (deferred) step will be to add it to the station podcast. This is deferred until support for this is added to the AzuraCast API.
 
 ## Potential Issues
 
@@ -383,11 +343,7 @@ Two setup scripts are available for development:
    - The base URL and station ID are hardcoded, making it difficult to switch between environments
    - These should be moved to environment variables for easier configuration
 
-2. **Filename Preservation**:
-   - The original filename is not preserved when uploading to AzuraCast
-   - This could make it difficult to identify files on the AzuraCast server
-
-3. **Genre Handling**:
+2. **Genre Handling**:
    - The genre from the form is now properly used in the songlist
    - The flow is clear: metadata.genre → songlist.broadcast_data.genre → AzuraCastMetadata.genre
-   - This issue has been resolved in the current implementation
+   - (A previously incorrect implementation may have been resolved in the current implementation; needs confirmed)
