@@ -1,9 +1,9 @@
 /**
  * Test script for AzuraCast upload flow
  * 
- * This script tests the Phase 1 implementation:
- * - Real API calls for playlist lookup (or mocks if USE_AZURACAST_MOCKS=true)
- * - Mock API calls for file upload, metadata, and playlist operations
+ * This script tests the AzuraCast upload implementation.
+ * API selection (mock vs. real) is configured in AzuraCastService.ts
+ * by commenting/uncommenting the appropriate sections.
  */
 
 import { AzuraCastService } from './dist/services/AzuraCastService.js';
@@ -57,7 +57,7 @@ const testSonglist = {
 async function testAzuraCastUpload() {
   console.log('🧪 Testing AzuraCast Upload Flow (Phase 1)');
   console.log('==========================================');
-  console.log(`USE_AZURACAST_MOCKS: ${process.env.USE_AZURACAST_MOCKS}`);
+  console.log('Note: API selection is configured in AzuraCastService.ts');
   console.log('');
 
   try {

@@ -332,3 +332,74 @@
 [SonglistParser]: info [2025-05-25 23:51:04]: songlist.nml, Parsing complete, found 13 songs
 [azuracast]: success [2025-05-25 23:51:06]: T55, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748217066450.mp3
 [azuracast]: success [2025-05-25 23:53:39]: T75, Uploaded to /var/azuracast/stations/2/files/mock-azuracast-1748217218925.mp3
+[azuracast]: error [2025-06-05 04:45:37]: Logging Test 04-45-37, No playlist found for DJ: Jay Batson
+[azuracast]: success [2025-06-05 04:46:49]: LIve test 5 title, Uploaded to /var/azuracast/stations/2/files/catalyst/2025-06-05_catalyst_LIve_test_5_title.mp3
+[azuracast]: error [2025-06-05 15:23:37]: Logging Test 15-23-37, No playlist found for DJ: Jay Batson
+[azuracast]: error [2025-06-05 15:30:01]: Live test 6 title, require is not defined
+[azuracast]: error [2025-06-05 15:30:02]: Live test 6 title, require is not defined
+[azuracast]: error [2025-06-05 15:30:04]: Live test 6 title, require is not defined
+[azuracast]: error [2025-06-05 15:30:04]: Live test 6 title, require is not defined
+[azuracast]: error [2025-06-05 15:31:08]: Live test 7 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-05 15:31:10]: Live test 7 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-05 15:31:12]: Live test 7 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-05 15:31:12]: Live test 7 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-07 20:20:59]: Live test 8 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-07 20:21:01]: Live test 8 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-07 20:21:04]: Live test 8 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-07 20:21:04]: Live test 8 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-07 20:22:01]: Live test 9 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-07 20:22:03]: Live test 9 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-07 20:22:05]: Live test 9 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-07 20:22:05]: Live test 9 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-07 20:23:03]: Live test 10 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-07 20:23:04]: Live test 10 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-07 20:23:07]: Live test 10 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-07 20:23:07]: Live test 10 title, Object(App\Entity\Api\UploadFile).file:
+    This value should not be blank. (code c1051bb4-d103-4f74-8988-acbcafc7fdc3)
+
+[azuracast]: error [2025-06-07 23:57:27]: Live test 11 title, File ID 1035 not found
+[azuracast]: error [2025-06-07 23:57:28]: Live test 11 title, File ID 1035 not found
+[azuracast]: error [2025-06-07 23:57:31]: Live test 11 title, File ID 1035 not found
+[azuracast]: error [2025-06-07 23:57:31]: Live test 11 title, File ID 1035 not found
+[azuracast]: error [2025-06-07 23:58:56]: Live test 12 title, Method not allowed. Must be one of: GET, OPTIONS, DELETE, PUT
+[azuracast]: error [2025-06-07 23:58:57]: Live test 12 title, Method not allowed. Must be one of: GET, OPTIONS, DELETE, PUT
+[azuracast]: error [2025-06-07 23:59:00]: Live test 12 title, Method not allowed. Must be one of: GET, OPTIONS, DELETE, PUT
+[azuracast]: error [2025-06-07 23:59:00]: Live test 12 title, Method not allowed. Must be one of: GET, OPTIONS, DELETE, PUT
+[azuracast]: success [2025-06-08 00:00:02]: Live test 13 title, Uploaded to catalyst/2025-06-07_catalyst_Live_test_13_title.mp3
+[azuracast]: error [2025-06-08 00:07:45]: Scheduling Live Test 1, Record not found
+[azuracast]: error [2025-06-08 00:07:46]: Scheduling Live Test 1, Record not found
+[azuracast]: error [2025-06-08 00:07:49]: Scheduling Live Test 1, Record not found
+[azuracast]: error [2025-06-08 00:07:49]: Scheduling Live Test 1, Record not found
+[azuracast]: success [2025-06-08 00:09:25]: Live Title Test 2, Uploaded to catalyst/2025-06-07_catalyst_Live_Title_Test_2.mp3
+[azuracast]: success [2025-06-08 00:15:30]: Live test 14 title sched, Uploaded to catalyst/2025-06-08_catalyst_Live_test_14_title_sched.mp3
+[azuracast]: success [2025-06-08 00:31:30]: Live test 15 sched title, Uploaded to catalyst/2025-06-09_catalyst_Live_test_15_sched_title.mp3

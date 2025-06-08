@@ -22,7 +22,7 @@ export const LogConfig = {
   'D:RTEDB ': false, // HTTP route handling - deeper debugging
   'D:STATUS': true,  // Status updates and tracking
   'D:STATDB': false, // Status updates and tracking - deeper debugging
-  'D:SYSTEM': false, // System-level operations
+  'D:SYSTEM': true,  // System-level operations
   'D:WORKER': true,  // Worker thread operations
   'D:WORKDB': false, // Worker thread operations - deeper debugging
   

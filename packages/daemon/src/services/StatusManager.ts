@@ -89,7 +89,44 @@ export class StatusManager {
     title: string,
     message: string
   ): void {
+    // Log to console
     log('D:STATUS', 'SM:007', `${serviceName} success: ${title} - ${message}`);
+    
+    // Also log to destination-status.log
+    this.logSuccessToDestinationFile(serviceName, title, message);
+  }
+  
+  /**
+   * Log success to destination status file
+   */
+  private logSuccessToDestinationFile(
+    serviceName: string,
+    title: string,
+    message: string
+  ): void {
+    try {
+      // Create logs directory if it doesn't exist
+      const logsDir = path.join(process.cwd(), 'logs');
+      if (!fs.existsSync(logsDir)) {
+        fs.mkdirSync(logsDir, { recursive: true });
+      }
+      
+      // Define log file
+      const statusLogPath = path.join(logsDir, 'destination-status.log');
+      
+      // Create timestamp
+      const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+      
+      // Format log entry
+      const logEntry = `[${serviceName}]: success [${timestamp}]: ${title}, ${message}`;
+      
+      // Log to destination-status.log
+      fs.appendFileSync(statusLogPath, logEntry + '\n');
+      
+      log('D:STATUS', 'SM:011', `Logged success to destination file: ${serviceName} - ${title}`);
+    } catch (error) {
+      logError('ERROR   ', 'SM:012', `Failed to log success to destination file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
   
   /**
@@ -117,10 +154,59 @@ export class StatusManager {
       logCategory = 'D:SYSTEM';
     }
     
+    // Log to console
     logError(logCategory, 'SM:008', `${serviceName} error: ${title} - ${errorMessage}`, {
       errorCategory,
       requestDetails,
       attempt
     });
+    
+    // Also log to destination-status.log and destination-errors.log
+    this.logToDestinationFiles(serviceName, title, errorMessage, errorCategory, requestDetails, attempt);
+  }
+  
+  /**
+   * Log to destination status and error files
+   */
+  private logToDestinationFiles(
+    serviceName: string,
+    title: string,
+    errorMessage: string,
+    errorCategory: string,
+    requestDetails: any = {},
+    attempt: number = 1
+  ): void {
+    try {
+      // Create logs directory if it doesn't exist
+      const logsDir = path.join(process.cwd(), 'logs');
+      if (!fs.existsSync(logsDir)) {
+        fs.mkdirSync(logsDir, { recursive: true });
+      }
+      
+      // Define log files
+      const statusLogPath = path.join(logsDir, 'destination-status.log');
+      const errorsLogPath = path.join(logsDir, 'destination-errors.log');
+      
+      // Create timestamp
+      const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+      
+      // Format log entry
+      const logEntry = `[${serviceName}]: error [${timestamp}]: ${title}, ${errorMessage}`;
+      
+      // Log to destination-status.log
+      fs.appendFileSync(statusLogPath, logEntry + '\n');
+      
+      // Log to destination-errors.log with more details
+      const detailedLogEntry = `[${serviceName}]: error [${timestamp}]: ${title}, ${errorMessage}\n` +
+        `  Category: ${errorCategory}\n` +
+        `  Attempt: ${attempt}\n` +
+        `  Details: ${JSON.stringify(requestDetails)}\n`;
+      
+      fs.appendFileSync(errorsLogPath, detailedLogEntry + '\n');
+      
+      log('D:STATUS', 'SM:009', `Logged error to destination files: ${serviceName} - ${title}`);
+    } catch (error) {
+      logError('ERROR   ', 'SM:010', `Failed to log to destination files: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 }

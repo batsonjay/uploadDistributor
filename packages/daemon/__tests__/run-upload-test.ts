@@ -65,7 +65,8 @@ async function runUploadTest() {
       genre: VALID_GENRES.join(', '), // Use all three valid genres
       description: `Automated logging test run at ${timestamp} - FIND-ME-EASILY`,
       // Add selected DJ ID for Super Admin uploading as DJ
-      selectedDjId: '3' // Assuming '3' is the ID for DJ "catalyst" - adjust if needed
+      selectedDjId: '1', // ID for DJ "catalyst" based on AzuraCastApiMock.simple.ts
+      djName: 'catalyst' // Explicitly set the DJ name to match the selected DJ
     };
     
     formData.append('metadata', JSON.stringify(metadata));
@@ -135,7 +136,16 @@ async function runUploadTest() {
             if (archiveResponse.data.success && archiveResponse.data.archived) {
               // File was found in archive
               status = archiveResponse.data.status.status || 'completed';
-              console.log(`File found in archive with status: ${status} - ${archiveResponse.data.status.message || ''}`);
+              const message = archiveResponse.data.status.message || '';
+              console.log(`File found in archive with status: ${status} - ${message}`);
+              
+              // Check if there was an error in the upload
+              if (status === 'error' || message.includes('error') || message.includes('failed')) {
+                console.log('\n❌ Test failed with error status in archive');
+                console.log(`Error message: ${message}`);
+                process.exit(1);
+              }
+              
               break;
             } else {
               console.log(`File not found in archive yet, may still be processing`);
@@ -176,6 +186,7 @@ async function runUploadTest() {
       console.log('\n✅ Test completed successfully!');
     } else if (status === 'error') {
       console.log('\n❌ Test failed with error status');
+      process.exit(1);
     } else {
       console.log('\n⚠️ Test timed out after waiting for', maxAttempts, 'seconds');
       console.log('This may be normal if processing takes longer than expected.');

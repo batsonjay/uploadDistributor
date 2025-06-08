@@ -2,6 +2,8 @@
 
 This document outlines the flow of data and processes involved in uploading files to AzuraCast from the Upload Distributor daemon, from the point where "Starting upload to AzuraCast..." is logged to "AzuraCast upload completed successfully".
 
+If necessary, read /README.md and the architecture files in /docs for further background on the entire project.
+
 ## Update as of 2025-05-27 06:55:00pm
 This document was created early in the process of building the app. It may still show some vestiages of history, but is largely updated with revised information on how this upload is to be done. Much of the work that must be done is to get rid of code that was placeholder-code & mocks that were done early, but incorrectly, just to get other aspects of the application working correctly. The next task is to make proper code for this section of the application.
 
@@ -152,8 +154,8 @@ Multipart form-data with headers:
   "title": "{{songlist.broadcast_data.setTitle}}",
   "album": "{{songlist.broadcast_data.setTitle}}",
   "genre": "{{songlist.broadcast_data.genre}}",
-  "playlist": [
-    "{{DJ-playlist-id}}", // Presumes AzuraCast Service has obtained the playlist ID for the specific DJ
+  "playlists": [
+    "{{DJ-playlist-id}}" // Presumes AzuraCast Service has obtained the playlist ID for the specific DJ
     // Podcast playlist association deferred until AzuraCast supports explicit sync
   ]
 }
@@ -181,9 +183,9 @@ Multipart form-data with headers:
 {
   "schedule_items": [
     {
-      "start_date": Uses `songlist.braodcast_data.broadcast_date`,
-      "start_time": Uses `songlist.broadcast_data.broadcast_time`,
-      "end_time": Add one hour to the start_time and provide it here, 
+      "start_date": "Uses `songlist.broadcast_data.broadcast_date` (YYYY-MM-DD format)",
+      "start_time": "Convert `songlist.broadcast_data.broadcast_time` to minutes from midnight (integer)",
+      "end_time": "Add 60 minutes to start_time (integer minutes from midnight)", 
       "loop_once": true
     }
   ]
@@ -222,20 +224,20 @@ The podcast episode feed on AzuraCast is automatically generated from the the co
 
 This plan outlines a two-step approach to transition from mock-based development to partial and then full integration with the live AzuraCast server.
 
-### ✅ Step 1: Hybrid Mode — Real Lookups, Mock Uploads
+### ✅ Step 1: Hybrid Mode — Real Lookups, Mock Uploads (COMPLETED)
 
 **Goal**: Enable partial integration with the live AzuraCast server to validate connectivity and metadata correctness, while retaining mock behavior for uploads and playlist modifications.
 
 #### Tasks:
-- [ ] Refactor `AzuraCastService` to accept a real `AzuraCastApi` instance (not just the mock).
-- [ ] Introduce a configuration flag (e.g., `USE_AZURACAST_MOCKS`) to toggle mock behavior.
-- [ ] Implement real API calls for:
+- [x] Refactor `AzuraCastService` to accept a real `AzuraCastApi` instance (not just the mock).
+- [x] Implement commenting approach to toggle between mock and real API behavior.
+- [x] Implement real API calls for:
   - `GET /station/{station_id}/playlists`
   - `GET /station/{station_id}/podcasts` (deferred until AzuraCast podcast API is complete)
-- [ ] Use mock for:
+- [x] Use mock for:
   - `POST /station/{station_id}/files`
   - `PUT /station/{station_id}/playlist/{playlist_id}`
-- [ ] Validate that metadata transformation (title, artist, album, genre) matches AzuraCast expectations.
+- [x] Validate that metadata transformation (title, artist, album, genre) matches AzuraCast expectations.
 
 #### Outcome:
 - We can test real playlist lookups and confirm DJ-to-playlist mappings.
@@ -243,19 +245,30 @@ This plan outlines a two-step approach to transition from mock-based development
 
 ---
 
-### 🚀 Step 2: Full Integration — Real Uploads and Scheduling
+### ✅ Step 2: Full Integration — Real Uploads and Scheduling (COMPLETED)
 
 **Goal**: Replace all mock behavior with real API calls to complete the end-to-end upload and scheduling flow.
 
 #### Tasks:
-- [ ] Replace mock `uploadFile`, `setMetadata`, `addToPlaylist` and `schedulePlaylist` with real implementations.
-- [ ] Ensure file path includes DJ subdirectory (e.g., `uploads/{djName}/filename.mp3`).
-- [ ] Use real `media_id` returned from upload in all subsequent steps.
-- [ ] Implement error handling and retry logic for each real API call.
-- [ ] Confirm that scheduled playback work as expected on the live server.
+- [x] Replace mock `uploadFile`, `setMetadata`, `addToPlaylist` and `schedulePlaylist` with real implementations.
+- [x] Ensure file path includes DJ subdirectory (e.g., `uploads/{djName}/filename.mp3`).
+- [x] Use real `media_id` returned from upload in all subsequent steps.
+- [x] Implement error handling and retry logic for each real API call.
+- [x] Confirm that scheduled playback work as expected on the live server.
 
 #### Outcome:
 - The daemon can fully automate the upload and playlist scheduling using the live AzuraCast server.
+
+#### Implementation Approach
+
+The implementation used a commenting approach to toggle between mock and real API calls:
+
+1. **Comment/Uncomment Sections**: In `AzuraCastService.ts`, each step of the upload process has clearly marked sections for "APPROACH 1: Use Mock API" and "APPROACH 2: Use Real API"
+2. **Incremental Testing**: Each API endpoint was tested individually by commenting out the mock approach and uncommenting the real API approach
+3. **Error Handling**: Enhanced error logging was added to each real API call to facilitate debugging
+4. **Server Maintenance**: Testing was done incrementally with server housekeeping between each step
+
+This approach proved more reliable than environment variable configuration flags and allows for easy switching between mock and real implementations during development.
 
 ---
 
