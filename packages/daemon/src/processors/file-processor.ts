@@ -154,17 +154,12 @@ export async function processFile(fileId: string) {
       const songsPath = path.join(fileDir, `${normalizedBase}_Songs.json`);
       let parseResult: ParseResult;
       
-      log('D:FILEDB', 'FP:040', `Checking for validated songs at: ${songsPath}`);
-      
       if (hasValidatedSongs && fs.existsSync(songsPath)) {
         // Use the validated songs directly
         log('D:WORKER', 'FP:035', `Using validated songs from ${songsPath}`);
-        log('D:FILEDB', 'FP:042', `Validated songs file exists: ${fs.existsSync(songsPath)}`);
         
         try {
           const songsContent = fs.readFileSync(songsPath, 'utf8');
-          log('D:FILEDB', 'FP:043', `Validated songs content length: ${songsContent.length} bytes`);
-          
           const songsData = JSON.parse(songsContent);
           
           // Handle both formats: array of songs directly or {songs: [...]} format
@@ -176,7 +171,6 @@ export async function processFile(fileId: string) {
               error: ParseError.NONE
             };
             log('D:WORKER', 'FP:036', `Loaded ${parseResult.songs.length} validated songs`);
-            log('D:FILEDB', 'FP:045', `First validated song: ${JSON.stringify(parseResult.songs[0])}`);
           } else {
             // Invalid validated data, fall back to parsing the songlist file
             logError('ERROR   ', 'FP:037', `Validated songs data is invalid, falling back to direct parsing`);
@@ -189,9 +183,8 @@ export async function processFile(fileId: string) {
         }
       } else {
         // No validated songs found, parse the songlist file directly
-        log('D:WORKER', 'FP:048', `No validated songs found, parsing songlist file directly: ${songlistFile}`);
         parseResult = await parseSonglist(songlistFile);
-        log('D:WORKER', 'FP:049', `Direct parsing complete, found ${parseResult.songs?.length || 0} songs`);
+        log('D:PARSDB', 'FP:039', `Direct parsing complete, found ${parseResult.songs?.length || 0} songs`);
       }
       
       if (parseResult.error !== ParseError.NONE) {

@@ -45,8 +45,6 @@ export class AzuraCastService {
    * @returns AzuraCast metadata object
    */
   public createMetadataFromSonglist(songlist: SonglistData): AzuraCastMetadata {
-    log('D:API   ', 'AZ:S01', `Creating metadata from songlist for ${songlist.broadcast_data.DJ || 'Unknown DJ'}`);
-    
     // Convert UTC timestamps to CET
     const broadcastDate = songlist.broadcast_data.broadcast_date;
     const broadcastTime = songlist.broadcast_data.broadcast_time;
@@ -63,7 +61,7 @@ export class AzuraCastService {
              songlist.broadcast_data.genre || 'Radio Show'
     };
     
-    log('D:API   ', 'AZ:S02', `Metadata created: ${metadata.title} by ${metadata.artist}, genre: ${metadata.genre}`);
+    log('D:API   ', 'AZ:001', `Created metadata: "${metadata.title}" by ${metadata.artist} (${metadata.genre})`);
     
     return metadata;
   }
@@ -76,8 +74,6 @@ export class AzuraCastService {
    */
   private async findDjPlaylist(djName: string): Promise<{ success: boolean; playlist?: any; error?: string }> {
     try {
-      log('D:API   ', 'AZ:S03', `Looking up playlist for DJ: ${djName}`);
-      
       // CHOOSE ONE APPROACH (comment out the other):
       
       // APPROACH 1: Use mock for playlist lookup
@@ -92,7 +88,7 @@ export class AzuraCastService {
         return { success: false, error: `No playlist found for DJ: ${djName}` };
       }
       
-      log('D:API   ', 'AZ:S04', `Found playlist: ${playlist.name} (ID: ${playlist.id})`);
+      log('D:API   ', 'AZ:002', `Found DJ playlist: ${playlist.name} (ID: ${playlist.id})`);
       return { success: true, playlist };
       */
       
@@ -115,10 +111,10 @@ export class AzuraCastService {
         return { success: false, error: `No playlist found for DJ: ${djName}` };
       }
       
-      log('D:API   ', 'AZ:S05', `Found playlist: ${playlist.name} (ID: ${playlist.id})`);
+      log('D:API   ', 'AZ:002', `Found DJ playlist: ${playlist.name} (ID: ${playlist.id})`);
       return { success: true, playlist };
     } catch (error) {
-      logError('ERROR   ', 'AZ:S06', `Error finding DJ playlist: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      logError('ERROR   ', 'AZ:003', `Error finding DJ playlist: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
@@ -172,15 +168,13 @@ export class AzuraCastService {
     metadata: AzuraCastMetadata,
     songlist: SonglistData
   ): Promise<{ success: boolean; id?: string; path?: string; error?: string }> {
-    log('D:WORKER', 'AZ:S07', 'Starting AzuraCast upload process...');
-    log('D:FILE  ', 'AZ:S08', `File: ${path.basename(audioFilePath)}`);
+    log('D:WORKER', 'AZ:004', `Starting AzuraCast upload: "${metadata.title}" by ${metadata.artist}`);
     
-    // Pre-upload: Find DJ playlist
-    log('D:API   ', 'AZ:S09', 'Pre-upload: Finding DJ playlist...');
+    // Find DJ playlist
     const playlistResult = await this.findDjPlaylist(metadata.artist);
     
     if (!playlistResult.success) {
-      logError('ERROR   ', 'AZ:S10', `Failed to find DJ playlist: ${playlistResult.error}`);
+      logError('ERROR   ', 'AZ:005', `Failed to find DJ playlist: ${playlistResult.error}`);
       this.statusManager.logError(
         'azuracast',
         metadata.title,
@@ -195,7 +189,6 @@ export class AzuraCastService {
     }
     
     const djPlaylist = playlistResult.playlist;
-    log('D:API   ', 'AZ:S11', `Found DJ playlist: ${djPlaylist.name} (ID: ${djPlaylist.id})`);
     
     // Define retry options
     const retryOptions: RetryOptions = {
@@ -212,14 +205,10 @@ export class AzuraCastService {
       // Use the retry utility to handle the entire upload process
       const result = await retry(async () => {
         // Step 1: Upload the .mp3 media file
-        log('D:API   ', 'AZ:S14', 'Step 1: Uploading .mp3 media file...');
+        log('D:API   ', 'AZ:006', 'Step 1: Uploading file to AzuraCast...');
         const djName = metadata.artist.toLowerCase().replace(/\s+/g, '_');
         const fileName = path.basename(audioFilePath);
         const destinationPath = `${djName}/${fileName}`;
-        const expectedFullPath = `/var/azuracast/stations/${STATION_ID}/files/${destinationPath}`;
-        
-        log('D:FILE  ', 'AZ:S15', `REMOTE destination path: ${destinationPath}`);
-        log('D:FILE  ', 'AZ:S16', `Expected REMOTE full path: ${expectedFullPath}`);
         
         let uploadResult: AzuraCastUploadResponse;
         
@@ -227,13 +216,10 @@ export class AzuraCastService {
         
         // APPROACH 1: Use Mock API for file upload
         /*
-        log('D:API   ', 'AZ:S14c', 'Using MOCK AzuraCast API for file upload');
-        log('D:API   ', 'AZ:S14h', `Uploading file to mock AzuraCast API: ${path.basename(audioFilePath)}`);
         uploadResult = await this.mockApi.uploadFile(audioFilePath, destinationPath);
         */
         
         // APPROACH 2: Use Real API for file upload
-        log('D:API   ', 'AZ:S14d', `Uploading LOCAL file to real AzuraCast API: ${path.basename(audioFilePath)}`);
         try {
           const realUploadResult = await this.realApi.uploadFile(audioFilePath, destinationPath, STATION_ID);
           uploadResult = {
@@ -242,14 +228,7 @@ export class AzuraCastService {
             path: realUploadResult.path,
             error: realUploadResult.error
           };
-          
-          if (uploadResult.success) {
-            log('D:API   ', 'AZ:S14e', `Real API file upload successful. File ID: ${uploadResult.id}, Path: ${uploadResult.path}`);
-          } else {
-            logError('ERROR   ', 'AZ:S14f', `Real API file upload failed: ${uploadResult.error}`);
-          }
         } catch (uploadError) {
-          logError('ERROR   ', 'AZ:S14g', `Exception during real API file upload: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
           uploadResult = {
             success: false,
             id: '',
@@ -258,7 +237,6 @@ export class AzuraCastService {
         }
         
         if (!uploadResult.success) {
-          logError('ERROR   ', 'AZ:S17', `Failed to upload file to AzuraCast: ${uploadResult.error || 'Unknown error'}`);
           this.statusManager.logError(
             'azuracast',
             metadata.title,
@@ -269,10 +247,7 @@ export class AzuraCastService {
           throw new Error(uploadResult.error || 'Upload failed');
         }
         
-        log('D:API   ', 'AZ:S18', `File uploaded successfully, media ID: ${uploadResult.id}`);
-        
-        // Step 2: Send metadata and playlist association (combined in single call)
-        log('D:API   ', 'AZ:S19', 'Step 2: Setting metadata and playlist association...');
+        log('D:API   ', 'AZ:007', `Step 2: Setting metadata and playlist (File ID: ${uploadResult.id})`);
         
         let metadataAndPlaylistResult: { success: boolean; error?: string };
         
@@ -280,17 +255,13 @@ export class AzuraCastService {
         
         // APPROACH 1: Use Mock API for metadata
         /*
-        log('D:API   ', 'AZ:S19c', 'Using MOCK AzuraCast API for metadata');
-        log('D:API   ', 'AZ:S19e', `Setting metadata with mock AzuraCast API for file ID: ${uploadResult.id}`);
         metadataAndPlaylistResult = await this.mockApi.setMetadataAndPlaylist(uploadResult.id, metadata, [djPlaylist.id]);
         */
         
         // APPROACH 2: Use Real API for metadata
-        log('D:API   ', 'AZ:S19d', `Setting metadata with real AzuraCast API for file ID: ${uploadResult.id}`);
         metadataAndPlaylistResult = await this.realApi.setMetadataAndPlaylist(uploadResult.id, metadata, [djPlaylist.id], STATION_ID);
         
         if (!metadataAndPlaylistResult.success) {
-          logError('ERROR   ', 'AZ:S20', `Failed to set metadata and playlist in AzuraCast: ${metadataAndPlaylistResult.error || 'Unknown error'}`);
           this.statusManager.logError(
             'azuracast',
             metadata.title,
@@ -301,13 +272,12 @@ export class AzuraCastService {
           throw new Error(metadataAndPlaylistResult.error || 'Failed to set metadata and playlist');
         }
         
-        log('D:API   ', 'AZ:S21', 'Metadata and playlist association set successfully');
-        
         // Step 3: Set Playback Time on Playlist
-        log('D:API   ', 'AZ:S22', 'Step 3: Setting playback time on playlist...');
-        
         const broadcastDate = songlist.broadcast_data.broadcast_date;
         const broadcastTime = songlist.broadcast_data.broadcast_time;
+        const endTime = this.calculateEndTime(broadcastTime);
+        log('D:API   ', 'AZ:008', `Step 3: Scheduling playlist for ${broadcastDate} ${broadcastTime}-${endTime}`);
+        
         const startTimeMinutes = this.timeStringToMinutes(broadcastTime);
         const endTimeMinutes = this.calculateEndTimeMinutes(broadcastTime);
         
@@ -324,17 +294,13 @@ export class AzuraCastService {
         
         // APPROACH 1: Use Mock API for scheduling
         /*
-        log('D:API   ', 'AZ:S22c', 'Using MOCK AzuraCast API for scheduling');
-        log('D:API   ', 'AZ:S22e', `Scheduling playlist with mock AzuraCast API: ${djPlaylist.name} (ID: ${djPlaylist.id})`);
         scheduleResult = await this.mockApi.schedulePlaylist(STATION_ID, djPlaylist.id, scheduleItems);
         */
         
         // APPROACH 2: Use Real API for scheduling
-        log('D:API   ', 'AZ:S22d', `Scheduling playlist with real AzuraCast API: ${djPlaylist.name} (ID: ${djPlaylist.id})`);
         scheduleResult = await this.realApi.schedulePlaylist(STATION_ID, djPlaylist.id, scheduleItems);
         
         if (!scheduleResult.success) {
-          logError('ERROR   ', 'AZ:S23', `Failed to schedule playlist: ${scheduleResult.error}`);
           this.statusManager.logError(
             'azuracast',
             metadata.title,
@@ -344,9 +310,6 @@ export class AzuraCastService {
           );
           throw new Error(scheduleResult.error || 'Failed to schedule playlist');
         }
-        
-        const endTime = this.calculateEndTime(broadcastTime);
-        log('D:API   ', 'AZ:S24', `Playlist scheduled successfully for ${broadcastDate} ${broadcastTime}-${endTime}`);
         
         // All steps succeeded, return the result
         return uploadResult;
@@ -359,8 +322,7 @@ export class AzuraCastService {
         `Uploaded to ${result.path}`
       );
       
-      log('D:WORKER', 'AZ:S25', 'AzuraCast upload completed successfully');
-      log('D:STATUS', 'AZ:S26', `File ID: ${result.id}, Path: ${result.path}`);
+      log('D:WORKER', 'AZ:009', `Upload completed successfully (ID: ${result.id})`);
       
       return {
         success: true,

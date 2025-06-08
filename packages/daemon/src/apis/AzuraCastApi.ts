@@ -377,7 +377,7 @@ export class AzuraCastApi {
       // Check if file exists and get file size for logging
       if (!fs.existsSync(filePath)) {
         const errorMsg = `File not found: ${filePath}`;
-        logError('ERROR   ', 'AZ:009a', errorMsg);
+        logError('ERROR   ', 'AZ:009', errorMsg);
         return {
           success: false,
           error: errorMsg
@@ -386,23 +386,22 @@ export class AzuraCastApi {
       
       const fileStats = fs.statSync(filePath);
       const fileSizeMB = (fileStats.size / (1024 * 1024)).toFixed(2);
+      const fileName = path.basename(filePath);
       
-      log('D:API   ', 'AZ:009b', `Uploading LOCAL file: ${filePath} (${fileSizeMB} MB) to REMOTE path: ${destinationPath}`);
-      log('D:API   ', 'AZ:009c', `Upload URL: ${this.baseUrl}/api/station/${stationId}/files`);
+      log('D:APIDB ', 'AZ:010', `Uploading ${fileName} (${fileSizeMB} MB) to ${destinationPath}`);
+      log('D:APIDB ', 'AZ:011', `Upload URL: ${this.baseUrl}/api/station/${stationId}/files`);
       
       // Read the file and convert to base64
       const fileBuffer = fs.readFileSync(filePath);
       const base64Content = fileBuffer.toString('base64');
       
-      log('D:API   ', 'AZ:009d', `File read successfully, base64 length: ${base64Content.length} characters`);
+      log('D:APIDB ', 'AZ:012', `File encoded to base64 (${base64Content.length} chars)`);
       
       // Create the JSON payload as expected by AzuraCast API
       const uploadData = {
         path: destinationPath,
         file: base64Content
       };
-      
-      log('D:API   ', 'AZ:009e', `Starting JSON-based file upload to AzuraCast...`);
       
       const response = await axios.post(
         `${this.baseUrl}/api/station/${stationId}/files`,
@@ -420,49 +419,29 @@ export class AzuraCastApi {
         }
       );
       
-      // Log successful response
-      log('D:API   ', 'AZ:009f', `Upload successful. File ID: ${response.data.id || 'unknown'}, Path: ${response.data.path || destinationPath}`);
-      
       return {
         success: true,
         id: response.data.id,
         path: response.data.path || destinationPath
       };
     } catch (error) {
-      // Enhanced error logging
-      logError('ERROR   ', 'AZ:009g', `Upload file error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      
       if (axios.isAxiosError(error)) {
-        // Log detailed information about the Axios error
         if (error.response) {
-          // The server responded with a status code outside the 2xx range
-          logError('ERROR   ', 'AZ:009h', `Server responded with error status: ${error.response.status}`);
-          logError('ERROR   ', 'AZ:009i', `Response headers: ${JSON.stringify(error.response.headers)}`);
-          logError('ERROR   ', 'AZ:009j', `Response data: ${JSON.stringify(error.response.data)}`);
-          
+          logError('ERROR   ', 'AZ:013', `Upload failed: ${error.response.status} - ${error.response.data?.message || error.response.statusText}`);
           return {
             success: false,
             error: error.response.data.message || `Server error: ${error.response.status} - ${error.response.statusText}`
           };
         } else if (error.request) {
-          // The request was made but no response was received
-          logError('ERROR   ', 'AZ:009k', 'No response received from server');
+          logError('ERROR   ', 'AZ:014', 'Upload failed: No response from server');
           return {
             success: false,
             error: 'No response received from server'
           };
-        } else {
-          // Something happened in setting up the request
-          logError('ERROR   ', 'AZ:009l', `Error setting up request: ${error.message}`);
-          return {
-            success: false,
-            error: `Request setup error: ${error.message}`
-          };
         }
       }
       
-      // Generic error handling
-      logError('ERROR   ', 'AZ:009m', `Unknown error during file upload: ${error instanceof Error ? error.stack : 'Unknown error'}`);
+      logError('ERROR   ', 'AZ:015', `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error during file upload'
