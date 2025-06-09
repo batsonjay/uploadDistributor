@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../auth/AuthContext";
 import { useFilePathsContext } from "../../components/FileContext";
+import { getSendFiles, clearSendFiles } from "../../utils/fileStorage";
 import styles from "./page.module.css";
 
 interface Song {
@@ -129,21 +130,23 @@ export default function ValidatePage() {
       // Create form data with all files and metadata
       const formData = new FormData();
       
-      // We need to get the actual files from the filesystem using the paths stored in the context
-      // This would typically be handled by the backend in a real application
-      // For now, we'll just simulate this by creating dummy files
+      // Retrieve actual files from IndexedDB
+      console.log("Retrieving files from IndexedDB...");
+      const { audio: audioFile, artwork: artworkFile } = await getSendFiles();
       
-      // Create a dummy audio file
-      const audioBlob = new Blob(["audio file content"], { type: "audio/mpeg" });
-      const audioFile = new File([audioBlob], audioFilePath || "audio.mp3", { type: "audio/mpeg" });
-      formData.append("audio", audioFile);
-      console.log("Added audio file to form data");
+      if (audioFile) {
+        formData.append("audio", audioFile);
+        console.log("Added audio file to form data:", audioFile.name, audioFile.size, "bytes");
+      } else {
+        console.warn("No audio file found in IndexedDB");
+      }
       
-      // Create a dummy artwork file
-      const artworkBlob = new Blob(["artwork file content"], { type: "image/jpeg" });
-      const artworkFile = new File([artworkBlob], artworkFilePath || "artwork.jpg", { type: "image/jpeg" });
-      formData.append("artwork", artworkFile);
-      console.log("Added artwork file to form data");
+      if (artworkFile) {
+        formData.append("artwork", artworkFile);
+        console.log("Added artwork file to form data:", artworkFile.name, artworkFile.size, "bytes");
+      } else {
+        console.warn("No artwork file found in IndexedDB");
+      }
       
       // Create a new songlist file from the validated songs as JSON
       // This avoids the need for re-parsing on the daemon side
@@ -165,6 +168,16 @@ export default function ValidatePage() {
       };
       
       formData.append("metadata", JSON.stringify(metadata));
+      
+      // Add selectedDjId if present in session storage
+      const storedData = sessionStorage.getItem("sendData");
+      if (storedData) {
+        const data = JSON.parse(storedData);
+        if (data.selectedDjId) {
+          formData.append("selectedDjId", data.selectedDjId);
+          console.log("Added selectedDjId to form data:", data.selectedDjId);
+        }
+      }
       
       // Send files to daemon using the send/process endpoint
       setCurrentFile("audio");
@@ -191,6 +204,15 @@ export default function ValidatePage() {
       // Clear the send data from session storage
       sessionStorage.removeItem("sendData");
       
+      // Clear files from IndexedDB
+      try {
+        await clearSendFiles();
+        console.log("Cleared files from IndexedDB");
+      } catch (error) {
+        console.error("Error clearing files from IndexedDB:", error);
+        // Don't fail the whole operation if cleanup fails
+      }
+      
       // Reset FileContext
       setAudioFilePath(null);
       setArtworkFilePath(null);
@@ -214,6 +236,14 @@ export default function ValidatePage() {
     } catch (err) {
       console.error("Error during file sending:", err);
       setError(err instanceof Error ? err.message : "File sending failed");
+      
+      // Clean up IndexedDB files on failure to prevent stale data
+      try {
+        await clearSendFiles();
+        console.log("Cleaned up files from IndexedDB after failure");
+      } catch (cleanupError) {
+        console.error("Error cleaning up files after failure:", cleanupError);
+      }
     } finally {
       setIsLoading(false);
       isSending.current = false;

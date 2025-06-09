@@ -6,6 +6,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useFilePathsContext } from "../components/FileContext";
 import DjSelector from "../components/DjSelector";
 import GenreSelector from "../components/GenreSelector";
+import { storeSendFiles, fileStorage } from "../utils/fileStorage";
 import styles from "./page.module.css";
 
 interface DJ {
@@ -47,7 +48,7 @@ export default function SendPage() {
   const songlistInputRef = useRef<HTMLInputElement>(null);
   const artworkInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (
+  const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     setFile: (state: FileState) => void,
     acceptedTypes: string[]
@@ -69,19 +70,24 @@ export default function SendPage() {
 
     setFile({ file, error: "" });
     
-    // Store the file path in the context
-    if (setFile === setAudioFile && file) {
-      // For web browsers, we can't get the actual file path due to security restrictions
-      // Instead, we'll store the file name as a reference
-      setAudioFilePath(file.name);
-    } else if (setFile === setArtworkFile && file) {
-      setArtworkFilePath(file.name);
-    } else if (setFile === setSonglistFile && file) {
-      setSonglistFilePath(file.name);
+    // Store files in IndexedDB for persistence across page navigation
+    try {
+      if (setFile === setAudioFile && file) {
+        await storeSendFiles(file, artworkFile.file);
+        setAudioFilePath(file.name);
+      } else if (setFile === setArtworkFile && file) {
+        await storeSendFiles(audioFile.file, file);
+        setArtworkFilePath(file.name);
+      } else if (setFile === setSonglistFile && file) {
+        setSonglistFilePath(file.name);
+      }
+    } catch (error) {
+      console.error('Error storing file in IndexedDB:', error);
+      // Continue anyway - the file is still in memory for this session
     }
   };
 
-  const handleDrop = (
+  const handleDrop = async (
     e: React.DragEvent,
     setFile: (state: FileState) => void,
     acceptedTypes: string[]
@@ -104,13 +110,20 @@ export default function SendPage() {
 
     setFile({ file, error: "" });
     
-    // Store the file path in the context
-    if (setFile === setAudioFile && file) {
-      setAudioFilePath(file.name);
-    } else if (setFile === setArtworkFile && file) {
-      setArtworkFilePath(file.name);
-    } else if (setFile === setSonglistFile && file) {
-      setSonglistFilePath(file.name);
+    // Store files in IndexedDB for persistence across page navigation
+    try {
+      if (setFile === setAudioFile && file) {
+        await storeSendFiles(file, artworkFile.file);
+        setAudioFilePath(file.name);
+      } else if (setFile === setArtworkFile && file) {
+        await storeSendFiles(audioFile.file, file);
+        setArtworkFilePath(file.name);
+      } else if (setFile === setSonglistFile && file) {
+        setSonglistFilePath(file.name);
+      }
+    } catch (error) {
+      console.error('Error storing file in IndexedDB:', error);
+      // Continue anyway - the file is still in memory for this session
     }
   };
 
@@ -122,9 +135,20 @@ export default function SendPage() {
   // Ref to prevent duplicate form submissions in StrictMode
   const isSubmitting = useRef(false);
 
-  // Only clean up session data when navigating away from the send flow entirely
-  // We don't want to clean up when navigating to the validate page
+  // Clean up old files and session data on page load
   useEffect(() => {
+    // Clean up old IndexedDB files (older than 24 hours) when page loads
+    const cleanupOldFiles = async () => {
+      try {
+        await fileStorage.cleanupOldFiles();
+        console.log('Cleaned up old IndexedDB files');
+      } catch (error) {
+        console.error('Error cleaning up old files:', error);
+      }
+    };
+    
+    cleanupOldFiles();
+    
     return () => {
       // Only clean up if we're not navigating to the validate page
       // We can check this by looking at the current URL
@@ -208,9 +232,10 @@ export default function SendPage() {
         description
       });
       
-      // Store the parsed songs in sessionStorage
+      // Store the parsed songs and selectedDjId in sessionStorage
       sessionStorage.setItem("sendData", JSON.stringify({
-        songs: result.songs
+        songs: result.songs,
+        selectedDjId: selectedDj?.id || null
       }));
 
       router.push("/send/validate");
