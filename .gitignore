@@ -10,6 +10,8 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+packages/daemon/logs/destination-errors.log
+packages/daemon/logs/destination-status.log
 
 # OS-specific
 .DS_Store
