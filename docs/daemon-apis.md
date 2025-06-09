@@ -24,7 +24,7 @@ The daemon exposes a RESTful API for use by the web and macOS clients. It handle
 
 ### Authentication Endpoints
 
-#### `POST /auth/request-login`
+#### `POST /api/auth/request-login`
 
 Requests a magic link for email-based authentication.
 
@@ -39,11 +39,11 @@ Requests a magic link for email-based authentication.
 ```json
 {
   "success": true,
-  "message": "Magic link sent to email"
+  "message": "Magic link sent"
 }
 ```
 
-#### `POST /auth/verify-login`
+#### `POST /api/auth/verify-login`
 
 Verifies a magic link token and completes authentication.
 
@@ -68,9 +68,33 @@ Verifies a magic link token and completes authentication.
 }
 ```
 
-#### `GET /auth/validate-token`
+#### `POST /api/auth/validate`
 
 Validates an existing authentication token.
+
+**Request**:
+```json
+{
+  "token": "jwt-auth-token"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "user": {
+    "id": "user-id",
+    "email": "user@example.com",
+    "displayName": "User Name",
+    "role": "DJ" // or "ADMIN"
+  }
+}
+```
+
+#### `GET /api/auth/profile`
+
+Retrieves the user profile associated with the provided token.
 
 **Request Headers**:
 - `Authorization`: Bearer token
@@ -88,11 +112,32 @@ Validates an existing authentication token.
 }
 ```
 
+#### `GET /api/auth/djs`
+
+Returns a list of all users with DJ role from AzuraCast. Only accessible to Super Admin users.
+
+**Request Headers**:
+- `Authorization`: Bearer token
+
+**Response**:
+```json
+{
+  "success": true,
+  "djs": [
+    {
+      "id": "dj-id",
+      "email": "dj@example.com",
+      "displayName": "DJ Name"
+    }
+  ]
+}
+```
+
 ### File Handling Endpoints
 
 #### `POST /receive`
 
-Receives files from clients.
+Receives files from clients (legacy endpoint).
 
 **Request**:
 Multipart form data with the following fields:
@@ -100,9 +145,45 @@ Multipart form data with the following fields:
 - `userId`: User ID string
 - `title`: Title of the broadcast
 - `djName`: Name of the DJ
+- `broadcastDate`: Date of the broadcast
+- `broadcastTime`: Time of the broadcast
+- `genre`: Genre of the broadcast
+- `description`: Description of the broadcast
 - `azcFolder`: AzuraCast folder name
 - `azcPlaylist`: AzuraCast playlist name
 - `userRole`: User role (optional)
+- `destinations`: Comma-separated list of destinations (optional)
+- `audio`: Audio file (.mp3)
+- `songlist`: Songlist file (.txt, .rtf, .docx, .nml, .m3u8)
+- `artwork`: Artwork image file (.jpg/.png)
+
+Headers:
+- `Authorization`: Bearer token for authentication
+- `x-file-id`: Optional file ID for testing/reuse
+
+**Response**:
+```json
+{
+  "fileId": "string",
+  "status": "received",
+  "message": "Files successfully received and validated"
+}
+```
+
+#### `POST /upload`
+
+Uploads files with support for DJ selection by Super Admins.
+
+**Request**:
+Multipart form data with the following fields:
+
+- `title`: Title of the broadcast
+- `broadcastDate`: Date of the broadcast
+- `broadcastTime`: Time of the broadcast
+- `genre`: Genre of the broadcast
+- `description`: Description of the broadcast
+- `azcFolder`: AzuraCast folder name
+- `azcPlaylist`: AzuraCast playlist name
 - `destinations`: Comma-separated list of destinations (optional)
 - `selectedDjId`: ID of DJ to upload as (optional, Super Admin only)
 - `audio`: Audio file (.mp3)
@@ -116,12 +197,43 @@ Headers:
 **Response**:
 ```json
 {
+  "success": true,
   "fileId": "string",
-  "status": "received"
+  "status": "received",
+  "message": "Files successfully received and validated"
 }
 ```
 
-### `GET /status/:fileId`
+#### `POST /send/process`
+
+Processes files with enhanced metadata handling and pre-validated songlist support.
+
+**Request**:
+Multipart form data with the following fields:
+
+- `metadata`: JSON string containing broadcast metadata
+- `selectedDjId`: ID of DJ to upload as (optional, Super Admin only)
+- `audio`: Audio file (.mp3)
+- `songlist`: Songlist file (.txt, .rtf, .docx, .nml, .m3u8, .json)
+- `artwork`: Artwork image file (.jpg/.png)
+
+Headers:
+- `Authorization`: Bearer token for authentication
+- `x-file-id`: Optional file ID for testing/reuse
+
+**Response**:
+```json
+{
+  "success": true,
+  "fileId": "string",
+  "status": "received",
+  "message": "Files successfully received and validated"
+}
+```
+
+### Status Endpoints
+
+#### `GET /status/:fileId`
 
 Returns the status of file processing and destination uploads.
 
@@ -129,34 +241,102 @@ Returns the status of file processing and destination uploads.
 ```json
 {
   "fileId": "string",
-  "status": "queued|processing|completed|error",
-  "message": "string (optional)"
+  "status": "received|queued|processing|completed|error",
+  "message": "string (optional)",
+  "timestamp": "ISO date string",
+  "metadata": {
+    "userId": "string",
+    "title": "string",
+    "djName": "string",
+    "broadcastDate": "string",
+    "broadcastTime": "string",
+    "genre": "string",
+    "description": "string",
+    "azcFolder": "string",
+    "azcPlaylist": "string",
+    "userRole": "string",
+    "destinations": "string",
+    "artworkFilename": "string"
+  },
+  "files": {
+    "audio": {
+      "exists": true,
+      "size": 12345678
+    },
+    "songlist": {
+      "exists": true,
+      "size": 1234,
+      "songCount": 15
+    }
+  },
+  "archived": false
 }
 ```
 
-### `POST /parse-songlist`
+For archived files, additional fields are included:
+```json
+{
+  "archived": true,
+  "archivePath": "/path/to/archive/directory"
+}
+```
 
-Parses a songlist file and returns the extracted track information.
+#### `GET /send/status/:fileId`
 
-**Request**:
-Multipart form data with the following field:
-- `songlist`: Songlist file (.txt, .rtf, .docx, .nml, .m3u8)
+Returns the status of a file processed through the send endpoint.
 
 **Response**:
 ```json
 {
+  "status": "received|queued|processing|completed|error",
+  "message": "string (optional)",
+  "timestamp": "ISO date string"
+}
+```
+
+#### `GET /send/archive-status/:fileId`
+
+Checks if a file has been archived and returns its status.
+
+**Response**:
+```json
+{
+  "success": true,
+  "archived": true,
+  "status": {
+    "fileId": "string",
+    "status": "completed",
+    "message": "string",
+    "timestamp": "ISO date string"
+  }
+}
+```
+
+### Songlist Parsing Endpoints
+
+#### `POST /parse-songlist/validate`
+
+Validates a songlist file without saving other files.
+
+**Request**:
+Multipart form data with the following fields:
+- `songlist`: Songlist file (.txt, .rtf, .docx, .nml, .m3u8)
+- `metadata`: JSON string containing metadata (optional)
+
+**Response**:
+```json
+{
+  "success": true,
   "songs": [
     {
       "title": "string",
       "artist": "string"
     }
-  ],
-  "error": "NONE|FILE_READ_ERROR|NO_TRACKS_DETECTED|NO_VALID_SONGS|UNKNOWN_ERROR",
-  "errorMessage": "string (optional)"
+  ]
 }
 ```
 
-### `GET /parse-songlist/:fileId`
+#### `GET /parse-songlist/:fileId`
 
 Parses a previously uploaded songlist file by its fileId.
 
@@ -168,13 +348,37 @@ Parses a previously uploaded songlist file by its fileId.
       "title": "string",
       "artist": "string"
     }
-  ],
-  "error": "NONE|FILE_READ_ERROR|NO_TRACKS_DETECTED|NO_VALID_SONGS|UNKNOWN_ERROR",
-  "errorMessage": "string (optional)"
+  ]
 }
 ```
 
-### `GET /health`
+#### `POST /parse-songlist/:fileId/confirm`
+
+Confirms parsed songs for a specific file ID and starts processing.
+
+**Request**:
+```json
+{
+  "songs": [
+    {
+      "title": "string",
+      "artist": "string"
+    }
+  ]
+}
+```
+
+**Response**:
+```json
+{
+  "status": "success",
+  "message": "Songs confirmed successfully"
+}
+```
+
+### Health Check
+
+#### `GET /health`
 
 Health check endpoint.
 
@@ -201,18 +405,15 @@ Health check endpoint.
 - Express is configured to bypass default body parsers for multipart data.
 - Files are stored in the `received-files` directory.
 - Each upload requires three files:
-  - `audio.mp3`: The audio file to be uploaded
-  - `songlist`: The tracklist information (supported formats: .txt, .rtf, .docx, .nml, .m3u8)
-  - `artwork.jpg/png`: Cover image for the broadcast
+  - `audio`: The audio file to be uploaded (.mp3 or other audio formats)
+  - `songlist`: The tracklist information (supported formats: .txt, .rtf, .docx, .nml, .m3u8, .json)
+  - `artwork`: Cover image for the broadcast (.jpg/.png)
 - Temporary files are cleaned up after processing.
-
-## Versioning
-
-- All endpoints are versioned under `/v1/`.
-- Future versions will maintain backward compatibility where possible.
+- Files are archived after successful processing.
 
 ## Security
 
-- All endpoints require HTTPS.
+- All endpoints require HTTPS in production.
 - Input validation and rate limiting are enforced.
-- Uploads are sandboxed in forked processes.
+- Uploads are sandboxed in worker processes.
+- Role-based access control for admin-only endpoints.
