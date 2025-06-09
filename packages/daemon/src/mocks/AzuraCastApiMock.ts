@@ -2,13 +2,11 @@
  * AzuraCast API Mock
  * 
  * This mock simulates the AzuraCast API for testing purposes.
- * 
- * Password handling is done using simple XOR obfuscation to avoid plaintext passwords.
+ * Focuses on upload and playlist functionality for development testing.
  */
 
 import { DestinationApiMock } from './DestinationApiMock.js';
 import * as fs from 'fs';
-import { AuthService } from '../services/AuthService.js';
 import { log } from '@uploadDistributor/logging';
 
 export interface AzuraCastUploadResponse {
@@ -28,104 +26,19 @@ export interface AzuraCastMetadata {
 export class AzuraCastApiMock extends DestinationApiMock {
   private stationId: string;
   private playlistId: string;
-  private authService: AuthService;
 
   constructor(stationId: string = '2', playlistId: string = '1') {
     super('azuracast');
     this.stationId = stationId;
     this.playlistId = playlistId;
-    this.authService = AuthService.getInstance();
   }
 
   /**
-   * Authenticate with AzuraCast using credentials
-   * 
-   * @param email User email
-   * @param password User password (plaintext)
-   * @param encodedPassword User password (encoded with XOR)
-   */
-  /**
-   * Authenticate with AzuraCast using email
-   * 
-   * @param email User email
-   */
-  public async authenticateWithEmail(
-    email: string
-  ): Promise<{ success: boolean; error?: string }> {
-    const result = await this.authService.authenticateWithEmail(email);
-    
-    this.recordRequest('authenticateWithEmail', {
-      email
-    });
-    
-    return {
-      success: result.success,
-      error: result.error
-    };
-  }
-  
-  /**
-   * Verify a magic link token
-   * 
-   * @param token Magic link token
-   */
-  public async verifyMagicLinkToken(
-    token: string
-  ): Promise<{ success: boolean; token?: string; user?: any; error?: string }> {
-    const result = await this.authService.verifyMagicLinkToken(token);
-    
-    this.recordRequest('verifyMagicLinkToken', {
-      token: token.substring(0, 10) + '...'
-    });
-    
-    return {
-      success: result.success,
-      token: result.token,
-      user: result.user,
-      error: result.error
-    };
-  }
-  
-  /**
-   * Override the base authenticate method
+   * Override the base authenticate method for upload testing
    */
   public override authenticate(): Promise<{ success: boolean; token: string }> {
     log('D:API   ', 'AZ:200', `[${this.destination}] Authentication stub called`);
     return Promise.resolve({ success: true, token: 'mock-token' });
-  }
-  
-  /**
-   * Validate a token
-   */
-  public async validateToken(token: string): Promise<{ success: boolean; user?: any; error?: string }> {
-    const result = await this.authService.validateToken(token);
-    
-    this.recordRequest('validateToken', {
-      token: token.substring(0, 10) + '...'
-    });
-    
-    return {
-      success: result.success,
-      user: result.user,
-      error: result.error
-    };
-  }
-  
-  /**
-   * Get user profile
-   */
-  public async getUserProfile(token: string): Promise<{ success: boolean; user?: any; error?: string }> {
-    const result = await this.authService.validateToken(token);
-    
-    this.recordRequest('getUserProfile', {
-      token: token.substring(0, 10) + '...'
-    });
-    
-    return {
-      success: result.success,
-      user: result.user,
-      error: result.error
-    };
   }
   
   /**

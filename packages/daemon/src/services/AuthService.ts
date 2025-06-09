@@ -45,26 +45,6 @@ export interface AuthResponse {
 export class AuthService {
   private static instance: AuthService;
   private jwtSecret: string;
-  private mockUsers: UserProfile[] = [
-    {
-      id: '1',
-      email: 'batsonjay@gmail.com',
-      displayName: 'Jay Batson',
-      role: USER_ROLES.ADMIN
-    },
-    {
-      id: '2',
-      email: 'batsonjay@mac.com',
-      displayName: 'catalyst',
-      role: USER_ROLES.DJ
-    },
-    {
-      id: '3',
-      email: 'miker@mrobs.co.uk',
-      displayName: 'Chewee',
-      role: USER_ROLES.DJ
-    }
-  ];
   
   private constructor() {
     // Use environment variable for JWT secret or a default for development

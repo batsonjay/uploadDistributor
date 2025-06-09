@@ -14,7 +14,7 @@ const VALID_GENRES = ['Deep House', 'Tech House', 'Progressive House'];
 
 async function runUploadTest() {
   try {
-    console.log('=== Upload Distributor Test ===');
+    console.log('=== AzuraCast Upload Test via File Processor ===');
     
     // 1. Check if test files exist
     const audioFile = path.join(TEST_FILES_DIR, 'TEST-VALID-MP3.mp3');
@@ -36,18 +36,18 @@ async function runUploadTest() {
       return;
     }
     
-    console.log('All test files found');
+    console.log('✅ All test files found');
     
-    // 2. Create form data
+    // 2. Create form data for file processor
     const formData = new FormData();
     
     // Add files
     formData.append('audio', fs.createReadStream(audioFile));
     formData.append('artwork', fs.createReadStream(artworkFile));
     formData.append('songlist', fs.createReadStream(songlistFile));
-    console.log('Added pre-validated JSON songlist to form data');
+    console.log('📁 Added files to form data (including pre-validated JSON songlist)');
     
-    // Get current date and time for broadcast info
+    // 3. Create metadata with all required fields
     const now = new Date();
     const broadcastDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
     const hours = String(now.getHours()).padStart(2, '0');
@@ -57,25 +57,35 @@ async function runUploadTest() {
     // Create a unique identifier for this test run
     const timestamp = now.toISOString().replace(/[:.]/g, '-');
     
-    // Add metadata
     const metadata = {
-      title: `Logging Test ${timestamp.substring(11, 19)}`,
+      // Basic info
+      title: `AzuraCast Test ${timestamp.substring(11, 19)}`,
       broadcastDate: broadcastDate,
       broadcastTime: broadcastTime,
-      genre: VALID_GENRES.join(', '), // Use all three valid genres
-      description: `Automated logging test run at ${timestamp} - FIND-ME-EASILY`,
-      // Add selected DJ ID for Super Admin uploading as DJ
-      selectedDjId: '1', // ID for DJ "catalyst" based on AzuraCastApiMock.simple.ts
-      djName: 'catalyst' // Explicitly set the DJ name to match the selected DJ
+      
+      // Genre list (required for AzuraCast)
+      genre: VALID_GENRES.join(', '),
+      
+      // Description
+      description: `Direct AzuraCast upload test - ${timestamp} - FIND-ME-EASILY`,
+      
+      // DJ name will be set by the route after DJ lookup
+      djName: 'catalyst' // This will be overridden by the route
     };
     
+    // Add selectedDjId as a separate form field (not in metadata JSON)
+    formData.append('selectedDjId', '1'); // ID for DJ "catalyst"
     formData.append('metadata', JSON.stringify(metadata));
-    console.log(`Prepared upload with title: "${metadata.title}"`);
-    console.log(`Broadcast date/time: ${metadata.broadcastDate} ${metadata.broadcastTime}`);
-    console.log(`Description: ${metadata.description}`);
     
-    // 3. Send files to daemon
-    console.log('\nUploading files to daemon...');
+    console.log('📋 Prepared metadata:');
+    console.log(`   Title: "${metadata.title}"`);
+    console.log(`   DJ: ${metadata.djName} (ID: 1 - catalyst)`);
+    console.log(`   Date/Time: ${metadata.broadcastDate} ${metadata.broadcastTime}`);
+    console.log(`   Genre: ${metadata.genre}`);
+    console.log(`   Description: ${metadata.description}`);
+    
+    // 4. Send to daemon file processor
+    console.log('\n🚀 Sending files to daemon file processor...');
     
     const uploadResponse = await axios.post(
       `${DAEMON_URL}/send/process`,
@@ -91,18 +101,18 @@ async function runUploadTest() {
     );
     
     if (!uploadResponse.data.success) {
-      console.error('Upload failed:', uploadResponse.data.error || 'Unknown error');
+      console.error('❌ Upload failed:', uploadResponse.data.error || 'Unknown error');
       return;
     }
     
     const fileId = uploadResponse.data.fileId;
-    console.log(`Files uploaded successfully with ID: ${fileId}`);
+    console.log(`✅ Files sent to processor with ID: ${fileId}`);
     
-    // 4. Monitor processing status
-    console.log('\nMonitoring processing status...');
+    // 5. Monitor processing status
+    console.log('\n⏳ Monitoring file processor status...');
     let status = 'received';
     let attempts = 0;
-    const maxAttempts = 60; // Increase timeout to 60 seconds
+    const maxAttempts = 60; // 60 seconds timeout
     
     while (status !== 'completed' && status !== 'error' && attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -115,16 +125,15 @@ async function runUploadTest() {
         );
         
         status = statusResponse.data.status;
-        console.log(`Status: ${status} - ${statusResponse.data.message}`);
+        console.log(`📊 Status: ${status} - ${statusResponse.data.message}`);
         
-        // If we get a completed status, break out of the loop
         if (status === 'completed') {
           break;
         }
       } catch (error) {
         // If we get a 404, the file might have been moved to archive
         if (error.response && error.response.status === 404) {
-          console.log(`Status check attempt ${attempts}/${maxAttempts}: File ID not found, checking archive...`);
+          console.log(`🔍 File ID not found, checking archive... (attempt ${attempts}/${maxAttempts})`);
           
           // Check the archive status endpoint
           try {
@@ -137,7 +146,7 @@ async function runUploadTest() {
               // File was found in archive
               status = archiveResponse.data.status.status || 'completed';
               const message = archiveResponse.data.status.message || '';
-              console.log(`File found in archive with status: ${status} - ${message}`);
+              console.log(`📦 File found in archive with status: ${status} - ${message}`);
               
               // Check if there was an error in the upload
               if (status === 'error' || message.includes('error') || message.includes('failed')) {
@@ -148,28 +157,25 @@ async function runUploadTest() {
               
               break;
             } else {
-              console.log(`File not found in archive yet, may still be processing`);
+              console.log(`📦 File not found in archive yet, may still be processing`);
             }
           } catch (archiveError) {
-            console.error(`Error checking archive status:`, 
+            console.error(`❌ Error checking archive status:`, 
               archiveError.response?.data || archiveError.message);
           }
           
-          // Give it a bit more time before first status check
+          // Give it a bit more time for initialization
           if (attempts < 5) {
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Extra delay for initialization
+            await new Promise(resolve => setTimeout(resolve, 1000));
           }
         } else {
-          console.error(`Error checking status (attempt ${attempts}/${maxAttempts}):`, 
+          console.error(`❌ Error checking status (attempt ${attempts}/${maxAttempts}):`, 
             error.response?.data || error.message);
-          
-          // Don't exit the loop, try again
         }
         
-        // If we've been checking for a while and getting 404s, assume it completed successfully
-        // and was moved to archive - this happens quickly in the current implementation
+        // If we've been checking for a while and getting 404s, assume it completed
         if (attempts > 10 && error.response && error.response.status === 404) {
-          console.log(`\nFile ID not found after ${attempts} attempts, assuming it was processed and moved to archive`);
+          console.log(`\n📦 File ID not found after ${attempts} attempts, assuming processed and archived`);
           console.log(`This is normal behavior - the daemon moves files to archive after processing`);
           status = 'completed';
           break;
@@ -177,27 +183,28 @@ async function runUploadTest() {
       }
       
       // Show a progress indicator
-      process.stdout.write(`\rProcessing: ${attempts}/${maxAttempts} seconds elapsed...`);
+      process.stdout.write(`\r⏳ Processing: ${attempts}/${maxAttempts} seconds elapsed...`);
     }
     
     console.log(''); // New line after progress indicator
     
     if (status === 'completed') {
-      console.log('\n✅ Test completed successfully!');
+      console.log('\n🎉 Test completed successfully!');
+      console.log('✅ File processor handled the upload pipeline');
+      console.log('✅ AzuraCast upload should have been processed');
     } else if (status === 'error') {
       console.log('\n❌ Test failed with error status');
       process.exit(1);
     } else {
       console.log('\n⚠️ Test timed out after waiting for', maxAttempts, 'seconds');
       console.log('This may be normal if processing takes longer than expected.');
-      console.log('Check the daemon console for detailed logs.');
     }
     
     console.log('\n=== Test Complete ===');
-    console.log('Check the daemon console for detailed logs');
+    console.log('🔍 Check the daemon console (brund.sh) for detailed AzuraCast API logs');
     
   } catch (error) {
-    console.error('Test failed:', error.response?.data || error.message);
+    console.error('❌ Test failed:', error.response?.data || error.message);
   }
 }
 

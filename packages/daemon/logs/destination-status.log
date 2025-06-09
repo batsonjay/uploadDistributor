@@ -405,3 +405,6 @@
 [azuracast]: success [2025-06-08 00:31:30]: Live test 15 sched title, Uploaded to catalyst/2025-06-09_catalyst_Live_test_15_sched_title.mp3
 [azuracast]: success [2025-06-08 01:03:11]: Log debug 1, Uploaded to catalyst/2025-06-10_catalyst_Log_debug_1.mp3
 [azuracast]: success [2025-06-08 01:10:52]: Log debug 2, Uploaded to catalyst/2025-06-10_catalyst_Log_debug_2.mp3
+[azuracast]: error [2025-06-08 22:58:02]: AzuraCast Test 22-58-01, No playlist found for DJ: Jay Batson
+[azuracast]: error [2025-06-08 22:59:52]: AzuraCast Test 22-59-51, No playlist found for DJ: Buster Neece
+[azuracast]: success [2025-06-09 01:46:35]: Tdoc, Uploaded to catalyst/2025-06-08_catalyst_Tdoc.mp3

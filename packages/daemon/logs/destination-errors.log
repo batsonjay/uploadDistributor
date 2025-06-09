@@ -299,3 +299,13 @@ Attempt: 1 of 3
   Attempt: 1
   Details: {"audioFilePath":"/Users/balearicfm/Projects/uploadDistributor/packages/daemon/received-files/9618c022-360b-4ee5-94aa-8ba7631020cd/2025-06-07_catalyst_Scheduling_Live_Test_1.mp3","metadata":{"title":"Scheduling Live Test 1","artist":"catalyst","album":"2025-06-07 Broadcast","genre":"House, Deep House"}}
 
+[azuracast]: error [2025-06-08 22:58:02]: AzuraCast Test 22-58-01, No playlist found for DJ: Jay Batson
+  Category: UNKNOWN
+  Attempt: 1
+  Details: {"audioFilePath":"/Users/balearicfm/Projects/uploadDistributor/packages/daemon/received-files/f34cd538-c9e1-481a-8462-c3c66dd71a25/2025-06-08_Jay_Batson_AzuraCast_Test_22-58-01.mp3","metadata":{"title":"AzuraCast Test 22-58-01","artist":"Jay Batson","album":"2025-06-08 Broadcast","genre":"Deep House, Tech House, Progressive House"}}
+
+[azuracast]: error [2025-06-08 22:59:52]: AzuraCast Test 22-59-51, No playlist found for DJ: Buster Neece
+  Category: UNKNOWN
+  Attempt: 1
+  Details: {"audioFilePath":"/Users/balearicfm/Projects/uploadDistributor/packages/daemon/received-files/533f91e9-8b25-4d7f-8ce4-0dbf16edf469/2025-06-08_Buster_Neece_AzuraCast_Test_22-59-51.mp3","metadata":{"title":"AzuraCast Test 22-59-51","artist":"Buster Neece","album":"2025-06-08 Broadcast","genre":"Deep House, Tech House, Progressive House"}}
+
