@@ -4,14 +4,88 @@ This document outlines the flow of data and processes involved in uploading file
 
 If necessary, read /README.md and the architecture files in /docs for further background on the entire project.
 
-## Update as of 2025-05-27 06:55:00pm
-This document was created early in the process of building the app. It may still show some vestiages of history, but is largely updated with revised information on how this upload is to be done. Much of the work that must be done is to get rid of code that was placeholder-code & mocks that were done early, but incorrectly, just to get other aspects of the application working correctly. The next task is to make proper code for this section of the application.
-
-* **Related, but un-described work: Provide upload progress reporting / status**
+* **Related, but un-described work**
   * The web-ui is designed to provide upload progress indication of the .mp3 file. Most will be large. Because the development so far has used small .mp3 files in order to get initial code in place, an upload of a large file has not been tested. This matters because the mock will need to be prepared to receive a large file. In addition, code is needed as part of this work to provide a way for the web-ui to display upload progress.
 
-* **Mock needs major rework**
-  * A review of the code in the mock suggests that it currently inadequately models the AzuraCast APIs that are necessary to use. The full API documentation for each API call is available at https://radio.balearic-fm.com/docs/api/, including both the syntax for sending as well as all responses, and the schema.
+## Large File Upload Investigation
+
+### Problem Identification
+
+During testing of the `/send` endpoint with large files, it was discovered that while the endpoint works correctly for small files, it fails when attempting to upload large MP3 files (100MB+). The investigation revealed that the issue is not with the `/send` endpoint logic itself, but rather with server-side upload limits that prevent large file transfers.
+
+**Root Cause Analysis:**
+- The `/send` endpoint successfully processes small files using the current base64 JSON approach
+- Large file uploads fail due to server configuration limits, not application logic
+- The current implementation uses a working file transfer mechanism that simply hits server boundaries
+- The user experience issue (inability to validate track listings before upload) was already solved by the two-step `/send` process
+
+**Key Finding:** The `/send` endpoint functionality is correct - but, The AzuraCast installation ONLY supports base64 JSON uploads via the API. The limitation then becomes server configuration related, making this a deployment/infrastructure issue rather than an application architecture problem.
+
+AzuraCast itself uses a Flow.js chunked upload system, but this is __exclusively for the web interface__, not the API. The API endpoint `/station/{station_id}/files` expects:
+
+1. __JSON content-type__ (not multipart)
+2. __Base64-encoded file content__ (not binary)
+3. __Single request__ (not chunked)
+
+### Why It Works vs. Fails
+
+- ✅ __Small files (< ~100MB)__: Base64 encoding fits within server request limits
+- ❌ __Large files (117MB → 163MB base64)__: Exceeds server's max request body size
+
+### Large File Upload Investigation Results
+
+During investigation of large file upload solutions, the AzuraCast Flow.js chunked upload endpoint was evaluated as an alternative to the current base64 JSON approach.
+
+**Flow.js Upload Endpoint Analysis:**
+- **Endpoint**: `/station/{station_id}/files/flow` (not in OpenAPI spec - internal only)
+- **Authentication**: Likely requires web session cookies, not API key
+- **Return Value**: Probably doesn't return the structured file ID we need for metadata setting
+- **Complexity**: Would require reverse-engineering their exact Flow.js implementation
+
+**Challenges Identified:**
+- The GitHub search for Flow.js implementation details requires authentication
+- The endpoint is not documented in the public API specification
+- Authentication mechanism differs from our API key-based approach
+- Uncertain metadata setting capability after chunked upload
+- Would require complex chunked upload implementation
+
+### Server Configuration Approach (RECOMMENDED)
+
+**For handling large file uploads, the recommended approach is server configuration changes rather than implementing Flow.js chunked uploads.**
+
+**Server Configuration Solutions:**
+
+**For Nginx** (most common):
+```nginx
+# In your nginx.conf or site config
+client_max_body_size 500M;  # Adjust as needed
+```
+
+**For Apache**:
+```apache
+# In .htaccess or apache config
+LimitRequestBody 524288000  # 500MB in bytes
+```
+
+**For PHP** (also needed):
+```ini
+# In php.ini
+upload_max_filesize = 500M
+post_max_size = 500M
+max_execution_time = 300
+memory_limit = 512M
+```
+
+***Recommendation Rationale:***
+
+1. ✅ **Keeps working code**: Our base64 JSON approach already works perfectly for small files
+2. ✅ **Simple one-time fix**: Just increase server limits
+3. ✅ **Maintains API compatibility**: Still get proper file IDs for metadata setting
+4. ✅ **No authentication issues**: Uses existing API key system
+5. ✅ **Future-proof**: Works for any file size you set
+
+## API definition**
+  * The full API documentation for each API call is available at https://radio.balearic-fm.com/docs/api/, including both the syntax for sending as well as all responses, and the schema.
 
 ## Upload Process Flow
 
