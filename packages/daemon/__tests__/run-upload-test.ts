@@ -12,9 +12,75 @@ const TEST_FILES_DIR = path.join(process.cwd(), '../../apps/tf');
 // Valid genres from the send page
 const VALID_GENRES = ['Deep House', 'Tech House', 'Progressive House'];
 
+// Test configuration from environment variables
+const TARGET_DJ_NAME = process.env.TARGET_DJ_NAME || 'catalyst';
+const ADMIN_MODE = process.env.ADMIN_MODE === 'true';
+
+/**
+ * Look up a DJ by name from AzuraCast
+ */
+async function findDjByName(djName: string): Promise<{ success: boolean; dj?: any; error?: string }> {
+  try {
+    console.log(`🔍 Looking up DJ: "${djName}"`);
+    
+    const response = await axios.get(
+      `${DAEMON_URL}/api/auth/djs`,
+      {
+        headers: {
+          'Authorization': `Bearer ${AUTH_TOKEN}`
+        }
+      }
+    );
+    
+    if (!response.data || !response.data.success || !Array.isArray(response.data.djs)) {
+      return { success: false, error: 'Invalid response from DJs API' };
+    }
+    
+    // Find DJ by name (case-insensitive)
+    const djNameLower = djName.toLowerCase();
+    const dj = response.data.djs.find((user: any) => 
+      user.displayName && user.displayName.toLowerCase() === djNameLower
+    );
+    
+    if (!dj) {
+      const availableDjs = response.data.djs.map((user: any) => user.displayName).join(', ');
+      return { 
+        success: false, 
+        error: `DJ "${djName}" not found. Available DJs: ${availableDjs}` 
+      };
+    }
+    
+    console.log(`✅ Found DJ: ${dj.displayName} (ID: ${dj.id})`);
+    return { success: true, dj };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: `Failed to lookup DJ: ${error.response?.data?.message || error.message}` 
+    };
+  }
+}
+
 async function runUploadTest() {
   try {
     console.log('=== AzuraCast Upload Test via File Processor ===');
+    console.log(`Mode: ${ADMIN_MODE ? 'Admin' : 'Regular DJ'}`);
+    console.log(`Target DJ: ${TARGET_DJ_NAME}`);
+    
+    // Always look up the target DJ and use admin mode approach
+    // This ensures both modes test uploading as the target DJ (catalyst)
+    const djLookup = await findDjByName(TARGET_DJ_NAME);
+    if (!djLookup.success) {
+      console.error(`❌ ${djLookup.error}`);
+      process.exit(1);
+    }
+    const selectedDjId = djLookup.dj.id;
+    
+    if (ADMIN_MODE) {
+      console.log(`✅ Admin mode: Will upload for DJ ${djLookup.dj.displayName} (ID: ${selectedDjId})`);
+    } else {
+      console.log(`✅ Regular DJ mode: Will test as ${djLookup.dj.displayName} (ID: ${selectedDjId})`);
+      console.log(`   Note: Using admin approach to ensure upload as "${TARGET_DJ_NAME}"`);
+    }
     
     // 1. Check if test files exist
     const audioFile = path.join(TEST_FILES_DIR, 'TEST-VALID-MP3.mp3');
@@ -23,31 +89,29 @@ async function runUploadTest() {
     
     if (!fs.existsSync(audioFile)) {
       console.error(`Error: Audio file not found: ${audioFile}`);
-      return;
+      process.exit(1);
     }
     
     if (!fs.existsSync(artworkFile)) {
       console.error(`Error: Artwork file not found: ${artworkFile}`);
-      return;
+      process.exit(1);
     }
     
     if (!fs.existsSync(songlistFile)) {
       console.error(`Error: Songlist file not found: ${songlistFile}`);
-      return;
+      process.exit(1);
     }
     
     console.log('✅ All test files found');
     
-    // 2. Create form data for file processor
+    // 2. Create form data for file processor exactly like web-UI
     const formData = new FormData();
     
-    // Add files
+    // Add audio and artwork files
     formData.append('audio', fs.createReadStream(audioFile));
     formData.append('artwork', fs.createReadStream(artworkFile));
-    formData.append('songlist', fs.createReadStream(songlistFile));
-    console.log('📁 Added files to form data (including pre-validated JSON songlist)');
     
-    // 3. Create metadata with all required fields
+    // 3. Create metadata exactly like the web-UI does
     const now = new Date();
     const broadcastDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
     const hours = String(now.getHours()).padStart(2, '0');
@@ -57,29 +121,36 @@ async function runUploadTest() {
     // Create a unique identifier for this test run
     const timestamp = now.toISOString().replace(/[:.]/g, '-');
     
+    // Create songlist in the same format as web-UI (JSON with format and songs)
+    const songsData = {
+      format: "json",
+      songs: [
+        { title: "Test Song 1", artist: "Test Artist 1" },
+        { title: "Test Song 2", artist: "Test Artist 2" },
+        { title: "Test Song 3", artist: "Test Artist 3" }
+      ]
+    };
+    const songsBlob = Buffer.from(JSON.stringify(songsData));
+    formData.append("songlist", songsBlob, "songlist.json");
+    
+    console.log('📁 Added files to form data (audio, artwork, and generated JSON songlist)');
+    
+    // Create metadata exactly like web-UI does (without djName - that gets set by the route)
     const metadata = {
-      // Basic info
       title: `AzuraCast Test ${timestamp.substring(11, 19)}`,
       broadcastDate: broadcastDate,
       broadcastTime: broadcastTime,
-      
-      // Genre list (required for AzuraCast)
       genre: VALID_GENRES.join(', '),
-      
-      // Description
-      description: `Direct AzuraCast upload test - ${timestamp} - FIND-ME-EASILY`,
-      
-      // DJ name will be set by the route after DJ lookup
-      djName: 'catalyst' // This will be overridden by the route
+      description: `Direct AzuraCast upload test - ${timestamp} - FIND-ME-EASILY`
     };
     
-    // Add selectedDjId as a separate form field (not in metadata JSON)
-    formData.append('selectedDjId', '1'); // ID for DJ "catalyst"
+    // Always send selectedDjId since we always look up the target DJ
+    formData.append('selectedDjId', selectedDjId);
     formData.append('metadata', JSON.stringify(metadata));
     
     console.log('📋 Prepared metadata:');
     console.log(`   Title: "${metadata.title}"`);
-    console.log(`   DJ: ${metadata.djName} (ID: 1 - catalyst)`);
+    console.log(`   Selected DJ ID: ${selectedDjId} (${TARGET_DJ_NAME})`);
     console.log(`   Date/Time: ${metadata.broadcastDate} ${metadata.broadcastTime}`);
     console.log(`   Genre: ${metadata.genre}`);
     console.log(`   Description: ${metadata.description}`);
@@ -102,7 +173,7 @@ async function runUploadTest() {
     
     if (!uploadResponse.data.success) {
       console.error('❌ Upload failed:', uploadResponse.data.error || 'Unknown error');
-      return;
+      process.exit(1);
     }
     
     const fileId = uploadResponse.data.fileId;
@@ -113,6 +184,8 @@ async function runUploadTest() {
     let status = 'received';
     let attempts = 0;
     const maxAttempts = 60; // 60 seconds timeout
+    let finalMessage = '';
+    let hasError = false;
     
     while (status !== 'completed' && status !== 'error' && attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -125,7 +198,15 @@ async function runUploadTest() {
         );
         
         status = statusResponse.data.status;
-        console.log(`📊 Status: ${status} - ${statusResponse.data.message}`);
+        finalMessage = statusResponse.data.message || '';
+        console.log(`📊 Status: ${status} - ${finalMessage}`);
+        
+        // Check for error indicators in the message
+        if (finalMessage.toLowerCase().includes('error') || 
+            finalMessage.toLowerCase().includes('failed') ||
+            finalMessage.toLowerCase().includes('no playlist found')) {
+          hasError = true;
+        }
         
         if (status === 'completed') {
           break;
@@ -145,14 +226,15 @@ async function runUploadTest() {
             if (archiveResponse.data.success && archiveResponse.data.archived) {
               // File was found in archive
               status = archiveResponse.data.status.status || 'completed';
-              const message = archiveResponse.data.status.message || '';
-              console.log(`📦 File found in archive with status: ${status} - ${message}`);
+              finalMessage = archiveResponse.data.status.message || '';
+              console.log(`📦 File found in archive with status: ${status} - ${finalMessage}`);
               
-              // Check if there was an error in the upload
-              if (status === 'error' || message.includes('error') || message.includes('failed')) {
-                console.log('\n❌ Test failed with error status in archive');
-                console.log(`Error message: ${message}`);
-                process.exit(1);
+              // Check for error indicators in archived status
+              if (status === 'error' || 
+                  finalMessage.toLowerCase().includes('error') || 
+                  finalMessage.toLowerCase().includes('failed') ||
+                  finalMessage.toLowerCase().includes('no playlist found')) {
+                hasError = true;
               }
               
               break;
@@ -188,16 +270,21 @@ async function runUploadTest() {
     
     console.log(''); // New line after progress indicator
     
-    if (status === 'completed') {
+    // 6. Determine final result based on status and error indicators
+    if (status === 'error' || hasError) {
+      console.log('\n❌ Test FAILED!');
+      console.log(`❌ Error detected in processing: ${finalMessage}`);
+      console.log('🔍 Check the daemon console (brund.sh) for detailed error logs');
+      process.exit(1);
+    } else if (status === 'completed' && !hasError) {
       console.log('\n🎉 Test completed successfully!');
       console.log('✅ File processor handled the upload pipeline');
-      console.log('✅ AzuraCast upload should have been processed');
-    } else if (status === 'error') {
-      console.log('\n❌ Test failed with error status');
-      process.exit(1);
+      console.log('✅ AzuraCast upload was processed without errors');
     } else {
       console.log('\n⚠️ Test timed out after waiting for', maxAttempts, 'seconds');
-      console.log('This may be normal if processing takes longer than expected.');
+      console.log('This may indicate a problem or very slow processing.');
+      console.log('🔍 Check the daemon console (brund.sh) for detailed logs');
+      process.exit(1);
     }
     
     console.log('\n=== Test Complete ===');
@@ -205,6 +292,7 @@ async function runUploadTest() {
     
   } catch (error) {
     console.error('❌ Test failed:', error.response?.data || error.message);
+    process.exit(1);
   }
 }
 
