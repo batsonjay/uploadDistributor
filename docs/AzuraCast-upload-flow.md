@@ -32,28 +32,18 @@ AzuraCast itself uses a Flow.js chunked upload system, but this is __exclusively
 - ✅ __Small files (< ~100MB)__: Base64 encoding fits within server request limits
 - ❌ __Large files (117MB → 163MB base64)__: Exceeds server's max request body size
 
-### Large File Upload Investigation Results
+### Server Configuration Changes needed
 
-During investigation of large file upload solutions, the AzuraCast Flow.js chunked upload endpoint was evaluated as an alternative to the current base64 JSON approach.
+**Help provided directly by the project lead for AzuraCast:**
 
-**Flow.js Upload Endpoint Analysis:**
-- **Endpoint**: `/station/{station_id}/files/flow` (not in OpenAPI spec - internal only)
-- **Authentication**: Likely requires web session cookies, not API key
-- **Return Value**: Probably doesn't return the structured file ID we need for metadata setting
-- **Complexity**: Would require reverse-engineering their exact Flow.js implementation
+There is a variable in the azuracast.env file called PHP_MAX_FILE_SIZE (the default is 25M), you can modify that file on the server host environment (inside /var/azuracast) and then restart services via:
+```docker
+docker compose down
+docker compose up -d
+```
+You can see other env files here: https://www.azuracast.com/docs/getting-started/settings/#advanced-configuration
 
-**Challenges Identified:**
-- The GitHub search for Flow.js implementation details requires authentication
-- The endpoint is not documented in the public API specification
-- Authentication mechanism differs from our API key-based approach
-- Uncertain metadata setting capability after chunked upload
-- Would require complex chunked upload implementation
-
-### Server Configuration Approach (RECOMMENDED)
-
-**For handling large file uploads, the recommended approach is server configuration changes rather than implementing Flow.js chunked uploads.**
-
-**Server Configuration Solutions:**
+**AI-generated Server Configuration Solutions:**
 
 **For Nginx** (most common):
 ```nginx
@@ -75,14 +65,6 @@ post_max_size = 500M
 max_execution_time = 300
 memory_limit = 512M
 ```
-
-***Recommendation Rationale:***
-
-1. ✅ **Keeps working code**: Our base64 JSON approach already works perfectly for small files
-2. ✅ **Simple one-time fix**: Just increase server limits
-3. ✅ **Maintains API compatibility**: Still get proper file IDs for metadata setting
-4. ✅ **No authentication issues**: Uses existing API key system
-5. ✅ **Future-proof**: Works for any file size you set
 
 ## API definition**
   * The full API documentation for each API call is available at https://radio.balearic-fm.com/docs/api/, including both the syntax for sending as well as all responses, and the schema.
