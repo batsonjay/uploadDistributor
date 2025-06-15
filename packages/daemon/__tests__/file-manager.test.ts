@@ -7,7 +7,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { FileManager } from '../src/services/FileManager';
+import { CleanupManager } from '../src/services/CleanupManager';
 import { SonglistData } from '../src/storage/SonglistStorage';
 
 // Test constants
@@ -111,21 +111,21 @@ async function runTests() {
     const testFileDir = setupTestEnvironment();
     console.log(`Test file directory created: ${testFileDir}`);
     
-    // Create FileManager with test directories
-    const fileManager = new FileManager();
+    // Create CleanupManager with test directories
+    const cleanupManager = new CleanupManager();
     
     // Override the default directories with test directories
-    Object.defineProperty(fileManager, 'receivedFilesDir', {
+    Object.defineProperty(cleanupManager, 'receivedFilesDir', {
       value: TEST_RECEIVED_DIR
     });
     
-    Object.defineProperty(fileManager, 'archiveDir', {
+    Object.defineProperty(cleanupManager, 'archiveDir', {
       value: TEST_ARCHIVE_DIR
     });
     
     // Move files to archive
     console.log('Moving files to archive...');
-    const { archivePath, fileMap } = fileManager.moveToArchive(TEST_FILE_ID, testSonglist);
+    const { archivePath, fileMap } = cleanupManager.moveToArchive(TEST_FILE_ID, testSonglist);
     
     console.log(`Files moved to archive: ${archivePath}`);
     console.log(`File mapping: ${JSON.stringify(fileMap, null, 2)}`);

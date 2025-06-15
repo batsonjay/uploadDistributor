@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { anyAuthenticated } from '../middleware/roleVerification.js';
 import { AuthService, USER_ROLES } from '../services/AuthService.js';
 import { log, logError } from '@uploadDistributor/logging';
-import { FileManager } from '../services/FileManager.js';
+import { CleanupManager } from '../services/CleanupManager.js';
 
 const router = express.Router();
 const authService = AuthService.getInstance();
@@ -385,11 +385,11 @@ router.get('/archive-status/:fileId', anyAuthenticated, async (req: express.Requ
 
   try {
     log('D:RTEDB ', 'SE:019', `Checking archive status for file ID: ${fileId}`);
-    // Create FileManager instance
-    const fileManager = new FileManager();
+    // Create CleanupManager instance
+    const cleanupManager = new CleanupManager();
     
     // Get the archive directory
-    const archiveDir = fileManager.getArchiveDir();
+    const archiveDir = cleanupManager.getArchiveDir();
     
     // Search for status files in the archive that contain this fileId
     // This is a simple implementation - could be optimized for production

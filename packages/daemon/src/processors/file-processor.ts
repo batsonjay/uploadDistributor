@@ -28,7 +28,7 @@ import { StatusManager } from '../services/StatusManager.js';
 import { AzuraCastService } from '../services/AzuraCastService.js';
 import { MixcloudService } from '../services/MixcloudService.js';
 import { SoundCloudService } from '../services/SoundCloudService.js';
-import { FileManager } from '../services/FileManager.js';
+import { CleanupManager, UploadResults, PlatformUploadResult } from '../services/CleanupManager.js';
 
 // Load environment variables
 dotenv.config();
@@ -50,7 +50,7 @@ const metadataFile = path.join(fileDir, 'metadata.json');
 
 // Initialize services
 const statusManager = new StatusManager(fileId);
-const fileManager = new FileManager();
+const cleanupManager = new CleanupManager();
 
 // Check if directory exists
 if (!fs.existsSync(fileDir)) {
@@ -126,6 +126,8 @@ const mixcloudService = new MixcloudService(statusManager);
 const soundCloudService = new SoundCloudService(statusManager);
 
 export async function processFile(fileId: string) {
+  let songlist: SonglistData | undefined; // Declare at function scope for error handling
+  
   try {
     // Update status to processing - the receive route already set status to 'received'
     statusManager.updateStatus('processing', 'Processing started');
@@ -146,8 +148,6 @@ export async function processFile(fileId: string) {
     
     // Step 1: Parse and normalize songlist
     log('D:WORKER', 'FP:010', 'Parsing songlist...');
-    
-    let songlist: SonglistData;
     
     try {
       // Check if we have validated songs from the web UI or pre-validated JSON songlist
@@ -330,8 +330,38 @@ export async function processFile(fileId: string) {
     log('D:WORKER', 'FP:021', 'Moving files to archive directory...');
     
     try {
-      // Move files to archive directory
-      const { archivePath, fileMap } = fileManager.moveToArchive(fileId, songlist);
+      // Create upload results for FileManager
+      const uploadResults: UploadResults = {
+        azuracast: {
+          success: destinations.azuracast.success,
+          timestamp: new Date().toISOString(),
+          ...(destinations.azuracast.success && destinations.azuracast.id ? {
+            fileId: destinations.azuracast.id,
+            path: destinations.azuracast.path,
+            playlistId: undefined, // We don't track playlist ID in current implementation
+            scheduled: true // Assume scheduled if upload succeeded
+          } : {}),
+          ...((!destinations.azuracast.success) ? {
+            error: destinations.azuracast.error,
+            step: 'upload' // Generic step for now
+          } : {})
+        },
+        mixcloud: {
+          success: false,
+          timestamp: new Date().toISOString(),
+          error: 'Not implemented yet',
+          step: 'upload'
+        },
+        soundcloud: {
+          success: false,
+          timestamp: new Date().toISOString(),
+          error: 'Not implemented yet',
+          step: 'upload'
+        }
+      };
+      
+      // Move files to archive directory with upload results and original metadata
+      const { archivePath, fileMap } = cleanupManager.moveToArchive(fileId, songlist, uploadResults, metadata);
       log('D:WORKER', 'FP:022', `Files moved to archive: ${archivePath}`);
       log('D:WORKDB', 'FP:023', `File mapping: ${JSON.stringify(fileMap, null, 2)}`);
       
@@ -359,6 +389,27 @@ export async function processFile(fileId: string) {
   } catch (err) {
     logError('ERROR   ', 'FP:027', `Error processing files:`, err);
     statusManager.updateStatus('error', `Processing error: ${(err as Error).message}`);
+    
+    // Even on error, try to archive essential files with error details
+    try {
+      const errorUploadResults: UploadResults = {
+        azuracast: {
+          success: false,
+          timestamp: new Date().toISOString(),
+          error: (err as Error).message,
+          step: 'processing'
+        }
+      };
+      
+      // If songlist exists, archive with error result
+      if (songlist) {
+        const { archivePath, fileMap } = cleanupManager.moveToArchive(fileId, songlist, errorUploadResults, metadata);
+        log('D:WORKER', 'FP:027a', `Error case: Files archived to: ${archivePath}`);
+      }
+    } catch (archiveErr) {
+      logError('ERROR   ', 'FP:027b', `Failed to archive files on error:`, archiveErr);
+    }
+    
     process.exit(1);
   }
 }

@@ -3,17 +3,17 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as glob from 'glob';
 import { anyAuthenticated } from '../middleware/roleVerification.js';
-import { FileManager } from '../services/FileManager.js';
+import { CleanupManager } from '../services/CleanupManager.js';
 import { log, logError } from '@uploadDistributor/logging';
 
 const router = express.Router();
 
-// Initialize FileManager
-const fileManager = new FileManager();
+// Initialize CleanupManager
+const cleanupManager = new CleanupManager();
 
 // Path to received files directory
-const receivedFilesDir = fileManager.getReceivedFilesDir();
-const archiveDir = fileManager.getArchiveDir();
+const receivedFilesDir = cleanupManager.getReceivedFilesDir();
+const archiveDir = cleanupManager.getArchiveDir();
 
 /**
  * Status endpoint
