@@ -25,6 +25,8 @@ export const LogConfig = {
   'D:SYSTEM': true,  // System-level operations
   'D:WORKER': true,  // Worker thread operations
   'D:WORKDB': false, // Worker thread operations - deeper debugging
+  'D:SFTP  ': true,  // SFTP operations
+  'D:SFTPDB': false, // SFTP operations - deeper debugging
   
   // Client categories
   'C:API   ': false, // API requests to the daemon

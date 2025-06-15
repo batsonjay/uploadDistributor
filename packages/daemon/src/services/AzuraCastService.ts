@@ -14,6 +14,7 @@
 
 import path from 'path';
 import { AzuraCastApi } from '../apis/AzuraCastApi.js';
+import { AzuraCastSftpApi } from '../apis/AzuraCastSftpApi.js';
 import { AzuraCastApiMock, AzuraCastMetadata, AzuraCastUploadResponse } from '../mocks/AzuraCastApiMock.simple.js';
 import { StatusManager } from './StatusManager.js';
 import { retry, RetryOptions } from '../utils/RetryUtils.js';
@@ -29,11 +30,13 @@ const STATION_ID = '2'; // Use station 2 for dev/test, station 1 for production
 
 export class AzuraCastService {
   private realApi: AzuraCastApi;
+  private sftpApi: AzuraCastSftpApi;
   private mockApi: AzuraCastApiMock;
   private statusManager: StatusManager;
   
   constructor(statusManager: StatusManager) {
     this.realApi = new AzuraCastApi();
+    this.sftpApi = new AzuraCastSftpApi();
     this.mockApi = new AzuraCastApiMock(STATION_ID);
     this.statusManager = statusManager;
   }
@@ -161,14 +164,14 @@ export class AzuraCastService {
   
   /**
    * Upload a file to AzuraCast with retry logic
-   * Implements the correct 3-step upload process as per AzuraCast-upload-flow.md
+   * Implements the new 4-step hybrid SFTP/API upload process as per AzuraCast-upload-flow.md
    */
   public async uploadFile(
     audioFilePath: string, 
     metadata: AzuraCastMetadata,
     songlist: SonglistData
   ): Promise<{ success: boolean; id?: string; path?: string; error?: string }> {
-    log('D:WORKER', 'AZ:004', `Starting AzuraCast upload: "${metadata.title}" by ${metadata.artist}`);
+    log('D:WORKER', 'AZ:004', `Starting AzuraCast SFTP upload: "${metadata.title}" by ${metadata.artist}`);
     
     // Find DJ playlist
     const playlistResult = await this.findDjPlaylist(metadata.artist);
@@ -204,62 +207,59 @@ export class AzuraCastService {
     try {
       // Use the retry utility to handle the entire upload process
       const result = await retry(async () => {
-        // Step 1: Upload the .mp3 media file
-        log('D:API   ', 'AZ:006', 'Step 1: Uploading file to AzuraCast...');
+        // Step 1: SFTP Upload of .mp3 media file
+        log('D:SFTP  ', 'AZ:006', 'Step 1: Uploading file via SFTP to AzuraCast...');
         const djName = metadata.artist.toLowerCase().replace(/\s+/g, '_');
         const fileName = path.basename(audioFilePath);
         const destinationPath = `${djName}/${fileName}`;
         
-        let uploadResult: AzuraCastUploadResponse;
+        // Upload via SFTP
+        const sftpResult = await this.sftpApi.uploadFile(audioFilePath, djName, fileName);
         
-        // CHOOSE ONE APPROACH (comment out the other):
-        
-        // APPROACH 1: Use Mock API for file upload
-        /*
-        uploadResult = await this.mockApi.uploadFile(audioFilePath, destinationPath);
-        */
-        
-        // APPROACH 2: Use Real API for file upload
-        try {
-          const realUploadResult = await this.realApi.uploadFile(audioFilePath, destinationPath, STATION_ID);
-          uploadResult = {
-            success: realUploadResult.success,
-            id: realUploadResult.id || '',
-            path: realUploadResult.path,
-            error: realUploadResult.error
-          };
-        } catch (uploadError) {
-          uploadResult = {
-            success: false,
-            id: '',
-            error: uploadError instanceof Error ? uploadError.message : 'Unknown upload error'
-          };
-        }
-        
-        if (!uploadResult.success) {
+        if (!sftpResult.success) {
           this.statusManager.logError(
             'azuracast',
             metadata.title,
-            uploadResult.error || 'Unknown error',
+            sftpResult.error || 'SFTP upload failed',
             'UNKNOWN',
-            { audioFilePath, metadata }
+            { audioFilePath, metadata, djName, fileName }
           );
-          throw new Error(uploadResult.error || 'Upload failed');
+          throw new Error(sftpResult.error || 'SFTP upload failed');
         }
         
-        log('D:API   ', 'AZ:007', `Step 2: Setting metadata and playlist (File ID: ${uploadResult.id})`);
+        log('D:SFTP  ', 'AZ:007', `SFTP upload completed: ${sftpResult.remotePath}`);
         
-        let metadataAndPlaylistResult: { success: boolean; error?: string };
+        // Step 2: API File Discovery
+        log('D:API   ', 'AZ:008', 'Step 2: Discovering uploaded file via API...');
         
-        // CHOOSE ONE APPROACH (comment out the other):
+        // Wait a moment for AzuraCast to detect the file
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
-        // APPROACH 1: Use Mock API for metadata
-        /*
-        metadataAndPlaylistResult = await this.mockApi.setMetadataAndPlaylist(uploadResult.id, metadata, [djPlaylist.id]);
-        */
+        const fileDiscoveryResult = await this.realApi.findFileByPath(STATION_ID, destinationPath);
         
-        // APPROACH 2: Use Real API for metadata
-        metadataAndPlaylistResult = await this.realApi.setMetadataAndPlaylist(uploadResult.id, metadata, [djPlaylist.id], STATION_ID);
+        if (!fileDiscoveryResult.success || !fileDiscoveryResult.file) {
+          this.statusManager.logError(
+            'azuracast',
+            metadata.title,
+            fileDiscoveryResult.error || 'Failed to find uploaded file',
+            'UNKNOWN',
+            { destinationPath, sftpPath: sftpResult.remotePath }
+          );
+          throw new Error(fileDiscoveryResult.error || 'Failed to find uploaded file');
+        }
+        
+        const discoveredFile = fileDiscoveryResult.file;
+        log('D:API   ', 'AZ:009', `File discovered: ID ${discoveredFile.id}, path: ${discoveredFile.path}`);
+        
+        // Step 3: API Metadata and Playlist Association
+        log('D:API   ', 'AZ:010', `Step 3: Setting metadata and playlist (File ID: ${discoveredFile.id})`);
+        
+        const metadataAndPlaylistResult = await this.realApi.setMetadataAndPlaylist(
+          discoveredFile.id, 
+          metadata, 
+          [djPlaylist.id], 
+          STATION_ID
+        );
         
         if (!metadataAndPlaylistResult.success) {
           this.statusManager.logError(
@@ -267,16 +267,16 @@ export class AzuraCastService {
             metadata.title,
             metadataAndPlaylistResult.error || 'Failed to set metadata and playlist',
             'UNKNOWN',
-            { trackId: uploadResult.id, metadata, playlistId: djPlaylist.id }
+            { trackId: discoveredFile.id, metadata, playlistId: djPlaylist.id }
           );
           throw new Error(metadataAndPlaylistResult.error || 'Failed to set metadata and playlist');
         }
         
-        // Step 3: Set Playback Time on Playlist
+        // Step 4: API Playlist Scheduling
         const broadcastDate = songlist.broadcast_data.broadcast_date;
         const broadcastTime = songlist.broadcast_data.broadcast_time;
         const endTime = this.calculateEndTime(broadcastTime);
-        log('D:API   ', 'AZ:008', `Step 3: Scheduling playlist for ${broadcastDate} ${broadcastTime}-${endTime}`);
+        log('D:API   ', 'AZ:011', `Step 4: Scheduling playlist for ${broadcastDate} ${broadcastTime}-${endTime}`);
         
         const startTimeMinutes = this.timeStringToMinutes(broadcastTime);
         const endTimeMinutes = this.calculateEndTimeMinutes(broadcastTime);
@@ -288,17 +288,7 @@ export class AzuraCastService {
           loop_once: true
         }];
         
-        let scheduleResult: { success: boolean; error?: string };
-        
-        // CHOOSE ONE APPROACH (comment out the other):
-        
-        // APPROACH 1: Use Mock API for scheduling
-        /*
-        scheduleResult = await this.mockApi.schedulePlaylist(STATION_ID, djPlaylist.id, scheduleItems);
-        */
-        
-        // APPROACH 2: Use Real API for scheduling
-        scheduleResult = await this.realApi.schedulePlaylist(STATION_ID, djPlaylist.id, scheduleItems);
+        const scheduleResult = await this.realApi.schedulePlaylist(STATION_ID, djPlaylist.id, scheduleItems);
         
         if (!scheduleResult.success) {
           this.statusManager.logError(
@@ -312,17 +302,21 @@ export class AzuraCastService {
         }
         
         // All steps succeeded, return the result
-        return uploadResult;
+        return {
+          success: true,
+          id: discoveredFile.id,
+          path: sftpResult.remotePath
+        };
       }, retryOptions);
       
       // Log success
       this.statusManager.logSuccess(
         'azuracast',
         metadata.title,
-        `Uploaded to ${result.path}`
+        `Uploaded via SFTP to ${result.path}`
       );
       
-      log('D:WORKER', 'AZ:009', `Upload completed successfully (ID: ${result.id})`);
+      log('D:WORKER', 'AZ:012', `SFTP upload completed successfully (ID: ${result.id})`);
       
       return {
         success: true,
@@ -338,7 +332,7 @@ export class AzuraCastService {
         'UNKNOWN',
         { audioFilePath, metadata }
       );
-      logError('ERROR   ', 'AZ:S27', `AzuraCast upload failed after all retries: ${(err as Error).message}`);
+      logError('ERROR   ', 'AZ:S27', `AzuraCast SFTP upload failed after all retries: ${(err as Error).message}`);
       
       return {
         success: false,

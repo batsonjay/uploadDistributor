@@ -606,4 +606,105 @@ export class AzuraCastApi {
       };
     }
   }
+
+  /**
+   * Find a file by path after SFTP upload
+   * 
+   * @param stationId The station ID
+   * @param filePath The relative file path (e.g., "djname/filename.mp3")
+   * @returns Promise with file discovery result
+   */
+  public async findFileByPath(
+    stationId: string, 
+    filePath: string
+  ): Promise<{ success: boolean; file?: any; error?: string }> {
+    try {
+      log('D:API   ', 'AZ:017', `Searching for uploaded file: ${filePath}`);
+      
+      const response = await axios.get(
+        `${this.baseUrl}/api/station/${stationId}/files`,
+        {
+          headers: {
+            'X-API-Key': this.superAdminApiKey,
+            'Accept': 'application/json'
+          },
+          params: {
+            searchPhrase: path.basename(filePath) // Search by filename
+          }
+        }
+      );
+      
+      // Look for the file in the response
+      if (response.data && response.data.rows && Array.isArray(response.data.rows)) {
+        const files = response.data.rows;
+        
+        // Find file by exact path match or filename match
+        const foundFile = files.find((file: any) => {
+          return file.path === filePath || 
+                 file.path === `/${filePath}` ||
+                 file.path.endsWith(`/${path.basename(filePath)}`);
+        });
+        
+        if (foundFile) {
+          log('D:API   ', 'AZ:018', `Found uploaded file: ID ${foundFile.id}, path: ${foundFile.path}`);
+          return {
+            success: true,
+            file: foundFile
+          };
+        }
+      }
+      
+      // If not found, try a broader search without search phrase
+      log('D:API   ', 'AZ:019', 'File not found with search phrase, trying broader search...');
+      
+      const broadResponse = await axios.get(
+        `${this.baseUrl}/api/station/${stationId}/files`,
+        {
+          headers: {
+            'X-API-Key': this.superAdminApiKey,
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      if (broadResponse.data && broadResponse.data.rows && Array.isArray(broadResponse.data.rows)) {
+        const allFiles = broadResponse.data.rows;
+        const filename = path.basename(filePath);
+        
+        // Search through all files for a match
+        const foundFile = allFiles.find((file: any) => {
+          return file.path === filePath || 
+                 file.path === `/${filePath}` ||
+                 file.path.endsWith(`/${filename}`) ||
+                 file.name === filename;
+        });
+        
+        if (foundFile) {
+          log('D:API   ', 'AZ:020', `Found uploaded file in broad search: ID ${foundFile.id}, path: ${foundFile.path}`);
+          return {
+            success: true,
+            file: foundFile
+          };
+        }
+      }
+      
+      return {
+        success: false,
+        error: `File not found: ${filePath}`
+      };
+    } catch (error) {
+      logError('ERROR   ', 'AZ:021', `File discovery error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      if (axios.isAxiosError(error) && error.response) {
+        return {
+          success: false,
+          error: error.response.data.message || 'Failed to find uploaded file'
+        };
+      }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
 }
