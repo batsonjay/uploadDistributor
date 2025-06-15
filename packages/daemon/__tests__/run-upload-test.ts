@@ -113,9 +113,11 @@ async function runUploadTest() {
     
     // 3. Create metadata exactly like the web-UI does
     const now = new Date();
-    const broadcastDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
+    // Schedule for 24 hours from now to avoid interfering with current broadcasts
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const broadcastDate = tomorrow.toISOString().split('T')[0]; // YYYY-MM-DD (tomorrow)
+    const hours = String(tomorrow.getHours()).padStart(2, '0');
+    const minutes = String(tomorrow.getMinutes()).padStart(2, '0');
     const broadcastTime = `${hours}:${minutes}`;
     
     // Create a unique identifier for this test run
@@ -151,7 +153,7 @@ async function runUploadTest() {
     console.log('📋 Prepared metadata:');
     console.log(`   Title: "${metadata.title}"`);
     console.log(`   Selected DJ ID: ${selectedDjId} (${TARGET_DJ_NAME})`);
-    console.log(`   Date/Time: ${metadata.broadcastDate} ${metadata.broadcastTime}`);
+    console.log(`   Date/Time: ${metadata.broadcastDate} ${metadata.broadcastTime} (24 hours from now)`);
     console.log(`   Genre: ${metadata.genre}`);
     console.log(`   Description: ${metadata.description}`);
     
@@ -229,6 +231,29 @@ async function runUploadTest() {
               finalMessage = archiveResponse.data.status.message || '';
               console.log(`📦 File found in archive with status: ${status} - ${finalMessage}`);
               
+              // Verify the comprehensive archive data
+              if (archiveResponse.data.archiveData) {
+                const archiveData = archiveResponse.data.archiveData;
+                console.log(`✅ Archive verification:`);
+                console.log(`   - DJ: ${archiveData.summary?.dj || 'Unknown'}`);
+                console.log(`   - Title: ${archiveData.summary?.title || 'Unknown'}`);
+                console.log(`   - Track Count: ${archiveData.summary?.trackCount || 0}`);
+                console.log(`   - Upload Results: ${Object.keys(archiveData.uploads || {}).join(', ') || 'None'}`);
+                
+                // Check for successful uploads
+                const uploads = archiveData.uploads || {};
+                const successfulUploads = Object.entries(uploads).filter(([_, result]: [string, any]) => 
+                  result && result.success === true
+                );
+                
+                if (successfulUploads.length > 0) {
+                  console.log(`✅ Successful uploads: ${successfulUploads.map(([platform]) => platform).join(', ')}`);
+                } else {
+                  console.log(`⚠️ No successful uploads found in archive data`);
+                  hasError = true;
+                }
+              }
+              
               // Check for error indicators in archived status
               if (status === 'error' || 
                   finalMessage.toLowerCase().includes('error') || 
@@ -255,12 +280,36 @@ async function runUploadTest() {
             error.response?.data || error.message);
         }
         
-        // If we've been checking for a while and getting 404s, assume it completed
+        // If we've been checking for a while and getting 404s, try archive one more time
         if (attempts > 10 && error.response && error.response.status === 404) {
-          console.log(`\n📦 File ID not found after ${attempts} attempts, assuming processed and archived`);
-          console.log(`This is normal behavior - the daemon moves files to archive after processing`);
-          status = 'completed';
-          break;
+          console.log(`\n📦 File ID not found after ${attempts} attempts, making final archive check...`);
+          
+          try {
+            const finalArchiveCheck = await axios.get(
+              `${DAEMON_URL}/send/archive-status/${fileId}`,
+              { headers: { 'Authorization': `Bearer ${AUTH_TOKEN}` } }
+            );
+            
+            if (finalArchiveCheck.data.success && finalArchiveCheck.data.archived) {
+              console.log(`✅ File found in archive on final check`);
+              status = 'completed';
+              finalMessage = 'File successfully processed and archived';
+              break;
+            } else {
+              console.log(`❌ File not found in archive after final check`);
+              console.log(`This may indicate a processing failure or timeout`);
+              hasError = true;
+              status = 'error';
+              finalMessage = 'File not found in archive after processing timeout';
+              break;
+            }
+          } catch (finalError) {
+            console.log(`❌ Final archive check failed: ${finalError.response?.data || finalError.message}`);
+            hasError = true;
+            status = 'error';
+            finalMessage = 'Archive check failed after processing timeout';
+            break;
+          }
         }
       }
       

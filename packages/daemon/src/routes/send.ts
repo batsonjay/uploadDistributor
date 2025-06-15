@@ -391,47 +391,65 @@ router.get('/archive-status/:fileId', anyAuthenticated, async (req: express.Requ
     // Get the archive directory
     const archiveDir = cleanupManager.getArchiveDir();
     
-    // Search for status files in the archive that contain this fileId
-    // This is a simple implementation - could be optimized for production
+    // Search for comprehensive JSON files in the archive that contain this fileId
     let found = false;
-    let archiveStatus = null;
+    let archiveData = null;
     
-    // Get the current year for a reasonable starting point
-    const currentYear = new Date().getFullYear().toString();
-    const yearDir = path.join(archiveDir, currentYear);
+    // Get the current year for a reasonable starting point, but also check previous year
+    const currentYear = new Date().getFullYear();
+    const yearsToCheck = [currentYear.toString(), (currentYear - 1).toString()];
     
-    if (fs.existsSync(yearDir)) {
-      // Read all files in the year directory
-      const files = fs.readdirSync(yearDir);
+    for (const year of yearsToCheck) {
+      const yearDir = path.join(archiveDir, year);
       
-      // Look for status files
-      for (const file of files) {
-        if (file.endsWith('_status.json')) {
-          const statusPath = path.join(yearDir, file);
-          try {
-            const statusContent = fs.readFileSync(statusPath, 'utf8');
-            const statusData = JSON.parse(statusContent);
-            
-            // Check if this status file contains our fileId
-            if (statusData.fileId === fileId) {
-              found = true;
-              archiveStatus = statusData;
-              break;
+      if (fs.existsSync(yearDir)) {
+        // Read all files in the year directory
+        const files = fs.readdirSync(yearDir);
+        
+        // Look for comprehensive JSON files (not status files)
+        for (const file of files) {
+          if (file.endsWith('.json') && !file.endsWith('_status.json')) {
+            const filePath = path.join(yearDir, file);
+            try {
+              const fileContent = fs.readFileSync(filePath, 'utf8');
+              const jsonData = JSON.parse(fileContent);
+              
+              // Check if this comprehensive file contains our fileId in the summary section
+              if (jsonData.summary && jsonData.summary.fileId === fileId) {
+                found = true;
+                archiveData = jsonData;
+                log('D:ROUTE ', 'SE:020', `File ${fileId} found in archive: ${file}`);
+                break;
+              }
+            } catch (err) {
+              // Skip files that can't be parsed
+              continue;
             }
-          } catch (err) {
-            // Skip files that can't be parsed
-            continue;
           }
         }
+        
+        if (found) break;
       }
     }
     
-    if (found && archiveStatus) {
-      log('D:ROUTE ', 'SE:020', `File ${fileId} found in archive`);
+    if (found && archiveData) {
+      // Extract status information from the comprehensive archive data
+      const status = {
+        status: 'completed',
+        message: 'File successfully processed and archived',
+        timestamp: archiveData.summary.timestamp || new Date().toISOString(),
+        fileId: fileId,
+        uploads: archiveData.uploads || {},
+        trackCount: archiveData.summary.trackCount || 0,
+        dj: archiveData.summary.dj || 'Unknown',
+        title: archiveData.summary.title || 'Unknown'
+      };
+      
       return res.json({
         success: true,
         archived: true,
-        status: archiveStatus
+        status: status,
+        archiveData: archiveData
       });
     } else {
       log('D:ROUTE ', 'SE:021', `File ${fileId} not found in archive`);
