@@ -621,36 +621,103 @@ export class AzuraCastApi {
     try {
       log('D:API   ', 'AZ:017', `Searching for uploaded file: ${filePath}`);
       
+      const filename = path.basename(filePath);
+      const djName = path.dirname(filePath);
+      
+      // Calculate timestamp for "yesterday" (24 hours ago) in Unix seconds
+      const oneDayAgo = Math.floor((Date.now() - (24 * 60 * 60 * 1000)) / 1000);
+      
+      // Helper function to filter and log recent files only
+      const filterAndLogRecentFiles = (files: any[], context: string) => {
+        const recentFiles = files.filter((file: any) => {
+          return file.uploaded_at && file.uploaded_at >= oneDayAgo;
+        });
+        
+        log('D:APIDB ', 'AZ:017a', `${context}: ${recentFiles.length} recent files (last 24h) out of ${files.length} total`);
+        
+        // Log only ID and path for recent files
+        recentFiles.slice(0, 10).forEach((file: any, index: number) => {
+          const uploadDate = new Date(file.uploaded_at * 1000).toISOString();
+          log('D:APIDB ', 'AZ:017b', `Recent file ${index + 1}: ID=${file.id}, path="${file.path}" (uploaded: ${uploadDate})`);
+        });
+        
+        // Also log files that contain our search filename for debugging
+        const matchingFiles = files.filter((file: any) => 
+          file.path && file.path.includes(filename)
+        );
+        
+        if (matchingFiles.length > 0) {
+          log('D:APIDB ', 'AZ:017c', `Files containing "${filename}": ${matchingFiles.length}`);
+          matchingFiles.slice(0, 5).forEach((file: any, index: number) => {
+            const uploadDate = new Date(file.uploaded_at * 1000).toISOString();
+            log('D:APIDB ', 'AZ:017d', `Match ${index + 1}: ID=${file.id}, path="${file.path}" (uploaded: ${uploadDate})`);
+          });
+        } else {
+          log('D:APIDB ', 'AZ:017e', `No files found containing "${filename}" in their path`);
+        }
+        
+        return recentFiles;
+      };
+      
+      // Try targeted search first (without searchPhrase to see all files)
+      log('D:APIDB ', 'AZ:016', `Making API call to: ${this.baseUrl}/api/station/${stationId}/files`);
+      
       const response = await axios.get(
         `${this.baseUrl}/api/station/${stationId}/files`,
         {
           headers: {
             'X-API-Key': this.superAdminApiKey,
             'Accept': 'application/json'
-          },
-          params: {
-            searchPhrase: path.basename(filePath) // Search by filename
           }
+          // Removed searchPhrase parameter to get all files for debugging
         }
       );
       
-      // Look for the file in the response
+      log('D:APIDB ', 'AZ:016x', `API call completed, status: ${response.status}`);
+      
+      // Handle both response formats: direct array or wrapped in rows
+      let files = null;
       if (response.data && response.data.rows && Array.isArray(response.data.rows)) {
-        const files = response.data.rows;
+        files = response.data.rows;
+        log('D:APIDB ', 'AZ:016a', `Targeted search: Found ${files.length} files in response.data.rows`);
+      } else if (Array.isArray(response.data)) {
+        files = response.data;
+        log('D:APIDB ', 'AZ:016b', `Targeted search: Found ${files.length} files in direct array`);
+      } else {
+        log('D:APIDB ', 'AZ:016c', `Targeted search: Unexpected response format - type: ${typeof response.data}, isArray: ${Array.isArray(response.data)}`);
+        if (response.data && typeof response.data === 'object') {
+          const keys = Object.keys(response.data);
+          log('D:APIDB ', 'AZ:016d', `Response keys: ${keys.slice(0, 5).join(', ')}`);
+        }
+      }
+      
+      if (files) {
+        const recentFiles = filterAndLogRecentFiles(files, 'Targeted search');
         
-        // Find file by exact path match or filename match
-        const foundFile = files.find((file: any) => {
-          return file.path === filePath || 
-                 file.path === `/${filePath}` ||
-                 file.path.endsWith(`/${path.basename(filePath)}`);
-        });
+        // Try multiple path variations on all files (not just recent ones for matching)
+        const pathVariations = [
+          filePath,                    // catalyst/filename.mp3
+          `/${filePath}`,              // /catalyst/filename.mp3
+          `/files/${filePath}`,        // /files/catalyst/filename.mp3
+          `files/${filePath}`,         // files/catalyst/filename.mp3
+          `/var/azuracast/stations/${stationId}/files/${filePath}`, // Full server path
+          filename                     // Just filename
+        ];
         
-        if (foundFile) {
-          log('D:API   ', 'AZ:018', `Found uploaded file: ID ${foundFile.id}, path: ${foundFile.path}`);
-          return {
-            success: true,
-            file: foundFile
-          };
+        for (const pathVariation of pathVariations) {
+          const foundFile = files.find((file: any) => {
+            return file.path === pathVariation || 
+                   file.path.endsWith(`/${filename}`) ||
+                   (file.name && file.name === filename);
+          });
+          
+          if (foundFile) {
+            log('D:API   ', 'AZ:018', `Found uploaded file: ID ${foundFile.id}, path: ${foundFile.path} (matched variation: ${pathVariation})`);
+            return {
+              success: true,
+              file: foundFile
+            };
+          }
         }
       }
       
@@ -667,16 +734,33 @@ export class AzuraCastApi {
         }
       );
       
+      // Handle both response formats for broad search
+      let allFiles = null;
       if (broadResponse.data && broadResponse.data.rows && Array.isArray(broadResponse.data.rows)) {
-        const allFiles = broadResponse.data.rows;
-        const filename = path.basename(filePath);
+        allFiles = broadResponse.data.rows;
+      } else if (Array.isArray(broadResponse.data)) {
+        allFiles = broadResponse.data;
+      }
+      
+      if (allFiles) {
         
-        // Search through all files for a match
-        const foundFile = allFiles.find((file: any) => {
-          return file.path === filePath || 
-                 file.path === `/${filePath}` ||
-                 file.path.endsWith(`/${filename}`) ||
-                 file.name === filename;
+        // Filter files that might be in the DJ directory
+        const djFiles = allFiles.filter((file: any) => 
+          file.path && (
+            file.path.includes(djName) || 
+            file.path.includes(filename) ||
+            (file.name && file.name === filename)
+          )
+        );
+        
+        const recentDjFiles = filterAndLogRecentFiles(djFiles, 'DJ directory search');
+        
+        // Try to find exact match
+        const foundFile = djFiles.find((file: any) => {
+          return file.path.endsWith(`/${filename}`) ||
+                 (file.name && file.name === filename) ||
+                 file.path === filePath ||
+                 file.path === `/${filePath}`;
         });
         
         if (foundFile) {
@@ -685,6 +769,17 @@ export class AzuraCastApi {
             success: true,
             file: foundFile
           };
+        }
+        
+        // If still not found, log recent files in DJ directory for debugging
+        if (recentDjFiles.length > 0) {
+          log('D:APIDB ', 'AZ:019d', `No exact match found. Recent files in DJ directory (last 24h):`);
+          recentDjFiles.forEach((file: any, index: number) => {
+            const uploadDate = new Date(file.uploaded_at * 1000).toISOString();
+            log('D:APIDB ', 'AZ:019e', `  ${index + 1}. ID: ${file.id}, path: "${file.path}" (uploaded: ${uploadDate})`);
+          });
+        } else {
+          log('D:APIDB ', 'AZ:019f', `No recent files found in DJ directory "${djName}" or matching filename "${filename}"`);
         }
       }
       

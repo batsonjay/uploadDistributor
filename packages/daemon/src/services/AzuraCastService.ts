@@ -205,47 +205,74 @@ export class AzuraCastService {
     };
     
     try {
-      // Use the retry utility to handle the entire upload process
+      // Step 1: SFTP Upload of .mp3 media file (no retry - upload once)
+      log('D:SFTP  ', 'AZ:006', 'Step 1: Uploading file via SFTP to AzuraCast...');
+      const djName = metadata.artist.toLowerCase().replace(/\s+/g, '_');
+      const fileName = path.basename(audioFilePath);
+      const destinationPath = `${djName}/${fileName}`;
+      
+      // Upload via SFTP (single attempt)
+      const sftpResult = await this.sftpApi.uploadFile(audioFilePath, djName, fileName);
+      
+      if (!sftpResult.success) {
+        this.statusManager.logError(
+          'azuracast',
+          metadata.title,
+          sftpResult.error || 'SFTP upload failed',
+          'UNKNOWN',
+          { audioFilePath, metadata, djName, fileName }
+        );
+        return {
+          success: false,
+          error: sftpResult.error || 'SFTP upload failed'
+        };
+      }
+      
+      log('D:SFTP  ', 'AZ:007', `SFTP upload completed: ${sftpResult.remotePath}`);
+      
+      // Steps 2-4: API operations with retry logic
       const result = await retry(async () => {
-        // Step 1: SFTP Upload of .mp3 media file
-        log('D:SFTP  ', 'AZ:006', 'Step 1: Uploading file via SFTP to AzuraCast...');
-        const djName = metadata.artist.toLowerCase().replace(/\s+/g, '_');
-        const fileName = path.basename(audioFilePath);
-        const destinationPath = `${djName}/${fileName}`;
-        
-        // Upload via SFTP
-        const sftpResult = await this.sftpApi.uploadFile(audioFilePath, djName, fileName);
-        
-        if (!sftpResult.success) {
-          this.statusManager.logError(
-            'azuracast',
-            metadata.title,
-            sftpResult.error || 'SFTP upload failed',
-            'UNKNOWN',
-            { audioFilePath, metadata, djName, fileName }
-          );
-          throw new Error(sftpResult.error || 'SFTP upload failed');
-        }
-        
-        log('D:SFTP  ', 'AZ:007', `SFTP upload completed: ${sftpResult.remotePath}`);
-        
-        // Step 2: API File Discovery
+        // Step 2: API File Discovery with enhanced retry logic
         log('D:API   ', 'AZ:008', 'Step 2: Discovering uploaded file via API...');
         
-        // Wait a moment for AzuraCast to detect the file
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        let fileDiscoveryResult: { success: boolean; file?: any; error?: string } = { success: false };
         
-        const fileDiscoveryResult = await this.realApi.findFileByPath(STATION_ID, destinationPath);
+        // Try discovery with progressive delays (3 attempts: 3s, 4s, 5s)
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          const delay = 2000 + (attempt * 1000); // 3s, 4s, 5s
+          log('D:API   ', 'AZ:008a', `Discovery attempt ${attempt}: Waiting ${delay/1000}s for AzuraCast to index the file...`);
+          
+          await new Promise(resolve => setTimeout(resolve, delay));
+          
+          fileDiscoveryResult = await this.realApi.findFileByPath(STATION_ID, destinationPath);
+          
+          if (fileDiscoveryResult.success && fileDiscoveryResult.file) {
+            log('D:API   ', 'AZ:008b', `✅ File discovered on attempt ${attempt}: ID ${fileDiscoveryResult.file.id}`);
+            break;
+          } else {
+            log('D:API   ', 'AZ:008c', `❌ Discovery attempt ${attempt} failed: ${fileDiscoveryResult.error}`);
+            if (attempt === 3) {
+              // Log the upload success even if discovery fails
+              this.statusManager.logSuccess(
+                'azuracast',
+                metadata.title,
+                `SFTP upload completed to ${sftpResult.remotePath} (file discovery failed after 3 attempts)`
+              );
+              
+              this.statusManager.logError(
+                'azuracast',
+                metadata.title,
+                fileDiscoveryResult.error || 'Failed to find uploaded file after 3 attempts',
+                'UNKNOWN',
+                { destinationPath, sftpPath: sftpResult.remotePath, attempts: 3 }
+              );
+              throw new Error(fileDiscoveryResult.error || 'Failed to find uploaded file after 3 attempts');
+            }
+          }
+        }
         
         if (!fileDiscoveryResult.success || !fileDiscoveryResult.file) {
-          this.statusManager.logError(
-            'azuracast',
-            metadata.title,
-            fileDiscoveryResult.error || 'Failed to find uploaded file',
-            'UNKNOWN',
-            { destinationPath, sftpPath: sftpResult.remotePath }
-          );
-          throw new Error(fileDiscoveryResult.error || 'Failed to find uploaded file');
+          throw new Error('File discovery failed unexpectedly');
         }
         
         const discoveredFile = fileDiscoveryResult.file;

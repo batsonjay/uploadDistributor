@@ -177,21 +177,41 @@ export class AzuraCastSftpApi {
       
       log('D:SFTP  ', 'SF:010', `Uploading to remote path: ${remoteFilePath}`);
       
-      // Set up progress tracking if callback provided
-      if (onProgress) {
-        this.sftp.on('upload', (info) => {
-          const progress: SftpUploadProgress = {
-            transferred: info.bytesTransferred,
-            total: info.bytesTotal,
-            percentage: Math.round((info.bytesTransferred / info.bytesTotal) * 100)
-          };
+      // Set up progress tracking with periodic console logging
+      let lastLoggedPercentage = 0;
+      let lastLogTime = Date.now();
+      const logInterval = 5000; // Log every 5 seconds
+      
+      this.sftp.on('upload', (info) => {
+        const progress: SftpUploadProgress = {
+          transferred: info.bytesTransferred,
+          total: info.bytesTotal,
+          percentage: Math.round((info.bytesTransferred / info.bytesTotal) * 100)
+        };
+        
+        // Call user callback if provided
+        if (onProgress) {
           onProgress(progress);
+        }
+        
+        const now = Date.now();
+        const timeSinceLastLog = now - lastLogTime;
+        
+        // Log progress every 5 seconds OR every 10% milestone
+        if (timeSinceLastLog >= logInterval || 
+            (progress.percentage >= lastLoggedPercentage + 10 && progress.percentage % 10 === 0)) {
           
-          if (progress.percentage % 10 === 0) { // Log every 10%
-            log('D:SFTPDB', 'SF:011', `Upload progress: ${progress.percentage}% (${(progress.transferred / (1024 * 1024)).toFixed(1)}MB / ${(progress.total / (1024 * 1024)).toFixed(1)}MB)`);
-          }
-        });
-      }
+          const transferredMB = (progress.transferred / (1024 * 1024)).toFixed(1);
+          const totalMB = (progress.total / (1024 * 1024)).toFixed(1);
+          const speedMBps = timeSinceLastLog > 0 ? 
+            ((progress.transferred - (lastLoggedPercentage * progress.total / 100)) / (1024 * 1024)) / (timeSinceLastLog / 1000) : 0;
+          
+          log('D:SFTP  ', 'SF:011', `Upload progress: ${progress.percentage}% (${transferredMB}MB / ${totalMB}MB) - ${speedMBps.toFixed(1)} MB/s`);
+          
+          lastLoggedPercentage = progress.percentage;
+          lastLogTime = now;
+        }
+      });
       
       // Perform the upload
       await this.sftp.fastPut(localFilePath, remoteFilePath);
