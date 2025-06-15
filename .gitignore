@@ -33,6 +33,9 @@ Thumbs.db
 .idea/
 *.swp
 
+# TypeScript build info
+**/tsconfig.tsbuildinfo
+
 # Big sample files
 apps/tf/*
 packages/daemon/received-files
