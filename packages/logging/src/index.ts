@@ -9,7 +9,7 @@
 export const LogConfig = {
   // Daemon categories
   'D:API   ': true,  // External API interactions
-  'D:APIDB ': false, // External API interactions - deeper debugging
+  'D:APIDB ': false,  // External API interactions - deeper debugging
   'D:AUTH  ': false, // Authentication-related logs
   'D:AUTHDB': false, // Authentication-related logs - deeper debugging
   'D:EMAIL ': false, // Email authentication logs
@@ -25,7 +25,7 @@ export const LogConfig = {
   'D:SYSTEM': true,  // System-level operations
   'D:WORKER': true,  // Worker thread operations
   'D:WORKDB': false, // Worker thread operations - deeper debugging
-  'D:SFTP  ': true,  // SFTP operations
+  'D:SFTP  ': false,  // SFTP operations
   'D:SFTPDB': false, // SFTP operations - deeper debugging
   
   // Client categories

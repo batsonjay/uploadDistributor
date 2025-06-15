@@ -288,15 +288,56 @@ export class AzuraCastApiMock extends DestinationApiMock {
       };
     }
 
-    // Validate schedule items
+    // Validate schedule items (format: HHMM integers with start_date/end_date)
     for (const item of scheduleItems) {
-      if (!item.start_date || !item.start_time || !item.end_time) {
-        logError('ERROR   ', 'AZ:M16', 'Invalid schedule item format');
+      if (typeof item.start_time !== 'number' || typeof item.end_time !== 'number') {
+        logError('ERROR   ', 'AZ:M16', 'Invalid schedule item format - expecting start_time and end_time as HHMM integers');
         return {
           success: false,
-          error: 'Invalid schedule item format'
+          error: 'Invalid schedule item format - expecting start_time and end_time as HHMM integers'
         };
       }
+      
+      // Validate HHMM format (0000-2359)
+      if (item.start_time < 0 || item.start_time > 2359 || item.end_time < 0 || item.end_time > 2359) {
+        logError('ERROR   ', 'AZ:M16a', 'Invalid time range - expecting HHMM format (0000-2359)');
+        return {
+          success: false,
+          error: 'Invalid time range - expecting HHMM format (0000-2359)'
+        };
+      }
+      
+      // Validate that minutes are valid (00-59)
+      const startMins = item.start_time % 100;
+      const endMins = item.end_time % 100;
+      if (startMins > 59 || endMins > 59) {
+        logError('ERROR   ', 'AZ:M16b', 'Invalid minutes in HHMM format - minutes must be 00-59');
+        return {
+          success: false,
+          error: 'Invalid minutes in HHMM format - minutes must be 00-59'
+        };
+      }
+      
+      // Validate date fields if present
+      if (item.start_date && item.end_date) {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(item.start_date) || !dateRegex.test(item.end_date)) {
+          logError('ERROR   ', 'AZ:M16c', 'Invalid date format - expecting YYYY-MM-DD');
+          return {
+            success: false,
+            error: 'Invalid date format - expecting YYYY-MM-DD'
+          };
+        }
+      }
+      
+      // Log the schedule details for debugging
+      const startHours = Math.floor(item.start_time / 100);
+      const startMins2 = item.start_time % 100;
+      const endHours = Math.floor(item.end_time / 100);
+      const endMins2 = item.end_time % 100;
+      const startTimeStr = `${startHours.toString().padStart(2, '0')}:${startMins2.toString().padStart(2, '0')}`;
+      const endTimeStr = `${endHours.toString().padStart(2, '0')}:${endMins2.toString().padStart(2, '0')}`;
+      log('D:API   ', 'AZ:M16d', `Mock: Schedule item - Start: ${item.start_time} (${startTimeStr}), End: ${item.end_time} (${endTimeStr}), Start Date: ${item.start_date || 'not set'}, End Date: ${item.end_date || 'not set'}, Loop once: ${item.loop_once}`);
     }
 
     // Record the request

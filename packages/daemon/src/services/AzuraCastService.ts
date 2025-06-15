@@ -55,10 +55,16 @@ export class AzuraCastService {
     const cetTimestamp = utcToCet(utcTimestamp);
     const [cetDate] = cetTimestamp.split(' ');
     
+    const baseTitle = songlist.broadcast_data.setTitle || 'Untitled Set';
+    const djName = songlist.broadcast_data.DJ || 'Unknown DJ';
+    
+    // Create title with DJ name appended in parentheses
+    const titleWithDj = `${baseTitle} (${djName})`;
+    
     const metadata = {
-      title: songlist.broadcast_data.setTitle || 'Untitled Set',
-      artist: songlist.broadcast_data.DJ || 'Unknown DJ',
-      album: `${cetDate || new Date().toISOString().split('T')[0]} Broadcast`,
+      title: titleWithDj,
+      artist: djName,
+      album: titleWithDj,  // Album is same as title (including DJ name)
       genre: Array.isArray(songlist.broadcast_data.genre) ? 
              songlist.broadcast_data.genre.join(', ') || 'Radio Show' : 
              songlist.broadcast_data.genre || 'Radio Show'
@@ -123,28 +129,30 @@ export class AzuraCastService {
   }
   
   /**
-   * Convert time string to minutes from midnight (as required by AzuraCast API)
+   * Convert time string to HHMM integer format (as required by AzuraCast API)
    * 
    * @param timeString The time in HH:MM or HH:MM:SS format
-   * @returns Minutes from midnight as integer
+   * @returns Time as HHMM integer (e.g., "14:30" -> 1430)
    */
-  private timeStringToMinutes(timeString: string): number {
+  private timeStringToHHMM(timeString: string): number {
     const timeParts = timeString.split(':').map(Number);
     const hours = timeParts[0] || 0;
     const minutes = timeParts[1] || 0;
-    return hours * 60 + minutes;
+    return hours * 100 + minutes;
   }
 
   /**
-   * Calculate end time (broadcast time + 1 hour) in minutes from midnight
+   * Calculate end time (broadcast time + 1 hour) in HHMM integer format
    * 
    * @param broadcastTime The broadcast time in HH:MM:SS format
-   * @returns End time in minutes from midnight
+   * @returns End time as HHMM integer
    */
-  private calculateEndTimeMinutes(broadcastTime: string): number {
-    const startMinutes = this.timeStringToMinutes(broadcastTime);
-    const endMinutes = (startMinutes + 60) % (24 * 60); // Handle midnight rollover
-    return endMinutes;
+  private calculateEndTimeHHMM(broadcastTime: string): number {
+    const timeParts = broadcastTime.split(':').map(Number);
+    const hours = timeParts[0] || 0;
+    const minutes = timeParts[1] || 0;
+    const endHours = (hours + 1) % 24; // Handle midnight rollover
+    return endHours * 100 + minutes;
   }
 
   /**
@@ -303,15 +311,16 @@ export class AzuraCastService {
         const broadcastDate = songlist.broadcast_data.broadcast_date;
         const broadcastTime = songlist.broadcast_data.broadcast_time;
         const endTime = this.calculateEndTime(broadcastTime);
-        log('D:API   ', 'AZ:011', `Step 4: Scheduling playlist for ${broadcastDate} ${broadcastTime}-${endTime}`);
+        const startTimeHHMM = this.timeStringToHHMM(broadcastTime);
+        const endTimeHHMM = this.calculateEndTimeHHMM(broadcastTime);
         
-        const startTimeMinutes = this.timeStringToMinutes(broadcastTime);
-        const endTimeMinutes = this.calculateEndTimeMinutes(broadcastTime);
+        log('D:API   ', 'AZ:011', `Step 4: Scheduling playlist for ${broadcastDate} ${broadcastTime}-${endTime} (HHMM: ${startTimeHHMM} - ${endTimeHHMM})`);
         
         const scheduleItems = [{
+          start_time: startTimeHHMM,
+          end_time: endTimeHHMM,
           start_date: broadcastDate,
-          start_time: startTimeMinutes,
-          end_time: endTimeMinutes,
+          end_date: broadcastDate,
           loop_once: true
         }];
         
@@ -384,14 +393,15 @@ export class AzuraCastService {
     log('D:API   ', 'AZ:S26', `Scheduling playlist ${playlistId} for ${broadcastDate} at ${broadcastTime}`);
     
     try {
-      const startTimeMinutes = this.timeStringToMinutes(broadcastTime);
-      const endTimeMinutes = this.calculateEndTimeMinutes(broadcastTime);
+      const startTimeHHMM = this.timeStringToHHMM(broadcastTime);
+      const endTimeHHMM = this.calculateEndTimeHHMM(broadcastTime);
       const endTime = this.calculateEndTime(broadcastTime);
       
       const scheduleItems = [{
+        start_time: startTimeHHMM,
+        end_time: endTimeHHMM,
         start_date: broadcastDate,
-        start_time: startTimeMinutes,
-        end_time: endTimeMinutes,
+        end_date: broadcastDate,
         loop_once: true
       }];
       

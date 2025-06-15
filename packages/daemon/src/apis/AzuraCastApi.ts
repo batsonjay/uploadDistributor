@@ -576,9 +576,26 @@ export class AzuraCastApi {
     scheduleItems: any[]
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      // Log the schedule items for debugging
+      log('D:APIDB ', 'AZ:012a', `Scheduling playlist ${playlistId} with ${scheduleItems.length} items:`);
+      scheduleItems.forEach((item, index) => {
+        // Convert HHMM integers back to readable time for logging
+        const startHours = Math.floor(item.start_time / 100);
+        const startMins = item.start_time % 100;
+        const endHours = Math.floor(item.end_time / 100);
+        const endMins = item.end_time % 100;
+        const startTimeStr = `${startHours.toString().padStart(2, '0')}:${startMins.toString().padStart(2, '0')}`;
+        const endTimeStr = `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
+        log('D:APIDB ', 'AZ:012b', `  Item ${index + 1}: start_time=${item.start_time} (${startTimeStr}), end_time=${item.end_time} (${endTimeStr}), start_date="${item.start_date}", end_date="${item.end_date}", loop_once=${item.loop_once}`);
+      });
+      
+      // Create the complete payload
+      const payload = { schedule_items: scheduleItems };
+      log('D:APIDB ', 'AZ:012c', `Complete JSON payload being sent to AzuraCast:`, JSON.stringify(payload, null, 2));
+      
       const response = await axios.put(
         `${this.baseUrl}/api/station/${stationId}/playlist/${playlistId}`,
-        { schedule_items: scheduleItems },
+        payload,
         {
           headers: {
             'X-API-Key': this.superAdminApiKey,
